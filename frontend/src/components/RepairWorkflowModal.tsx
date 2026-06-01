@@ -47,8 +47,8 @@ export function RepairWorkflowModal({ open, mode, busy = false, onConfirm, onCan
             ? 'Опишите, какие данные вам необходимы. Комментарий появится в задаче Yandex Tracker.'
             : 'Выберите резолюцию и при необходимости добавьте комментарий.';
 
-    const canSubmit =
-        mode === 'needs_info' ? comment.trim().length > 0 : Boolean(resolution);
+    const commentTrimmed = comment.trim();
+    const canSubmit = mode === 'needs_info' ? commentTrimmed.length > 0 : Boolean(resolution);
 
     return (
         <div
@@ -131,12 +131,15 @@ export function RepairWorkflowModal({ open, mode, busy = false, onConfirm, onCan
                         type="button"
                         className={mode === 'close' ? 'btn-danger' : 'btn-primary'}
                         disabled={busy || !canSubmit}
-                        onClick={() =>
+                        onClick={() => {
+                            if (!canSubmit) {
+                                return;
+                            }
                             onConfirm({
-                                comment: comment.trim(),
+                                comment: commentTrimmed,
                                 resolution: mode === 'close' ? resolution : undefined,
-                            })
-                        }
+                            });
+                        }}
                     >
                         {busy ? 'Сохранение…' : mode === 'close' ? 'Закрыть' : 'Отправить'}
                     </button>
