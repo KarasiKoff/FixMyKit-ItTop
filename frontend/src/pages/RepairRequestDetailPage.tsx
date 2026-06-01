@@ -219,7 +219,7 @@ export function RepairRequestDetailPage() {
     const resolutionNoteTrimmed = noteParts.resolutionTrimmed;
     const resolutionDescTrimmed = request.resolutionDesc?.trim() ?? '';
     const closedByDisplayed = noteParts.closedFromMeta || closedByDbLabel || '';
-    const workflowBubble = repairRequestWorkflowBubble(request.status);
+    const workflowBubble = repairRequestWorkflowBubble(request);
 
     return (
         <main className="page page--wide page--centered">

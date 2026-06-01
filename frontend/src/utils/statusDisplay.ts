@@ -33,10 +33,13 @@ export function repairRequestStatusPillClassForRequest(
  * - in_progress и takenBySysadmin - «Забрал сисадмин»
  */
 export function repairRequestWorkflowBubble(
-    status: RepairRequest['status'],
+    request: Pick<RepairRequest, 'status' | 'takenBySysadmin'>,
 ): { label: string; className: string } | null {
-    if (status === 'closed') {
+    if (request.status === 'closed') {
         return { label: 'Решён', className: 'status-pill status-pill--request-resolved' };
+    }
+    if (request.status === 'in_progress' && request.takenBySysadmin) {
+        return { label: 'Забрал сисадмин', className: 'status-pill status-pill--sysadmin-taken' };
     }
     return null;
 }
