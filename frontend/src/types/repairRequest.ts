@@ -11,6 +11,7 @@ export type RepairRequest = {
     ticketKey?: string;
     ticketUrl?: string;
     trackerStatusLabel?: string | null;
+    trackerStatusSyncPending?: boolean;
     lastSyncedAt?: string;
     deviceInventoryNumber?: string;
     deviceName?: string;

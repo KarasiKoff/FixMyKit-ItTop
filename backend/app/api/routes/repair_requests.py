@@ -39,16 +39,15 @@ from backend.app.services.repair_history_service import add_repair_history
 from backend.app.services.repair_request_comment_service import create_comment, list_comments
 from backend.app.services.repair_request_tracker_outbound import (
     REQUEST_STATUS_TRACKER_LABEL,
+    RESOLUTION_NOTE_TO_TRACKER_KEY,
     require_tracker_ticket,
+    retry_pending_status_sync,
     sync_publish_to_tracker,
     sync_resolution_comment_to_tracker,
     sync_status_to_tracker,
     sync_sysadmin_taken_to_tracker,
 )
-from backend.app.services.repair_request_workflow_service import (
-    RESOLUTION_NOTE_TO_TRACKER_KEY,
-    apply_workflow_change,
-)
+from backend.app.services.repair_request_workflow_service import apply_workflow_change
 from backend.app.services.realtime_notify import notify_repair_request_updated
 from backend.app.services.repair_request_attachment_service import (
     AttachmentLimitError,
@@ -501,6 +500,7 @@ def update_repair_request_status(
     if payload.status == RequestStatus.CLOSED and payload.resolution_note:
         tracker_resolution = RESOLUTION_NOTE_TO_TRACKER_KEY.get(payload.resolution_note.strip())
     sync_status_to_tracker(
+        db,
         repair_request,
         payload.status,
         resolution=tracker_resolution,
@@ -579,6 +579,7 @@ def close_repair_request(
     if payload.resolution_note:
         tracker_resolution = RESOLUTION_NOTE_TO_TRACKER_KEY.get(payload.resolution_note.strip())
     sync_status_to_tracker(
+        db,
         repair_request,
         RequestStatus.CLOSED,
         resolution=tracker_resolution,
@@ -605,6 +606,25 @@ def publish_repair_request(
     db.commit()
     db.refresh(repair_request)
     sync_publish_to_tracker(repair_request, payload.is_published)
+    notify_repair_request_updated(repair_request, source="api")
+    return RepairRequestDetail.model_validate(repair_request)
+
+
+@router.post("/repair-requests/{request_id}/tracker/push-status", response_model=RepairRequestDetail)
+def push_repair_request_status_to_tracker(
+    request_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_or_sysadmin),
+) -> RepairRequestDetail:
+    repair_request = get_repair_request_or_404(db, request_id)
+    require_tracker_ticket(repair_request)
+    if not repair_request.tracker_status_sync_pending:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="tracker_status_sync_not_pending",
+        )
+    retry_pending_status_sync(db, repair_request)
+    db.refresh(repair_request)
     notify_repair_request_updated(repair_request, source="api")
     return RepairRequestDetail.model_validate(repair_request)
 

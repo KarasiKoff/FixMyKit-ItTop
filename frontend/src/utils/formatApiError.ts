@@ -17,6 +17,7 @@ const DETAIL_RU: Record<string, string> = {
     active_request_exists: 'По этому устройству уже есть активная заявка',
     invalid_status_transition: 'Такое изменение статуса недопустимо',
     tracker_unavailable: 'Трекер временно недоступен. Попробуйте позже',
+    tracker_status_sync_not_pending: 'Статус уже синхронизирован с Трекером',
     tracker_ticket_required: 'Сначала синхронизируйте заявку с Трекером',
     comment_required_for_needs_info: 'Добавьте комментарий для статуса «Требуется информация»',
     resolution_required_for_close: 'Выберите резолюцию при закрытии',

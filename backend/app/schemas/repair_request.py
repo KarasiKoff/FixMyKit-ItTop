@@ -76,6 +76,7 @@ class RepairRequestResponse(RepairRequestBase):
     tracker_ticket_key: str | None = None
     tracker_ticket_url: str | None = None
     tracker_status_label: str | None = None
+    tracker_status_sync_pending: bool = False
     last_sync_at: datetime | None = None
     has_attachments: bool = False
     attachments_sync_status: AttachmentsSyncStatus = AttachmentsSyncStatus.NONE

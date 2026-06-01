@@ -14,7 +14,7 @@ from backend.app.services.repair_request_closure_service import record_repair_re
 from backend.app.services.repair_request_comment_service import create_comment
 from backend.app.services.repair_request_tracker_outbound import (
     sync_resolution_comment_to_tracker,
-    sync_tracker_label_to_tracker,
+    sync_tracker_label_with_pending,
 )
 
 WORKFLOW_TRACKER_LABEL: dict[RepairWorkflowKind, str] = {
@@ -40,11 +40,6 @@ CLOSE_RESOLUTION_LABEL: dict[RepairCloseResolution, str] = {
 TRACKER_CLOSE_RESOLUTION_KEY: dict[RepairCloseResolution, str] = {
     "resolved": "fixed",
     "wont_fix": "wontFix",
-}
-
-RESOLUTION_NOTE_TO_TRACKER_KEY: dict[str, str] = {
-    label: TRACKER_CLOSE_RESOLUTION_KEY[key]
-    for key, label in CLOSE_RESOLUTION_LABEL.items()
 }
 
 
@@ -107,7 +102,8 @@ def apply_workflow_change(
         )
         db.commit()
         db.refresh(repair_request)
-        sync_tracker_label_to_tracker(
+        sync_tracker_label_with_pending(
+            db,
             repair_request,
             label,
             resolution=TRACKER_CLOSE_RESOLUTION_KEY[resolution],  # type: ignore[index]
@@ -131,7 +127,7 @@ def apply_workflow_change(
     )
     db.commit()
     db.refresh(repair_request)
-    sync_tracker_label_to_tracker(repair_request, label)
+    sync_tracker_label_with_pending(db, repair_request, label)
 
     if workflow == "needs_info" and comment_text:
         create_comment(db, repair_request, actor, comment_text)

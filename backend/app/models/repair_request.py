@@ -34,6 +34,9 @@ class RepairRequest(Base):
     tracker_ticket_key = Column(String, nullable=True)
     tracker_ticket_url = Column(String, nullable=True)
     tracker_status_label = Column(String, nullable=True)
+    tracker_status_sync_pending = Column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     last_sync_at = Column(TIMESTAMP(timezone=True), nullable=True)
     is_published = Column(Boolean, nullable=False, default=False, server_default="false")
     has_attachments = Column(Boolean, nullable=False, default=False, server_default="false")

@@ -1,5 +1,10 @@
 import React, { useState } from 'react';
-import { patchRepairRequestTake, patchRepairRequestWorkflow } from '../api/repairRequests';
+import {
+    fetchRepairRequest,
+    patchRepairRequestTake,
+    patchRepairRequestWorkflow,
+    pushRepairRequestStatusToTracker,
+} from '../api/repairRequests';
 import type { RepairRequestDetail } from '../types/repairRequest';
 import { useToast } from '../context/ToastContext';
 import { formatApiError } from '../utils/formatApiError';
@@ -54,6 +59,7 @@ export function RepairRequestStatusPanel({
 
     const current = workflowFromRequest(request);
     const canChange = hasTrackerTicket && !busy;
+    const showTrackerStatusRetry = Boolean(request.trackerStatusSyncPending && hasTrackerTicket);
 
 
 
@@ -77,9 +83,30 @@ export function RepairRequestStatusPanel({
             showSuccess('Статус обновлён');
         } catch (err) {
             showError(formatApiError(err));
+            try {
+                onUpdated(await fetchRepairRequest(requestId));
+            } catch {
+                /* ignore */
+            }
         } finally {
             setBusy(false);
             setModal(null);
+        }
+    }
+
+    async function pushStatusToTracker() {
+        if (!showTrackerStatusRetry || busy) {
+            return;
+        }
+        setBusy(true);
+        try {
+            const updated = await pushRepairRequestStatusToTracker(requestId);
+            onUpdated(updated);
+            showSuccess('Статус отправлен в Трекер');
+        } catch (err) {
+            showError(formatApiError(err));
+        } finally {
+            setBusy(false);
         }
     }
 
@@ -142,6 +169,23 @@ export function RepairRequestStatusPanel({
                         </p>
                     ) : null}
                 </div>
+
+                {showTrackerStatusRetry ? (
+                    <div className="repair-status-panel__pending">
+                        <p className="repair-status-panel__pending-text muted-text">
+                            Статус на сайте обновлён, в Yandex Tracker не ушёл. Когда Трекер снова доступен — отправьте
+                            вручную.
+                        </p>
+                        <button
+                            type="button"
+                            className="repair-pill-btn repair-pill-btn--filled repair-status-panel__pending-btn"
+                            disabled={busy}
+                            onClick={() => void pushStatusToTracker()}
+                        >
+                            {busy ? 'Отправка…' : 'Отправить статус в Трекер'}
+                        </button>
+                    </div>
+                ) : null}
 
                 <div
                     className={`repair-status-stack ${!canChange ? 'repair-status-stack--disabled' : ''}`}

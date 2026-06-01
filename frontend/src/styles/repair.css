@@ -362,6 +362,24 @@
   font-size: 1.05rem;
 }
 
+.repair-status-panel__pending {
+  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(232, 163, 23, 0.45);
+  background: rgba(232, 163, 23, 0.12);
+}
+
+.repair-status-panel__pending-text {
+  margin: 0 0 10px;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.repair-status-panel__pending-btn {
+  width: 100%;
+}
+
 .repair-detail-comments-block {
   width: 100%;
   max-width: none;

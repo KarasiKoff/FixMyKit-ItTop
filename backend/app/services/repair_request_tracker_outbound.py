@@ -5,6 +5,7 @@ from __future__ import annotations
 import logging
 
 from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
 
 from backend.app.models.enums import RequestStatus
 from backend.app.models.repair_request import RepairRequest
@@ -28,6 +29,11 @@ REQUEST_STATUS_TRACKER_LABEL: dict[RequestStatus, str] = {
     RequestStatus.CLOSED: "Закрыт",
 }
 
+RESOLUTION_NOTE_TO_TRACKER_KEY: dict[str, str] = {
+    "Решен": "fixed",
+    "Не будет исправлено": "wontFix",
+}
+
 
 def require_tracker_ticket(repair_request: RepairRequest) -> str:
     ref = issue_ref_for(repair_request)
@@ -47,7 +53,54 @@ def _tracker_http_error(exc: TrackerUnavailableError) -> HTTPException:
     )
 
 
+def tracker_resolution_key_for_request(repair_request: RepairRequest) -> str | None:
+    if repair_request.status != RequestStatus.CLOSED:
+        return None
+    note = (repair_request.resolution_note or "").strip()
+    if not note:
+        return None
+    return RESOLUTION_NOTE_TO_TRACKER_KEY.get(note)
+
+
+def _push_status_label_to_tracker(
+    repair_request: RepairRequest,
+    label: str,
+    *,
+    resolution: str | None = None,
+) -> None:
+    ref = require_tracker_ticket(repair_request)
+    push_issue_status_from_site(ref, label, resolution=resolution)
+    post_issue_comment(ref, tracker_comment_status_from_site(label))
+
+
+def sync_tracker_label_with_pending(
+    db: Session,
+    repair_request: RepairRequest,
+    label: str,
+    *,
+    resolution: str | None = None,
+) -> None:
+    """Синхронизирует статус; при ошибке Трекера помечает заявку для повторной отправки."""
+    try:
+        _push_status_label_to_tracker(repair_request, label, resolution=resolution)
+        repair_request.tracker_status_sync_pending = False
+        db.commit()
+    except TrackerUnavailableError as exc:
+        repair_request.tracker_status_sync_pending = True
+        db.commit()
+        raise _tracker_http_error(exc) from exc
+
+
+def retry_pending_status_sync(db: Session, repair_request: RepairRequest) -> None:
+    label = (repair_request.tracker_status_label or "").strip()
+    if not label:
+        label = REQUEST_STATUS_TRACKER_LABEL[repair_request.status]
+    resolution = tracker_resolution_key_for_request(repair_request)
+    sync_tracker_label_with_pending(db, repair_request, label, resolution=resolution)
+
+
 def sync_status_to_tracker(
+    db: Session,
     repair_request: RepairRequest,
     target: RequestStatus,
     *,
@@ -56,7 +109,7 @@ def sync_status_to_tracker(
     label = repair_request.tracker_status_label
     if not label:
         label = REQUEST_STATUS_TRACKER_LABEL[target]
-    sync_tracker_label_to_tracker(repair_request, label, resolution=resolution)
+    sync_tracker_label_with_pending(db, repair_request, label, resolution=resolution)
 
 
 def sync_tracker_label_to_tracker(
@@ -65,10 +118,9 @@ def sync_tracker_label_to_tracker(
     *,
     resolution: str | None = None,
 ) -> None:
-    ref = require_tracker_ticket(repair_request)
+    """Без записи pending в БД — только для вызовов без сессии (не использовать после workflow)."""
     try:
-        push_issue_status_from_site(ref, label, resolution=resolution)
-        post_issue_comment(ref, tracker_comment_status_from_site(label))
+        _push_status_label_to_tracker(repair_request, label, resolution=resolution)
     except TrackerUnavailableError as exc:
         raise _tracker_http_error(exc) from exc
 

@@ -16,6 +16,7 @@ type RepairRequestApi = {
     tracker_ticket_key?: string | null;
     tracker_ticket_url?: string | null;
     tracker_status_label?: string | null;
+    tracker_status_sync_pending?: boolean;
     last_sync_at?: string | null;
     resolution_note?: string | null;
     resolution_desc?: string | null;
@@ -73,6 +74,7 @@ function mapRepairRequest(item: RepairRequestApi): RepairRequest {
         ticketKey: item.tracker_ticket_key ?? undefined,
         ticketUrl: item.tracker_ticket_url ?? undefined,
         trackerStatusLabel: item.tracker_status_label ?? undefined,
+        trackerStatusSyncPending: item.tracker_status_sync_pending ?? false,
         lastSyncedAt: item.last_sync_at ?? undefined,
         deviceInventoryNumber: item.device_inventory_number ?? undefined,
         deviceName: item.device_name ?? undefined,
@@ -301,6 +303,14 @@ export async function patchRepairRequestClose(id: string, resolutionNote?: strin
         await apiRequest<RepairRequestApi>(`/api/repair-requests/${id}/close`, {
             method: 'PATCH',
             body: JSON.stringify({ resolution_note: resolutionNote }),
+        }),
+    );
+}
+
+export async function pushRepairRequestStatusToTracker(id: string): Promise<RepairRequestDetail> {
+    return mapDetail(
+        await apiRequest<RepairRequestApi>(`/api/repair-requests/${id}/tracker/push-status`, {
+            method: 'POST',
         }),
     );
 }
