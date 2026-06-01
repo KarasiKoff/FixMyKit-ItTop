@@ -1,3 +1,11 @@
+export function normalizeCommentBodyForDisplay(body: string): string {
+    return body
+        .replace(/\u00a0/g, ' ')
+        .replace(/&nbsp;/gi, ' ')
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/^\*\*([^*]+)\*\*:\s*\n+/, (_m, name: string) => `${name}:\n\n`);
+}
+
 export function authorInitials(displayName: string): string {
     const trimmed = displayName.trim();
     if (!trimmed) {

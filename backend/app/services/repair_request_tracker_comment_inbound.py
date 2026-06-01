@@ -9,6 +9,10 @@ from sqlalchemy.orm import Session
 from backend.app.models.repair_request import RepairRequest
 from backend.app.models.repair_request_comment import RepairRequestComment
 from backend.app.models.user import User
+from backend.app.services.comment_body_normalize import (
+    normalize_comment_body,
+    plain_author_prefix_body,
+)
 
 # Комментарии, которые сайт сам пишет в Tracker — не импортируем обратно.
 _TRACKER_ECHO_MARKERS = (
@@ -24,16 +28,6 @@ def should_skip_tracker_inbound_comment(text: str) -> bool:
     if not body:
         return True
     return any(marker in body for marker in _TRACKER_ECHO_MARKERS)
-
-
-def _format_inbound_body(text: str, author_label: str | None, *, use_prefix: bool) -> str:
-    body = text.strip()
-    if not use_prefix or not author_label:
-        return body
-    label = author_label.strip()
-    if not label:
-        return body
-    return f"**{label}**:\n\n{body}"
 
 
 def find_existing_tracker_comment(
@@ -74,8 +68,10 @@ def create_comment_from_tracker(
         if existing is not None:
             return "duplicate"
 
-    use_prefix = author.login == webhook_actor_login
-    stored_body = _format_inbound_body(body, author_label, use_prefix=use_prefix)
+    if author.login == webhook_actor_login:
+        stored_body = plain_author_prefix_body(body, author_label or "")
+    else:
+        stored_body = normalize_comment_body(body)
 
     row = RepairRequestComment(
         repair_request_id=repair_request.id,

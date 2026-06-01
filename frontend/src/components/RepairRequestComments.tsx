@@ -3,7 +3,7 @@ import { fetchRepairRequestComments, postRepairRequestComment } from '../api/rep
 import { useToast } from '../context/ToastContext';
 import { RepairRequestComment } from '../types/repairRequestComment';
 import { formatApiError } from '../utils/formatApiError';
-import { authorInitials, formatCommentTime } from '../utils/commentDisplay';
+import { authorInitials, formatCommentTime, normalizeCommentBodyForDisplay } from '../utils/commentDisplay';
 
 type Props = {
     requestId: string;
@@ -14,6 +14,7 @@ type Props = {
 
 function CommentItem({ item }: { item: RepairRequestComment }) {
     const author = item.authorDisplayName || item.authorLogin || 'Пользователь';
+    const body = normalizeCommentBodyForDisplay(item.body);
     return (
         <li className="repair-comment">
             <div className="repair-comment__avatar" aria-hidden="true">
@@ -26,7 +27,7 @@ function CommentItem({ item }: { item: RepairRequestComment }) {
                         {formatCommentTime(item.createdAt)}
                     </time>
                 </header>
-                <p className="repair-comment__text">{item.body}</p>
+                <p className="repair-comment__text">{body}</p>
             </article>
         </li>
     );
