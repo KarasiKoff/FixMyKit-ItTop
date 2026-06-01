@@ -123,6 +123,56 @@ class YandexTrackerPublishPayload(BaseModel):
         return self
 
 
+class YandexTrackerCommentPayload(BaseModel):
+    """Тело POST из триггера Yandex Tracker при добавлении комментария к задаче."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    issue_key: str | None = Field(default=None)
+    issue_id: str | None = Field(default=None)
+    comment_id: str | None = Field(
+        default=None,
+        description="{{userComment.id}} — для идемпотентности",
+    )
+    comment_text: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices("comment_text", "comment", "text"),
+        description="{{userComment.text}}",
+    )
+    user: str | None = Field(
+        default=None,
+        description="Логин автора ({{currentUser.login}})",
+    )
+    author: str | None = Field(
+        default=None,
+        description="Отображаемое имя ({{userComment.author}})",
+    )
+
+    @field_validator("issue_id", "comment_id", mode="before")
+    @classmethod
+    def id_as_str(cls, v: object) -> str | None:
+        if v is None:
+            return None
+        s = str(v).strip()
+        return s or None
+
+    @field_validator("comment_text", "user", "author", mode="before")
+    @classmethod
+    def empty_text_as_none(cls, v: object) -> str | None:
+        if v is None:
+            return None
+        s = str(v).strip()
+        return s or None
+
+    @model_validator(mode="after")
+    def require_issue_ref(self) -> "YandexTrackerCommentPayload":
+        key = (self.issue_key or "").strip()
+        iid = (self.issue_id or "").strip()
+        if not key and not iid:
+            raise ValueError("issue_key or issue_id is required")
+        return self
+
+
 class YandexTrackerWebhookResponse(BaseModel):
     status: str
     repair_request_id: str | None = None

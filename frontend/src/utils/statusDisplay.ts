@@ -1,14 +1,30 @@
 import type { Device } from '../types/device';
 import type { RepairRequest } from '../types/repairRequest';
 import type { RepairHistoryEntry } from '../types/repairHistory';
+import { workflowFromRequest, workflowPillClass, workflowStatusLabel } from './repairWorkflow';
 
-export function repairRequestStatusLabel(status: RepairRequest['status']): string {
+export function repairRequestStatusLabel(
+    status: RepairRequest['status'],
+    trackerStatusLabel?: string | null,
+): string {
+    if (trackerStatusLabel?.trim()) {
+        return workflowStatusLabel(workflowFromRequest({ status, trackerStatusLabel }));
+    }
     const map: Record<RepairRequest['status'], string> = {
-        new: 'Новая',
+        new: 'Открыто',
         in_progress: 'В работе',
-        closed: 'Закрыта',
+        closed: 'Закрыто',
     };
     return map[status] ?? status;
+}
+
+export function repairRequestStatusPillClassForRequest(
+    request: Pick<RepairRequest, 'status' | 'trackerStatusLabel'>,
+): string {
+    if (request.trackerStatusLabel?.trim()) {
+        return workflowPillClass(workflowFromRequest(request));
+    }
+    return repairRequestStatusPillClass(request.status);
 }
 
 /**
@@ -18,13 +34,9 @@ export function repairRequestStatusLabel(status: RepairRequest['status']): strin
  */
 export function repairRequestWorkflowBubble(
     status: RepairRequest['status'],
-    takenBySysadmin: boolean,
 ): { label: string; className: string } | null {
     if (status === 'closed') {
         return { label: 'Решён', className: 'status-pill status-pill--request-resolved' };
-    }
-    if (status === 'in_progress' && takenBySysadmin) {
-        return { label: 'Забрал сисадмин', className: 'status-pill status-pill--sysadmin-taken' };
     }
     return null;
 }

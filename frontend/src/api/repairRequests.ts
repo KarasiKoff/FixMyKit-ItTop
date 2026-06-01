@@ -1,6 +1,7 @@
 import { getStoredAuthToken } from './auth';
 import { apiRequest } from './client';
 import { PublicRepairSummary, RepairRequest, RepairRequestDetail } from '../types/repairRequest';
+import { RepairRequestComment } from '../types/repairRequestComment';
 
 type RepairRequestApi = {
     id: string;
@@ -14,6 +15,7 @@ type RepairRequestApi = {
     tracker_ticket_id?: string | null;
     tracker_ticket_key?: string | null;
     tracker_ticket_url?: string | null;
+    tracker_status_label?: string | null;
     last_sync_at?: string | null;
     resolution_note?: string | null;
     resolution_desc?: string | null;
@@ -70,6 +72,7 @@ function mapRepairRequest(item: RepairRequestApi): RepairRequest {
         ticketId: item.tracker_ticket_id ?? undefined,
         ticketKey: item.tracker_ticket_key ?? undefined,
         ticketUrl: item.tracker_ticket_url ?? undefined,
+        trackerStatusLabel: item.tracker_status_label ?? undefined,
         lastSyncedAt: item.last_sync_at ?? undefined,
         deviceInventoryNumber: item.device_inventory_number ?? undefined,
         deviceName: item.device_name ?? undefined,
@@ -270,6 +273,29 @@ export async function patchRepairRequestTake(id: string, taken: boolean) {
     );
 }
 
+export async function patchRepairRequestWorkflow(
+    id: string,
+    payload: {
+        workflow: 'open' | 'in_progress' | 'needs_info' | 'closed';
+        resolution?: 'resolved' | 'wont_fix';
+        comment?: string;
+    },
+): Promise<RepairRequestDetail> {
+    const body: Record<string, unknown> = { workflow: payload.workflow };
+    if (payload.resolution) {
+        body.resolution = payload.resolution;
+    }
+    if (payload.comment !== undefined && payload.comment !== '') {
+        body.comment = payload.comment;
+    }
+    return mapDetail(
+        await apiRequest<RepairRequestApi>(`/api/repair-requests/${id}/workflow`, {
+            method: 'PATCH',
+            body: JSON.stringify(body),
+        }),
+    );
+}
+
 export async function patchRepairRequestClose(id: string, resolutionNote?: string | null) {
     return mapDetail(
         await apiRequest<RepairRequestApi>(`/api/repair-requests/${id}/close`, {
@@ -300,6 +326,46 @@ export async function publishRepairRequest(id: string, isPublished: boolean): Pr
         await apiRequest<RepairRequestApi>(`/api/repair-requests/${id}/publish`, {
             method: 'PATCH',
             body: JSON.stringify({ is_published: isPublished }),
+        }),
+    );
+}
+
+type RepairRequestCommentApi = {
+    id: string;
+    repair_request_id: string;
+    author_user_id: string;
+    author_login?: string | null;
+    author_display_name?: string | null;
+    body: string;
+    tracker_synced: boolean;
+    created_at: string;
+};
+
+function mapComment(item: RepairRequestCommentApi): RepairRequestComment {
+    return {
+        id: item.id,
+        repairRequestId: item.repair_request_id,
+        authorUserId: item.author_user_id,
+        authorLogin: item.author_login ?? undefined,
+        authorDisplayName: item.author_display_name ?? undefined,
+        body: item.body,
+        trackerSynced: item.tracker_synced,
+        createdAt: item.created_at,
+    };
+}
+
+export async function fetchRepairRequestComments(requestId: string): Promise<RepairRequestComment[]> {
+    const response = await apiRequest<{ items: RepairRequestCommentApi[] }>(
+        `/api/repair-requests/${requestId}/comments`,
+    );
+    return response.items.map(mapComment);
+}
+
+export async function postRepairRequestComment(requestId: string, body: string): Promise<RepairRequestComment> {
+    return mapComment(
+        await apiRequest<RepairRequestCommentApi>(`/api/repair-requests/${requestId}/comments`, {
+            method: 'POST',
+            body: JSON.stringify({ body }),
         }),
     );
 }

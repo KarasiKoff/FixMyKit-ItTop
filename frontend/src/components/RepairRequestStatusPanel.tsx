@@ -1,0 +1,242 @@
+import React, { useState } from 'react';
+import { patchRepairRequestTake, patchRepairRequestWorkflow } from '../api/repairRequests';
+import type { RepairRequestDetail } from '../types/repairRequest';
+import { useToast } from '../context/ToastContext';
+import { formatApiError } from '../utils/formatApiError';
+import { type RepairWorkflowState, workflowFromRequest } from '../utils/repairWorkflow';
+import { RepairWorkflowModal, type RepairWorkflowModalMode } from './RepairWorkflowModal';
+import type { RepairCloseResolution } from '../utils/repairWorkflow';
+
+
+type Props = {
+    requestId: string;
+    request: RepairRequestDetail;
+    hasTrackerTicket: boolean;
+    onUpdated: (request: RepairRequestDetail) => void;
+    onCommentsChanged?: () => void;
+};
+
+
+
+function statusPillClass(workflow: RepairWorkflowState, current: RepairWorkflowState, canChange: boolean): string {
+    const base = 'repair-pill-btn';
+    if (!canChange) {
+        return `${base} repair-pill-btn--disabled`;
+    }
+
+    if (workflow !== current) {
+        return `${base} repair-pill-btn--ghost`;
+    }
+
+    if (workflow === 'needs_info') {
+        return `${base} repair-pill-btn--active-needs`;
+    }
+
+    if (workflow === 'closed') {
+        return `${base} repair-pill-btn--active-closed`;
+    }
+
+    return `${base} repair-pill-btn--active`;
+}
+
+
+
+export function RepairRequestStatusPanel({
+    requestId,
+    request,
+    hasTrackerTicket,
+    onUpdated,
+    onCommentsChanged,
+}: Props) {
+    const { showSuccess, showError } = useToast();
+    const [busy, setBusy] = useState(false);
+    const [modal, setModal] = useState<RepairWorkflowModalMode | null>(null);
+
+    const current = workflowFromRequest(request);
+    const canChange = hasTrackerTicket && !busy;
+
+
+
+    async function applyWorkflow(
+        workflow: RepairWorkflowState,
+        opts?: { resolution?: RepairCloseResolution; comment?: string },
+
+    ) {
+        setBusy(true);
+        try {
+            const updated = await patchRepairRequestWorkflow(requestId, {
+                workflow,
+                resolution: opts?.resolution,
+                comment: opts?.comment,
+            });
+
+            onUpdated(updated);
+            if (workflow === 'needs_info') {
+                onCommentsChanged?.();
+            }
+            showSuccess('Статус обновлён');
+        } catch (err) {
+            showError(formatApiError(err));
+        } finally {
+            setBusy(false);
+            setModal(null);
+        }
+    }
+
+    function onSelect(next: RepairWorkflowState) {
+        if (!canChange || next === current) {
+            return;
+        }
+
+        if (next === 'needs_info') {
+            setModal('needs_info');
+            return;
+        }
+
+        if (next === 'closed') {
+            setModal('close');
+            return;
+        }
+
+        void applyWorkflow(next);
+    }
+
+
+
+    async function onSetTaken(taken: boolean) {
+        if (!canChange) {
+            return;
+        }
+
+        if (taken && request.takenBySysadmin) {
+            return;
+        }
+
+        if (!taken && !request.takenBySysadmin) {
+            return;
+        }
+
+        setBusy(true);
+
+        try {
+            const updated = await patchRepairRequestTake(requestId, taken);
+            onUpdated(updated);
+            showSuccess(taken ? 'Отмечено: забрал сисадмин' : 'Устройство возвращено');
+
+        } catch (err) {
+            showError(formatApiError(err));
+        } finally {
+            setBusy(false);
+        }
+
+    }
+
+    return (
+        <>
+            <section className="card card-form repair-status-panel-card">
+                <div className="repair-status-panel__head">
+                    <h3 className="repair-status-panel-card__title">Статус заявки</h3>
+                    {!hasTrackerTicket ? (
+                        <p className="repair-status-panel__hint muted-text">
+                            Смена статуса доступна после синхронизации с Трекером.
+                        </p>
+                    ) : null}
+                </div>
+
+                <div
+                    className={`repair-status-stack ${!canChange ? 'repair-status-stack--disabled' : ''}`}
+                    role="tablist"
+                    aria-label="Статус заявки"
+                >
+                    <div className="repair-status-row">
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={current === 'open'}
+                            className={statusPillClass('open', current, canChange)}
+                            disabled={!canChange}
+                            onClick={() => onSelect('open')}
+
+                        >
+                            Переоткрыть
+                        </button>
+
+                        <button
+                            type="button"
+                            role="tab"
+                            aria-selected={current === 'in_progress'}
+                            className={statusPillClass('in_progress', current, canChange)}
+                            disabled={!canChange}
+                            onClick={() => onSelect('in_progress')}
+
+                        >
+                            В работу
+                        </button>
+
+                    </div>
+
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={current === 'needs_info'}
+                        className={statusPillClass('needs_info', current, canChange)}
+                        disabled={!canChange}
+                        onClick={() => onSelect('needs_info')}
+                    >
+                        Нужна информация
+                    </button>
+
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={current === 'closed'}
+                        className={statusPillClass('closed', current, canChange)}
+                        disabled={!canChange}
+                        onClick={() => onSelect('closed')}
+                    >
+                        Закрыть
+                    </button>
+
+                </div>
+
+
+                {current !== 'closed' ? (
+                    <div className="repair-status-panel__taken-row">
+                        <button
+                            type="button"
+                            className={
+                                request.takenBySysadmin
+                                    ? 'repair-pill-btn repair-pill-btn--ghost repair-status-panel__taken'
+                                    : 'repair-pill-btn repair-pill-btn--filled repair-status-panel__taken'
+                            }
+                            disabled={!canChange}
+                            onClick={() => void onSetTaken(!request.takenBySysadmin)}
+                        >
+                            {request.takenBySysadmin ? 'Вернуть на место' : 'Забрал сисадмин'}
+                        </button>
+                    </div>
+                ) : null}
+            </section>
+
+
+            <RepairWorkflowModal
+                open={modal !== null}
+                mode={modal ?? 'needs_info'}
+                busy={busy}
+                onCancel={() => {
+                    if (!busy) {
+                        setModal(null);
+                    }
+                }}
+
+                onConfirm={({ comment, resolution }) => {
+                    if (modal === 'needs_info') {
+                        void applyWorkflow('needs_info', { comment });
+                    } else if (modal === 'close' && resolution) {
+                        void applyWorkflow('closed', { resolution, comment });
+                    }
+                }}
+            />
+        </>
+    );
+}

@@ -5,6 +5,7 @@ from backend.app.models.audience import Audience
 from backend.app.models.enums import RepairStatus, RequestStatus, UserRole
 from backend.app.models.repair_history import RepairHistory
 from backend.app.models.repair_request import RepairRequest
+from backend.app.models.repair_request_comment import RepairRequestComment
 from backend.app.models.room_device_position import RoomDevicePosition
 from backend.app.models.user import User
 
@@ -17,6 +18,7 @@ __all__ = [
     "Audience",
     "RepairStatus",
     "RepairRequest",
+    "RepairRequestComment",
     "RequestStatus",
     "RepairHistory",
     "RoomDevicePosition",

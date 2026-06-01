@@ -15,10 +15,14 @@ from backend.app.models.enums import RepairStatus, RequestStatus
 from backend.app.models.repair_request import RepairRequest
 from backend.app.models.user import User
 from backend.app.schemas.tracker_webhook import (
+    YandexTrackerCommentPayload,
     YandexTrackerPublishPayload,
     YandexTrackerSysadminTakenPayload,
     YandexTrackerWebhookPayload,
     YandexTrackerWebhookResponse,
+)
+from backend.app.services.repair_request_tracker_comment_inbound import (
+    create_comment_from_tracker,
 )
 from backend.app.services.repair_history_service import add_repair_history
 from backend.app.services.repair_request_closure_service import (
@@ -311,6 +315,7 @@ def yandex_tracker_close_repair_request(
             payload.resolution,
             payload.resolution_desc,
         )
+        repair_request.tracker_status_label = raw_status
         db.commit()
         notify_repair_request_updated(repair_request, source="tracker_webhook")
         _post_tracker_comment(
@@ -330,6 +335,7 @@ def yandex_tracker_close_repair_request(
         _reopen_from_closed(db, repair_request)
 
     repair_request.status = target
+    repair_request.tracker_status_label = raw_status
     if payload.resolution is not None:
         repair_request.resolution_note = payload.resolution
     if payload.resolution_desc is not None:
@@ -400,6 +406,74 @@ def yandex_tracker_publish(
     _apply_publish_flag(db, repair_request, payload.is_published)
     return _commit_publish_webhook(
         db, repair_request, is_published=payload.is_published
+    )
+
+
+@router.post(
+    "/yandex-tracker/comment",
+    response_model=YandexTrackerWebhookResponse,
+    summary="Комментарий из Yandex Tracker в ленту на сайте",
+    description=(
+        "Отдельный триггер при добавлении комментария к задаче. "
+        "В JSON: `comment_text` = `{{userComment.text}}`, `comment_id` = `{{userComment.id}}`. "
+        "Комментарии, созданные Fix My Kit в Трекере, игнорируются."
+    ),
+)
+def yandex_tracker_comment(
+    payload: YandexTrackerCommentPayload,
+    db: Session = Depends(get_db),
+    x_tracker_webhook_secret: Annotated[
+        str | None, Header(alias=TRACKER_WEBHOOK_SECRET_HEADER)
+    ] = None,
+) -> YandexTrackerWebhookResponse:
+    _verify_webhook_secret(x_tracker_webhook_secret)
+
+    key = (payload.issue_key or "").strip()
+    iid = (payload.issue_id or "").strip()
+    repair_request = _find_repair_request(db, key, iid)
+    if repair_request is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="repair_request_not_found_for_tracker_issue",
+        )
+
+    text = (payload.comment_text or "").strip()
+    if not text:
+        return YandexTrackerWebhookResponse(
+            status="noop",
+            repair_request_id=str(repair_request.id),
+            detail="missing_comment_text",
+            request_status=repair_request.status.value,
+        )
+
+    fallback = _webhook_fallback_user(db)
+    actor_login = fallback.login
+    author = _resolve_closed_by_user(db, payload.user, fallback)
+    author_label = (payload.author or payload.user or "").strip() or None
+
+    outcome = create_comment_from_tracker(
+        db,
+        repair_request,
+        author,
+        text,
+        tracker_comment_id=(payload.comment_id or "").strip() or None,
+        author_label=author_label,
+        webhook_actor_login=actor_login,
+    )
+    if outcome != "created":
+        return YandexTrackerWebhookResponse(
+            status="noop",
+            repair_request_id=str(repair_request.id),
+            detail=outcome,
+            request_status=repair_request.status.value,
+        )
+
+    notify_repair_request_updated(repair_request, source="tracker_webhook_comment")
+    return YandexTrackerWebhookResponse(
+        status="created",
+        repair_request_id=str(repair_request.id),
+        detail=None,
+        request_status=repair_request.status.value,
     )
 
 
