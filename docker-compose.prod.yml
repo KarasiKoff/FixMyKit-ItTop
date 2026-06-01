@@ -1,0 +1,74 @@
+#  docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+x-env: &env
+  env_file:
+    - ${ENV_FILE:-.env.production}
+
+name: fixmykit-prod
+
+services:
+  postgres:
+    <<: [ *env ]
+    image: postgres:18.1-alpine
+    container_name: fixmykit-postgres-prod
+    restart: always
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fixmykit}
+      POSTGRES_USER: ${POSTGRES_USER:-fixmykit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in env file}
+    volumes:
+      - postgres_data_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fixmykit} -d ${POSTGRES_DB:-fixmykit}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks:
+      - fixmykit_prod
+
+  backend:
+    <<: [ *env ]
+    container_name: fixmykit-backend-prod
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+      target: backend
+    restart: always
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8001:8000"
+    volumes:
+      - uploads_data_prod:/data/uploads
+    networks:
+      - fixmykit_prod
+
+  frontend:
+    container_name: fixmykit-frontend-prod
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
+      target: frontend-prod
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:8080:80"
+    networks:
+      - fixmykit_prod
+
+volumes:
+  postgres_data_prod:
+    name: fixmykit-postgres-data-prod
+  uploads_data_prod:
+    name: fixmykit-uploads-prod
+
+networks:
+  fixmykit_prod:
+    name: fixmykit-prod
+    driver: bridge

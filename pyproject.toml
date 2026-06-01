@@ -1,0 +1,19 @@
+[project]
+name = "fix-my-kit"
+version = "0.1.0"
+description = "Fix My Kit backend API"
+requires-python = ">=3.14"
+dependencies = [
+    "alembic",
+    "bcrypt",
+    "fastapi",
+    "psycopg[binary]",
+    "pydantic-settings",
+    "pyjwt",
+    "python-multipart",
+    "sqlalchemy",
+    "uvicorn[standard]",
+]
+
+[tool.uv]
+package = false

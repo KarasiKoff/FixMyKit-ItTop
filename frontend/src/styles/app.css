@@ -1,0 +1,17 @@
+/* Aggregated app styles — import order matters */
+@import './variables.css';
+@import './base.css';
+@import './layout.css';
+@import './chrome.css';
+@import './forms.css';
+@import './tables.css';
+@import './admin.css';
+@import './admin-hub-stats.css';
+@import './repair.css';
+@import './device-scanner.css';
+@import './modals.css';
+@import './pages-misc.css';
+@import './attachments.css';
+@import './category-icons.css';
+@import './room-map.css';
+@import './responsive.css';

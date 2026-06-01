@@ -1,0 +1,116 @@
+@media (max-width: 768px) {
+  :root {
+    --page-padding-x: 14px;
+  }
+
+  .topbar {
+    align-items: stretch;
+    padding: 12px var(--page-padding-x);
+  }
+
+  .topbar-inner {
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .topbar-brand {
+    flex: 0 0 auto;
+  }
+
+  .topbar-brand h1 {
+    text-align: left;
+  }
+
+  .topbar-nav {
+    justify-content: flex-end;
+    flex: 1 1 auto;
+    gap: 8px;
+    width: auto;
+  }
+
+  .topbar-nav a,
+  .topbar-nav .nav-button {
+    min-height: 44px;
+    padding: 11px 16px;
+    flex: 0 0 auto;
+    max-width: none;
+    white-space: nowrap;
+    text-align: center;
+    line-height: 1.25;
+  }
+
+  .btn-primary {
+    min-height: 46px;
+  }
+
+  .page {
+    padding-top: 20px;
+    padding-bottom: 36px;
+    gap: 16px;
+  }
+
+  .page-title {
+    font-size: clamp(1.35rem, 4.5vw, 1.65rem);
+  }
+
+  .card {
+    padding: 18px 16px;
+  }
+
+  .login-page {
+    align-items: center;
+    padding-top: clamp(20px, 4vh, 40px);
+    padding-bottom: clamp(24px, 5vh, 48px);
+  }
+
+  .login-stack {
+    width: 100%;
+    max-width: 440px;
+  }
+
+  .card-heading {
+    font-size: 15px;
+  }
+
+  .admin-hub-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-hub-grid--row {
+    grid-template-columns: 1fr;
+  }
+
+  .scanner-wrap {
+    max-width: 100%;
+  }
+
+  .device-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .actions-row {
+    flex-direction: column;
+  }
+
+  .actions-row a,
+  .actions-row button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .grid-5 {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
+  th,
+  td {
+    padding: 10px 8px;
+    font-size: 14px;
+  }
+}

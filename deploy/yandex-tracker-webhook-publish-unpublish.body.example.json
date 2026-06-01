@@ -1,0 +1,6 @@
+{
+  "issue_key": "{{issue.key}}",
+  "issue_id": "{{issue.id}}",
+  "is_published": false,
+  "user": "{{currentUser.login}}"
+}

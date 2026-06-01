@@ -1,0 +1,8 @@
+{
+  "issue_key": "{{issue.key}}",
+  "issue_id": "{{issue.id}}",
+  "tracker_status": "{{issue.status}}",
+  "resolution": "{{issue.resolution}}",
+  "resolution_comment": "{{userComment.text}}",
+  "user": "{{currentUser.login}}"
+}

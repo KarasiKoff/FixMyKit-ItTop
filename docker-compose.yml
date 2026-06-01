@@ -1,0 +1,63 @@
+x-env: &env
+  env_file:
+    - ${ENV_FILE:-.env}
+
+services:
+  postgres:
+    <<: [*env]
+    image: postgres:18.1-alpine
+    container_name: fixmykit-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-fixmykit}
+      POSTGRES_USER: ${POSTGRES_USER:-fixmykit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-fixmykit}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-fixmykit} -d ${POSTGRES_DB:-fixmykit}"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    <<: [*env]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: backend
+    container_name: fixmykit-backend
+    restart: unless-stopped
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${API_PORT:-8000}:8000"
+    volumes:
+      - ./data/uploads:/app/data/uploads
+
+  frontend:
+    <<: [*env]
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: frontend
+      args:
+        VITE_PROXY_TARGET: ${VITE_PROXY_TARGET:-http://backend:8000}
+    container_name: fixmykit-frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+    environment:
+      VITE_PROXY_TARGET: ${VITE_PROXY_TARGET:-http://backend:8000}
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+
+volumes:
+  postgres_data:

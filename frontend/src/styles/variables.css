@@ -1,0 +1,31 @@
+:root {
+  --bg-page: #0b0e14;
+  --bg-card: #161b22;
+  --bg-input: #0d1117;
+  --border-subtle: #30363d;
+  --text-primary: #f9fafb;
+  --text-muted: #9ca3af;
+  --accent: #7b96ff;
+  --accent-hover: #94a9ff;
+  --nav-active-bg: #2d333b;
+  --danger: #f87171;
+  --success: #86efac;
+  --shadow-card: 0 8px 24px rgba(0, 0, 0, 0.35);
+  --page-padding-x: 24px;
+  --centered-narrow: 520px;
+  --centered-hub: min(1120px, 100%);
+  --layout-max: min(1400px, 100%);
+  --font-title-page: clamp(1.5rem, 2.2vw, 1.85rem);
+  --font-title-brand: clamp(1.15rem, 1.8vw, 1.45rem);
+  --font-nav: 1rem;
+  --control-font: 1rem;
+  --control-padding-y: 14px;
+  --control-padding-x: 14px;
+  --control-min-height: calc(2 * var(--control-padding-y) + 1.4rem + 2px);
+  --admin-actions-col-width: 300px;
+  --scrollbar-size: 10px;
+  --scrollbar-track: var(--bg-input);
+  --scrollbar-thumb: #3d444d;
+  --scrollbar-thumb-hover: var(--accent);
+  --scrollbar-thumb-active: var(--accent-hover);
+}
