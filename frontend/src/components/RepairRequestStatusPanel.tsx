@@ -60,6 +60,8 @@ export function RepairRequestStatusPanel({
     const current = workflowFromRequest(request);
     const canChange = hasTrackerTicket && !busy;
     const showTrackerStatusRetry = Boolean(request.trackerStatusSyncPending && hasTrackerTicket);
+    const sliderValue: 'open' | 'in_progress' | null =
+        current === 'open' || current === 'in_progress' ? current : null;
 
 
 
@@ -192,31 +194,40 @@ export function RepairRequestStatusPanel({
                     role="tablist"
                     aria-label="Статус заявки"
                 >
-                    <div className="repair-status-row">
+                    <div
+                        className={`repair-status-slider ${!canChange ? 'repair-status-slider--disabled' : ''} ${
+                            sliderValue === 'open'
+                                ? 'repair-status-slider--open'
+                                : sliderValue === 'in_progress'
+                                  ? 'repair-status-slider--in-progress'
+                                  : 'repair-status-slider--none'
+                        }`}
+                        role="radiogroup"
+                        aria-label="Открыта или в работе"
+                        aria-disabled={!canChange}
+                    >
+                        <span className="repair-status-slider__thumb" aria-hidden="true" />
                         <button
                             type="button"
-                            role="tab"
-                            aria-selected={current === 'open'}
-                            className={statusPillClass('open', current, canChange)}
+                            role="radio"
+                            aria-checked={sliderValue === 'open'}
+                            className="repair-status-slider__option"
                             disabled={!canChange}
                             onClick={() => onSelect('open')}
-
                         >
-                            Переоткрыть
+                            Открыта
                         </button>
 
                         <button
                             type="button"
-                            role="tab"
-                            aria-selected={current === 'in_progress'}
-                            className={statusPillClass('in_progress', current, canChange)}
+                            role="radio"
+                            aria-checked={sliderValue === 'in_progress'}
+                            className="repair-status-slider__option"
                             disabled={!canChange}
                             onClick={() => onSelect('in_progress')}
-
                         >
                             В работу
                         </button>
-
                     </div>
 
                     <button
