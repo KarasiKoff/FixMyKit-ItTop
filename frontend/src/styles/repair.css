@@ -396,16 +396,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-}
-
-.repair-detail-comments-block .repair-comments-feed {
-  min-height: 140px;
-  max-height: min(420px, 50vh);
-}
-
-.repair-comments-embedded .repair-comments-compose {
-  margin-top: 12px;
-  flex-shrink: 0;
+  gap: 12px;
 }
 
 .repair-pill-btn {
@@ -640,8 +631,11 @@
   border-radius: 12px;
   background: rgba(0, 0, 0, 0.22);
   border: 1px solid var(--border-subtle);
-  overflow-y: auto;
-  overflow-x: hidden;
+}
+
+.repair-comments-stream {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
 }
 
 .repair-comments-feed__placeholder {
@@ -776,6 +770,10 @@
 
 .repair-comments-compose__input:disabled {
   opacity: 0.55;
+}
+
+.repair-comments-show-more {
+  margin-top: 12px;
 }
 
 .repair-detail-actions {

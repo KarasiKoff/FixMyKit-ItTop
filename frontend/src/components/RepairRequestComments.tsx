@@ -39,11 +39,15 @@ export function RepairRequestComments({ requestId, hasTrackerTicket, refreshKey,
     const [loading, setLoading] = useState(true);
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(10);
 
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            setItems(await fetchRepairRequestComments(requestId));
+            const loaded = await fetchRepairRequestComments(requestId);
+            const sorted = [...loaded].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            setItems(sorted);
+            setVisibleCount(10);
         } catch (err) {
             showError(formatApiError(err));
         } finally {
@@ -68,7 +72,8 @@ export function RepairRequestComments({ requestId, hasTrackerTicket, refreshKey,
         setSending(true);
         try {
             const created = await postRepairRequestComment(requestId, trimmed);
-            setItems((prev) => [...prev, created]);
+            setItems((prev) => [created, ...prev]);
+            setVisibleCount((prev) => Math.max(prev, 10));
             setText('');
             showSuccess('Комментарий отправлен');
         } catch (err) {
@@ -78,6 +83,9 @@ export function RepairRequestComments({ requestId, hasTrackerTicket, refreshKey,
         }
     }
 
+    const visibleItems = items.slice(0, visibleCount);
+    const canShowMore = items.length > visibleCount;
+
     const body = (
         <>
             <h3 className="repair-comments-block__title">Комментарии</h3>
@@ -86,25 +94,6 @@ export function RepairRequestComments({ requestId, hasTrackerTicket, refreshKey,
                     Чтобы писать комментарии, сначала синхронизируйте заявку с Yandex Tracker
                 </p>
             ) : null}
-
-            <div className="repair-comments-feed" aria-live="polite">
-                {loading ? (
-                    <p className="repair-comments-feed__placeholder muted-text">Загрузка…</p>
-                ) : items.length === 0 ? (
-                    <div className="repair-comments-empty">
-                        <p className="repair-comments-empty__title">Пока пусто</p>
-                        <p className="repair-comments-empty__hint muted-text">
-                            Напишите комментарий — он появится здесь и в задаче Yandex Tracker
-                        </p>
-                    </div>
-                ) : (
-                    <ul className="repair-comments-list">
-                        {items.map((item) => (
-                            <CommentItem key={item.id} item={item} />
-                        ))}
-                    </ul>
-                )}
-            </div>
 
             <form className="repair-comments-compose" onSubmit={(e) => void submit(e)}>
                 <label className="repair-comments-compose__label" htmlFor="repair-comment-input">
@@ -131,6 +120,36 @@ export function RepairRequestComments({ requestId, hasTrackerTicket, refreshKey,
                     {sending ? 'Отправка…' : 'Отправить'}
                 </button>
             </form>
+
+            <div className="repair-comments-stream" aria-live="polite">
+                {loading ? (
+                    <p className="repair-comments-feed__placeholder muted-text">Загрузка…</p>
+                ) : items.length === 0 ? (
+                    <div className="repair-comments-empty">
+                        <p className="repair-comments-empty__title">Пока пусто</p>
+                        <p className="repair-comments-empty__hint muted-text">
+                            Напишите комментарий — он появится здесь и в задаче Yandex Tracker
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        <ul className="repair-comments-list">
+                            {visibleItems.map((item) => (
+                                <CommentItem key={item.id} item={item} />
+                            ))}
+                        </ul>
+                        {canShowMore ? (
+                            <button
+                                type="button"
+                                className="btn-ghost btn-compact repair-comments-show-more"
+                                onClick={() => setVisibleCount((prev) => prev + 10)}
+                            >
+                                Показать ещё
+                            </button>
+                        ) : null}
+                    </>
+                )}
+            </div>
         </>
     );
 
