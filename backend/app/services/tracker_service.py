@@ -12,6 +12,7 @@ from urllib.parse import quote as urlquote
 
 from backend.app.core.config import settings
 from backend.app.models.repair_request import RepairRequest
+from backend.app.models.user import User
 
 
 class TrackerUnavailableError(Exception):
@@ -399,3 +400,134 @@ def post_issue_comment(issue_ref: str, text: str, *, markup_md: bool = True) -> 
     if markup_md:
         payload["markupType"] = "md"
     _request_json("POST", url, token=token, org_id=org_id, data=payload)
+
+
+def _transition_target_label(transition: dict) -> str | None:
+    to = transition.get("to")
+    if isinstance(to, dict):
+        for key in ("display", "name"):
+            raw = to.get(key)
+            if isinstance(raw, str) and raw.strip():
+                return raw.strip()
+    display = transition.get("display")
+    if isinstance(display, str) and display.strip():
+        return display.strip()
+    return None
+
+
+def _issue_status_label(issue_body: dict) -> str | None:
+    status = issue_body.get("status")
+    if isinstance(status, dict):
+        for key in ("display", "name"):
+            raw = status.get(key)
+            if isinstance(raw, str) and raw.strip():
+                return raw.strip()
+    if isinstance(status, str) and status.strip():
+        return status.strip()
+    status_type = issue_body.get("statusType")
+    if isinstance(status_type, dict):
+        for key in ("display", "name"):
+            raw = status_type.get(key)
+            if isinstance(raw, str) and raw.strip():
+                return raw.strip()
+    return None
+
+
+def _labels_match(current: str, target: str) -> bool:
+    c = current.strip().casefold()
+    t = target.strip().casefold()
+    if c == t:
+        return True
+    if t == "в работе" and c in ("в работе", "требуется информация"):
+        return True
+    return False
+
+
+def _list_issue_transitions(base_url: str, token: str, org_id: str, issue_ref: str) -> list[dict]:
+    safe_ref = quote(issue_ref, safe="")
+    url = f"{base_url}/issues/{safe_ref}/transitions"
+    raw = _request_json_list("GET", url, token=token, org_id=org_id)
+    return [row for row in raw if isinstance(row, dict)]
+
+
+def _execute_issue_transition(
+    base_url: str,
+    token: str,
+    org_id: str,
+    issue_ref: str,
+    transition_id: str,
+    *,
+    body: dict | None = None,
+) -> None:
+    safe_ref = quote(issue_ref, safe="")
+    safe_tid = quote(str(transition_id), safe="")
+    url = f"{base_url}/issues/{safe_ref}/transitions/{safe_tid}/_execute"
+    _request_json("POST", url, token=token, org_id=org_id, data=body if body is not None else {})
+
+
+def push_issue_status_from_site(
+    issue_ref: str,
+    target_status_label: str,
+    *,
+    resolution: str | None = None,
+) -> None:
+    """Переводит задачу в статус по русской метке (как в вебхуках)."""
+    ref = (issue_ref or "").strip()
+    target = (target_status_label or "").strip()
+    if not ref or not target:
+        raise TrackerUnavailableError("tracker_issue_ref_or_status_missing")
+    base_url, token, org_id, _ = _require_tracker_config()
+    issue_body = _request_json(
+        "GET",
+        f"{base_url}/issues/{quote(ref, safe='')}/",
+        token=token,
+        org_id=org_id,
+    )
+    current = _issue_status_label(issue_body)
+    if current and _labels_match(current, target):
+        return
+
+    transitions = _list_issue_transitions(base_url, token, org_id, ref)
+    for transition in transitions:
+        label = _transition_target_label(transition)
+        tid = transition.get("id")
+        if not tid or not label:
+            continue
+        if not _labels_match(label, target):
+            continue
+        body: dict = {}
+        # resolution — ключ резолюции в API Трекера (fixed, wontFix)
+        if target == "Закрыт" and resolution and resolution.strip():
+            body["resolution"] = resolution.strip()
+        _execute_issue_transition(
+            base_url,
+            token,
+            org_id,
+            ref,
+            str(tid),
+            body=body,
+        )
+        return
+
+    raise TrackerUnavailableError(f"tracker_transition_not_found:{target}")
+
+
+def tracker_comment_status_from_site(target_status_label: str) -> str:
+    label = (target_status_label or "").strip() or "—"
+    return yfm_red(f"Статус изменён в Fix My Kit: **{label}**")
+
+
+def post_site_user_comment(issue_ref: str, user: User, body: str) -> None:
+    display = (user.full_name or "").strip() or user.login
+    text = f"**{display}** (Fix My Kit):\n\n{(body or '').strip()}"
+    post_issue_comment(issue_ref, text)
+
+
+def push_publish_state_comment(issue_ref: str, is_published: bool) -> None:
+    text = PUBLISH_TRACKER_COMMENT if is_published else UNPUBLISH_TRACKER_COMMENT
+    post_issue_comment(issue_ref, text)
+
+
+def push_sysadmin_taken_comment(issue_ref: str, *, taken: bool) -> None:
+    text = SYSADMIN_TAKEN_TRACKER_COMMENT if taken else SYSADMIN_RETURNED_TRACKER_COMMENT
+    post_issue_comment(issue_ref, text)

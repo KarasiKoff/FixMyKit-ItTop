@@ -9,13 +9,15 @@
   }
 
   .topbar-inner {
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
   }
 
   .topbar-brand {
-    flex: 0 0 auto;
+    flex: 1 1 auto;
+    min-width: 0;
   }
 
   .topbar-brand h1 {
@@ -38,6 +40,33 @@
     white-space: nowrap;
     text-align: center;
     line-height: 1.25;
+  }
+
+  .topbar-nav-auth {
+    display: none !important;
+  }
+
+  .topbar-account--desktop {
+    display: none !important;
+  }
+
+  .topbar-menu-trigger {
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+
+  button[aria-label='Обновить'],
+  button[aria-label='Обновить список'] {
+    display: none !important;
+  }
+
+  .admin-page-head--edges .page-title-actions {
+    padding-inline: 0;
+    min-height: auto;
+  }
+
+  .admin-page-head--edges .page-title-actions > .btn-ghost {
+    display: none;
   }
 
   .btn-primary {

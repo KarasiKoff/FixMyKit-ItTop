@@ -1,9 +1,13 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from backend.app.models.enums import AttachmentsSyncStatus, RequestStatus
+
+RepairWorkflowKind = Literal["open", "in_progress", "needs_info", "closed"]
+RepairCloseResolution = Literal["resolved", "wont_fix"]
 
 
 class RepairRequestBase(BaseModel):
@@ -49,6 +53,12 @@ class RepairRequestPublish(BaseModel):
     is_published: bool
 
 
+class RepairRequestWorkflowUpdate(BaseModel):
+    workflow: RepairWorkflowKind
+    resolution: RepairCloseResolution | None = None
+    comment: str | None = Field(default=None, max_length=10000)
+
+
 class RepairRequestResponse(RepairRequestBase):
     model_config = ConfigDict(from_attributes=True)
 
@@ -65,6 +75,8 @@ class RepairRequestResponse(RepairRequestBase):
     tracker_ticket_id: str | None = None
     tracker_ticket_key: str | None = None
     tracker_ticket_url: str | None = None
+    tracker_status_label: str | None = None
+    tracker_status_sync_pending: bool = False
     last_sync_at: datetime | None = None
     has_attachments: bool = False
     attachments_sync_status: AttachmentsSyncStatus = AttachmentsSyncStatus.NONE

@@ -1,22 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchDeviceById } from '../api/devices';
-import {
-    fetchRepairRequest,
-    isRepairRequestSynced,
-    patchRepairRequestClose,
-    patchRepairRequestStatus,
-    patchRepairRequestTake,
-    publishRepairRequest,
-    syncRepairRequestTracker,
-} from '../api/repairRequests';
+import { fetchRepairRequest, isRepairRequestSynced, publishRepairRequest, syncRepairRequestTracker } from '../api/repairRequests';
 import { RepairAttachmentsModal } from '../components/RepairAttachmentsModal';
+import { RepairRequestComments } from '../components/RepairRequestComments';
+import { RepairRequestStatusPanel } from '../components/RepairRequestStatusPanel';
 import { Device } from '../types/device';
 import { RepairRequestDetail } from '../types/repairRequest';
 import { useToast } from '../context/ToastContext';
 import {
     repairRequestStatusLabel,
-    repairRequestStatusPillClass,
+    repairRequestStatusPillClassForRequest,
     repairRequestWorkflowBubble,
 } from '../utils/statusDisplay';
 import { yandexTrackerIssueWebHref } from '../utils/yandexTracker';
@@ -41,8 +35,8 @@ export function RepairRequestDetailPage() {
     const [request, setRequest] = useState<RepairRequestDetail | null>(null);
     const [device, setDevice] = useState<Device | null>(null);
     const [loading, setLoading] = useState(true);
-    const [closeNote, setCloseNote] = useState('');
     const [closedByDbLabel, setClosedByDbLabel] = useState<string | null>(null);
+    const [commentsRefreshKey, setCommentsRefreshKey] = useState(0);
     const [showMapModal, setShowMapModal] = useState(false);
     const [attachmentsOpen, setAttachmentsOpen] = useState(false);
     const [syncing, setSyncing] = useState(false);
@@ -84,6 +78,7 @@ export function RepairRequestDetailPage() {
         enabled: Boolean(id),
         onEvent: (payload) => {
             if (payload.repair_request_id === id) {
+                setCommentsRefreshKey((k) => k + 1);
                 void reload({ silent: true });
             }
         },
@@ -148,40 +143,6 @@ export function RepairRequestDetailPage() {
             showError(formatApiError(err));
         } finally {
             setSyncing(false);
-        }
-    }
-
-    async function setStatus(next: 'open' | 'in_progress' | 'closed') {
-        if (!id) {
-            return;
-        }
-        try {
-            const note = next === 'closed' ? closeNote || null : undefined;
-            const updated =
-                next === 'closed'
-                    ? await patchRepairRequestClose(id, note)
-                    : await patchRepairRequestStatus(id, next, note);
-            setRequest(updated);
-            setDevice(await fetchDeviceById(updated.deviceId));
-            if (next === 'closed') {
-                setCloseNote('');
-            }
-            showSuccess('Сохранено');
-        } catch (err) {
-            showError(formatApiError(err));
-        }
-    }
-
-    async function markTaken() {
-        if (!id) {
-            return;
-        }
-        try {
-            const updated = await patchRepairRequestTake(id, true);
-            setRequest(updated);
-            showSuccess('Отмечено');
-        } catch (err) {
-            showError(formatApiError(err));
         }
     }
 
@@ -250,15 +211,15 @@ export function RepairRequestDetailPage() {
     }
 
     const synced = isRepairRequestSynced(request);
+    const hasTrackerTicket = synced;
     const apiSt = apiStatusFromUi(request.status);
-    const canAct = apiSt !== 'closed';
     const trackerHref = yandexTrackerIssueWebHref(request.ticketKey, request.ticketUrl);
     const needsAttachmentSync = needsAttachmentTrackerSync(request);
     const showTrackerSyncButton = !trackerHref || needsAttachmentSync;
     const resolutionNoteTrimmed = noteParts.resolutionTrimmed;
     const resolutionDescTrimmed = request.resolutionDesc?.trim() ?? '';
     const closedByDisplayed = noteParts.closedFromMeta || closedByDbLabel || '';
-    const workflowBubble = repairRequestWorkflowBubble(request.status, request.takenBySysadmin);
+    const workflowBubble = repairRequestWorkflowBubble(request);
 
     return (
         <main className="page page--wide page--centered">
@@ -282,10 +243,28 @@ export function RepairRequestDetailPage() {
                 </div>
             </div>
 
-            <section className="card card-form card--narrow-device repair-detail-card">
+            <div className="repair-detail-page">
+            <div className="repair-detail-main-with-side">
+            {id ? (
+                <aside className="repair-detail-floating-status">
+                    <RepairRequestStatusPanel
+                        requestId={id}
+                        request={request}
+                        hasTrackerTicket={hasTrackerTicket}
+                        onUpdated={async (updated) => {
+                            setRequest(updated);
+                            setDevice(await fetchDeviceById(updated.deviceId));
+                        }}
+                        onCommentsChanged={() => setCommentsRefreshKey((k) => k + 1)}
+                    />
+                </aside>
+            ) : null}
+            <section className="card card-form card--narrow-device repair-detail-card repair-detail-layout__card">
                 <div className="device-title-row repair-detail-head">
                     <p className="repair-detail-status-line">
-                        <span className={repairRequestStatusPillClass(request.status)}>{repairRequestStatusLabel(request.status)}</span>
+                        <span className={repairRequestStatusPillClassForRequest(request)}>
+                            {repairRequestStatusLabel(request.status, request.trackerStatusLabel)}
+                        </span>
                         {synced ? (
                             <span className="status-pill status-pill--tracker-synced">Трекер</span>
                         ) : (
@@ -441,6 +420,8 @@ export function RepairRequestDetailPage() {
                     <button
                         type="button"
                         className={`repair-detail-publish-btn ${request.isPublished ? 'btn-publish--active' : 'btn-publish'}`}
+                        disabled={!hasTrackerTicket}
+                        title={hasTrackerTicket ? undefined : 'Сначала синхронизируйте с Трекером'}
                         onClick={() => void togglePublish()}
                     >
                         {request.isPublished ? 'Снять публикацию' : 'Опубликовать'}
@@ -448,32 +429,18 @@ export function RepairRequestDetailPage() {
                 </div>
             </section>
 
-            {canAct ? (
-                <section className="card card-form card--narrow-device request-actions-panel repair-detail-actions">
-                    <h3>Действия</h3>
-                    <div className="actions-row request-actions">
-                        {apiSt === 'open' ? (
-                            <button type="button" className="btn-primary" onClick={() => void setStatus('in_progress')}>
-                                Взять в работу
-                            </button>
-                        ) : null}
-                        {!request.takenBySysadmin ? (
-                            <button type="button" className="btn-primary" onClick={() => void markTaken()}>
-                                Забрал сисадмин
-                            </button>
-                        ) : null}
-                        <div className="request-close-row">
-                            <label>
-                                Примечание при закрытии
-                                <input value={closeNote} onChange={(e) => setCloseNote(e.target.value)} placeholder="Необязательно" />
-                            </label>
-                            <button type="button" className="btn-danger" onClick={() => void setStatus('closed')}>
-                                Закрыть заявку
-                            </button>
-                        </div>
-                    </div>
+            {id ? (
+                <section className="repair-detail-comments-block">
+                    <RepairRequestComments
+                        embedded
+                        requestId={id}
+                        hasTrackerTicket={hasTrackerTicket}
+                        refreshKey={`${request.ticketKey ?? id}-${commentsRefreshKey}`}
+                    />
                 </section>
             ) : null}
+            </div>
+            </div>
 
             {showMapModal && device?.audienceId != null ? (
                 <RoomMapModal

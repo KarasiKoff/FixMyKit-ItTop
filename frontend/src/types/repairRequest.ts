@@ -10,6 +10,8 @@ export type RepairRequest = {
     ticketId?: string;
     ticketKey?: string;
     ticketUrl?: string;
+    trackerStatusLabel?: string | null;
+    trackerStatusSyncPending?: boolean;
     lastSyncedAt?: string;
     deviceInventoryNumber?: string;
     deviceName?: string;

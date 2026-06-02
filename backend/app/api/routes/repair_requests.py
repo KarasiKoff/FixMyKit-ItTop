@@ -25,11 +25,29 @@ from backend.app.schemas.repair_request import (
     RepairRequestResponse,
     RepairRequestStatusUpdate,
     RepairRequestTake,
+    RepairRequestWorkflowUpdate,
 )
 from backend.app.schemas.suggest import SuggestResponse
 from backend.app.schemas.attachments import TrackerAttachmentItem, TrackerAttachmentList
+from backend.app.schemas.repair_request_comment import (
+    RepairRequestCommentCreate,
+    RepairRequestCommentList,
+    RepairRequestCommentResponse,
+)
 from backend.app.schemas.tracker import TrackerBulkSyncResponse, TrackerSyncResponse
 from backend.app.services.repair_history_service import add_repair_history
+from backend.app.services.repair_request_comment_service import create_comment, list_comments
+from backend.app.services.repair_request_tracker_outbound import (
+    REQUEST_STATUS_TRACKER_LABEL,
+    RESOLUTION_NOTE_TO_TRACKER_KEY,
+    require_tracker_ticket,
+    retry_pending_status_sync,
+    sync_publish_to_tracker,
+    sync_resolution_comment_to_tracker,
+    sync_status_to_tracker,
+    sync_sysadmin_taken_to_tracker,
+)
+from backend.app.services.repair_request_workflow_service import apply_workflow_change
 from backend.app.services.realtime_notify import notify_repair_request_updated
 from backend.app.services.repair_request_attachment_service import (
     AttachmentLimitError,
@@ -42,6 +60,7 @@ from backend.app.services.repair_request_attachment_service import (
     validate_and_store_uploads,
 )
 from backend.app.services.repair_request_closure_service import record_repair_request_closed
+from backend.app.services.repair_request_sysadmin_taken_service import clear_sysadmin_taken_fields
 from backend.app.services.repair_request_list_query import fetch_repair_requests_page, suggest_repair_requests
 from backend.app.services.tracker_service import (
     TrackerUnavailableError,
@@ -390,6 +409,55 @@ def get_repair_request(
     return _repair_request_list_item(repair_request)
 
 
+@router.get("/repair-requests/{request_id}/comments", response_model=RepairRequestCommentList)
+def get_repair_request_comments(
+    request_id: UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_admin_or_sysadmin),
+) -> RepairRequestCommentList:
+    get_repair_request_or_404(db, request_id)
+    return RepairRequestCommentList(items=list_comments(db, request_id))
+
+
+@router.post(
+    "/repair-requests/{request_id}/comments",
+    response_model=RepairRequestCommentResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def post_repair_request_comment(
+    request_id: UUID,
+    payload: RepairRequestCommentCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_or_sysadmin),
+) -> RepairRequestCommentResponse:
+    repair_request = get_repair_request_or_404(db, request_id)
+    item = create_comment(db, repair_request, current_user, payload.body)
+    notify_repair_request_updated(repair_request, source="api")
+    return item
+
+
+@router.patch("/repair-requests/{request_id}/workflow", response_model=RepairRequestDetail)
+def update_repair_request_workflow(
+    request_id: UUID,
+    payload: RepairRequestWorkflowUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_or_sysadmin),
+) -> RepairRequestDetail:
+    repair_request = get_repair_request_or_404(db, request_id)
+    require_tracker_ticket(repair_request)
+    apply_workflow_change(
+        db,
+        repair_request,
+        current_user,
+        payload.workflow,
+        resolution=payload.resolution,
+        comment=payload.comment,
+    )
+    db.refresh(repair_request)
+    notify_repair_request_updated(repair_request, source="api")
+    return RepairRequestDetail.model_validate(repair_request)
+
+
 @router.patch("/repair-requests/{request_id}/status", response_model=RepairRequestDetail)
 def update_repair_request_status(
     request_id: UUID,
@@ -398,6 +466,7 @@ def update_repair_request_status(
     current_user: User = Depends(require_admin_or_sysadmin),
 ) -> RepairRequestDetail:
     repair_request = get_repair_request_or_404(db, request_id)
+    require_tracker_ticket(repair_request)
     if payload.status not in ALLOWED_STATUS_TRANSITIONS[repair_request.status]:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="invalid_status_transition")
 
@@ -411,6 +480,7 @@ def update_repair_request_status(
         )
     else:
         repair_request.status = payload.status
+        repair_request.tracker_status_label = REQUEST_STATUS_TRACKER_LABEL[payload.status]
         if payload.resolution_note is not None:
             repair_request.resolution_note = payload.resolution_note
         if payload.resolution_desc is not None:
@@ -426,6 +496,21 @@ def update_repair_request_status(
 
     db.commit()
     db.refresh(repair_request)
+    tracker_resolution = None
+    if payload.status == RequestStatus.CLOSED and payload.resolution_note:
+        tracker_resolution = RESOLUTION_NOTE_TO_TRACKER_KEY.get(payload.resolution_note.strip())
+    sync_status_to_tracker(
+        db,
+        repair_request,
+        payload.status,
+        resolution=tracker_resolution,
+    )
+    if payload.status == RequestStatus.CLOSED:
+        sync_resolution_comment_to_tracker(
+            repair_request,
+            payload.resolution_note,
+            payload.resolution_desc,
+        )
     notify_repair_request_updated(repair_request, source="api")
     return RepairRequestDetail.model_validate(repair_request)
 
@@ -438,6 +523,7 @@ def take_repair_request(
     current_user: User = Depends(require_admin_or_sysadmin),
 ) -> RepairRequestDetail:
     repair_request = get_repair_request_or_404(db, request_id)
+    require_tracker_ticket(repair_request)
     if payload.taken:
         repair_request.taken_by_sysadmin_at = datetime.now(timezone.utc)
         repair_request.taken_by_sysadmin_by_user_id = current_user.id
@@ -449,9 +535,20 @@ def take_repair_request(
             new_status=None,
             note="Отмечено: забрал системный администратор",
         )
+    else:
+        clear_sysadmin_taken_fields(repair_request)
+        add_repair_history(
+            db,
+            device_id=repair_request.device_id,
+            repair_request_id=repair_request.id,
+            old_status=None,
+            new_status=None,
+            note="Устройство возвращено на место",
+        )
 
     db.commit()
     db.refresh(repair_request)
+    sync_sysadmin_taken_to_tracker(repair_request, taken=payload.taken)
     notify_repair_request_updated(repair_request, source="api")
     return RepairRequestDetail.model_validate(repair_request)
 
@@ -464,6 +561,7 @@ def close_repair_request(
     current_user: User = Depends(require_admin_or_sysadmin),
 ) -> RepairRequestDetail:
     repair_request = get_repair_request_or_404(db, request_id)
+    require_tracker_ticket(repair_request)
     if RequestStatus.CLOSED not in ALLOWED_STATUS_TRANSITIONS[repair_request.status]:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="invalid_status_transition")
 
@@ -474,8 +572,23 @@ def close_repair_request(
         payload.resolution_note,
         payload.resolution_desc,
     )
+    repair_request.tracker_status_label = REQUEST_STATUS_TRACKER_LABEL[RequestStatus.CLOSED]
     db.commit()
     db.refresh(repair_request)
+    tracker_resolution = None
+    if payload.resolution_note:
+        tracker_resolution = RESOLUTION_NOTE_TO_TRACKER_KEY.get(payload.resolution_note.strip())
+    sync_status_to_tracker(
+        db,
+        repair_request,
+        RequestStatus.CLOSED,
+        resolution=tracker_resolution,
+    )
+    sync_resolution_comment_to_tracker(
+        repair_request,
+        payload.resolution_note,
+        payload.resolution_desc,
+    )
     notify_repair_request_updated(repair_request, source="api")
     return RepairRequestDetail.model_validate(repair_request)
 
@@ -488,8 +601,29 @@ def publish_repair_request(
     _: User = Depends(require_admin_or_sysadmin),
 ) -> RepairRequestDetail:
     repair_request = get_repair_request_or_404(db, request_id)
+    require_tracker_ticket(repair_request)
     repair_request.is_published = payload.is_published
     db.commit()
+    db.refresh(repair_request)
+    sync_publish_to_tracker(repair_request, payload.is_published)
+    notify_repair_request_updated(repair_request, source="api")
+    return RepairRequestDetail.model_validate(repair_request)
+
+
+@router.post("/repair-requests/{request_id}/tracker/push-status", response_model=RepairRequestDetail)
+def push_repair_request_status_to_tracker(
+    request_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin_or_sysadmin),
+) -> RepairRequestDetail:
+    repair_request = get_repair_request_or_404(db, request_id)
+    require_tracker_ticket(repair_request)
+    if not repair_request.tracker_status_sync_pending:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="tracker_status_sync_not_pending",
+        )
+    retry_pending_status_sync(db, repair_request)
     db.refresh(repair_request)
     notify_repair_request_updated(repair_request, source="api")
     return RepairRequestDetail.model_validate(repair_request)

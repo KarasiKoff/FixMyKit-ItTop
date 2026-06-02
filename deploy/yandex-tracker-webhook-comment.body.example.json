@@ -1,0 +1,8 @@
+{
+  "issue_key": "{{issue.key}}",
+  "issue_id": "{{issue.id}}",
+  "comment_id": "{{userComment.id}}",
+  "comment_text": "{{userComment.text}}",
+  "user": "{{currentUser.login}}",
+  "author": "{{userComment.author}}"
+}

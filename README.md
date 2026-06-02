@@ -341,6 +341,9 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 | `POST /api/webhooks/yandex-tracker` | Синхронизация статуса задачи с заявкой |
 | `POST /api/webhooks/yandex-tracker/publish` | Публикация / снятие с публикации |
 | `POST /api/webhooks/yandex-tracker/sysadmin-taken` | Отметка «сисадмин забрал / вернул» |
+| `POST /api/webhooks/yandex-tracker/comment` | Комментарий из Трекера → лента на сайте |
+
+Пример тела для комментария: [`deploy/yandex-tracker-webhook-comment.body.example.json`](deploy/yandex-tracker-webhook-comment.body.example.json). В очереди FIXMYKIT нужен триггер: условие «добавлен комментарий» (тип `userComment`), действие HTTP POST на `/api/webhooks/yandex-tracker/comment`.
 
 Пример тела для publish/unpublish: [`deploy/yandex-tracker-webhook-publish-unpublish.body.example.json`](deploy/yandex-tracker-webhook-publish-unpublish.body.example.json).
 
