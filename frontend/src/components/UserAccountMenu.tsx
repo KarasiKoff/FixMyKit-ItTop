@@ -1,10 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { NavLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { authorInitials } from '../utils/commentDisplay';
+import { AccountMenuContent } from './AccountMenuContent';
 
-export function UserAccountMenu() {
-    const { user, signOut } = useAuth();
+type Props = {
+    variant?: 'topbar' | 'drawer';
+    onDrawerClose?: () => void;
+};
+
+export function UserAccountMenu({ variant = 'topbar', onDrawerClose }: Props) {
+    const { user } = useAuth();
     const [open, setOpen] = useState(false);
     const rootRef = useRef<HTMLDivElement | null>(null);
 
@@ -25,11 +30,23 @@ export function UserAccountMenu() {
         return null;
     }
 
-    const roleLabel = user.role === 'admin' ? 'Администратор' : 'Системный администратор';
     const displayName = user.name?.trim() || user.login?.trim() || 'Пользователь';
+    const rootClass =
+        variant === 'drawer' ? 'topbar-account topbar-account--drawer' : 'topbar-account topbar-account--desktop';
+
+    function closeDropdown() {
+        setOpen(false);
+    }
+
+    function closeDropdownAndDrawer() {
+        closeDropdown();
+        if (variant === 'drawer') {
+            onDrawerClose?.();
+        }
+    }
 
     return (
-        <div className="topbar-account" ref={rootRef}>
+        <div className={rootClass} ref={rootRef}>
             <button
                 type="button"
                 className="topbar-account-trigger"
@@ -44,40 +61,7 @@ export function UserAccountMenu() {
             </button>
             {open ? (
                 <div className="topbar-account-dropdown" role="menu">
-                    <div className="topbar-account-meta">
-                        <div>
-                            <span className="muted-text topbar-account-meta-label">Логин</span>
-                            {user.login ?? '—'}
-                        </div>
-                        <div>
-                            <span className="muted-text topbar-account-meta-label">Отображаемое имя</span>
-                            {user.name}
-                        </div>
-                        <div>
-                            <span className="muted-text topbar-account-meta-label">Роль</span>
-                            {roleLabel}
-                        </div>
-                    </div>
-                    <div className="topbar-account-actions">
-                        <NavLink
-                            to="/admin/password"
-                            className="btn-ghost btn-compact topbar-account-action"
-                            role="menuitem"
-                            onClick={() => setOpen(false)}
-                        >
-                            Сменить пароль
-                        </NavLink>
-                        <button
-                            type="button"
-                            className="btn-ghost btn-compact topbar-account-action"
-                            onClick={() => {
-                                setOpen(false);
-                                signOut();
-                            }}
-                        >
-                            Выйти
-                        </button>
-                    </div>
+                    <AccountMenuContent onClose={closeDropdownAndDrawer} />
                 </div>
             ) : null}
         </div>

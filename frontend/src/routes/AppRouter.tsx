@@ -23,6 +23,7 @@ import { DevicePublicPage } from '../pages/DevicePublicPage';
 import { useAuth } from '../hooks/useAuth';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { UserAccountMenu } from '../components/UserAccountMenu';
+import { TopbarMobileMenu } from '../components/TopbarMobileMenu';
 import { ToastProvider } from '../context/ToastContext';
 import { RouteDocumentTitle } from '../components/RouteDocumentTitle';
 
@@ -78,17 +79,20 @@ function AppShell() {
                         {!isAuthenticated ? (
                             <NavLink to="/repair">Главная</NavLink>
                         ) : (
-                            <>
-                                <NavLink to="/scan">QR</NavLink>
-                                <NavLink to="/repair">Заявка</NavLink>
-                                <NavLink to="/devices">Оборудование</NavLink>
-                                <NavLink to="/room-maps">Карта кабинетов</NavLink>
-                                <NavLink to="/requests">Все заявки</NavLink>
-                                <NavLink to="/admin">Админка</NavLink>
+                            <div className="topbar-nav-auth">
+                                <div className="topbar-nav-auth__links">
+                                    <NavLink to="/scan">QR</NavLink>
+                                    <NavLink to="/repair">Заявка</NavLink>
+                                    <NavLink to="/devices">Оборудование</NavLink>
+                                    <NavLink to="/room-maps">Карта кабинетов</NavLink>
+                                    <NavLink to="/requests">Все заявки</NavLink>
+                                    <NavLink to="/admin">Админка</NavLink>
+                                </div>
                                 <UserAccountMenu />
-                            </>
+                            </div>
                         )}
                     </nav>
+                    {isAuthenticated ? <TopbarMobileMenu /> : null}
                 </div>
             </header>
             <div className="app-shell-main">
