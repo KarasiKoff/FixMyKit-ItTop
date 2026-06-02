@@ -99,32 +99,38 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px;
+  padding: 0;
   margin: 0;
   border: none;
   background: transparent;
   cursor: pointer;
   line-height: 0;
-  border-radius: 0;
+  border-radius: 50%;
 }
 
 .topbar-account-trigger:hover .topbar-account-avatar {
-  opacity: 0.82;
+  filter: brightness(0.92);
 }
 
 .topbar-account-trigger:focus-visible {
   outline: 2px solid var(--accent, #7b92ff);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 .topbar-account-avatar {
-  width: 28px;
-  height: 28px;
-  display: block;
-  border-radius: 0;
-  object-fit: contain;
-  opacity: 0.92;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #0b0e14;
+  background: var(--accent);
+  user-select: none;
 }
 
 .topbar-account-dropdown {
@@ -164,10 +170,14 @@
 }
 
 .topbar-account-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   text-align: center;
   text-decoration: none;
   box-sizing: border-box;
+  border-radius: 11px;
 }
 
 .topbar-nav {
@@ -213,6 +223,155 @@
   background: var(--nav-active-bg);
   border-color: transparent;
 }
+
+.topbar-nav-auth {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  flex: 1 1 auto;
+}
+
+.topbar-nav-auth__links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.topbar-menu-trigger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.topbar-menu-trigger:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.topbar-menu-trigger:focus-visible {
+  outline: 2px solid var(--accent, #7b92ff);
+  outline-offset: 2px;
+}
+
+.topbar-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  cursor: pointer;
+}
+
+.topbar-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  width: min(320px, 100vw);
+  max-width: 100%;
+  height: 100dvh;
+  padding: 0 0 24px;
+  background: var(--bg-card);
+  border-left: 1px solid var(--border-subtle);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.35);
+  overflow-y: auto;
+  animation: topbar-drawer-in 220ms ease-out;
+}
+
+@keyframes topbar-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.topbar-drawer__head {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 16px 12px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.topbar-drawer__title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.topbar-drawer__head-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.topbar-account--drawer {
+  margin-left: 0;
+}
+
+.topbar-account--drawer .topbar-account-dropdown {
+  z-index: 95;
+}
+
+.topbar-drawer__close {
+  min-width: 40px;
+  min-height: 40px;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.topbar-drawer__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 12px 0;
+}
+
+.topbar-drawer__link {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: var(--font-nav);
+  font-weight: 500;
+  transition: background-color 180ms ease;
+}
+
+.topbar-drawer__link:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.topbar-drawer__link.active {
+  font-weight: 600;
+  background: var(--nav-active-bg);
+}
+
 .scroll-to-top {
   position: fixed;
   right: max(var(--page-padding-x), 16px);

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchRepairRequestComments, postRepairRequestComment } from '../api/repairRequests';
 import { useToast } from '../context/ToastContext';
 import { RepairRequestComment } from '../types/repairRequestComment';
@@ -23,7 +23,11 @@ function CommentItem({ item }: { item: RepairRequestComment }) {
             <article className="repair-comment__bubble">
                 <header className="repair-comment__head">
                     <span className="repair-comment__author">{author}</span>
-                    <time className="repair-comment__time" dateTime={item.createdAt} title={new Date(item.createdAt).toLocaleString('ru-RU')}>
+                    <time
+                        className="repair-comment__time"
+                        dateTime={item.createdAt}
+                        title={new Date(item.createdAt).toLocaleString('ru-RU')}
+                    >
                         {formatCommentTime(item.createdAt)}
                     </time>
                 </header>
@@ -39,11 +43,17 @@ export function RepairRequestComments({ requestId, hasTrackerTicket, refreshKey,
     const [loading, setLoading] = useState(true);
     const [text, setText] = useState('');
     const [sending, setSending] = useState(false);
+    const bottomRef = useRef<HTMLDivElement>(null);
+    const prevItemsLengthRef = useRef(0);
 
     const load = useCallback(async () => {
         setLoading(true);
         try {
-            setItems(await fetchRepairRequestComments(requestId));
+            const loaded = await fetchRepairRequestComments(requestId);
+            const sorted = [...loaded].sort(
+                (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+            );
+            setItems(sorted);
         } catch (err) {
             showError(formatApiError(err));
         } finally {
@@ -54,6 +64,16 @@ export function RepairRequestComments({ requestId, hasTrackerTicket, refreshKey,
     useEffect(() => {
         void load();
     }, [load, refreshKey]);
+
+    useEffect(() => {
+        if (loading) {
+            return;
+        }
+        if (items.length > prevItemsLengthRef.current) {
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        prevItemsLengthRef.current = items.length;
+    }, [items.length, loading]);
 
     async function submit(e: React.FormEvent) {
         e.preventDefault();
@@ -71,6 +91,9 @@ export function RepairRequestComments({ requestId, hasTrackerTicket, refreshKey,
             setItems((prev) => [...prev, created]);
             setText('');
             showSuccess('Комментарий отправлен');
+            requestAnimationFrame(() => {
+                bottomRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            });
         } catch (err) {
             showError(formatApiError(err));
         } finally {
@@ -87,7 +110,7 @@ export function RepairRequestComments({ requestId, hasTrackerTicket, refreshKey,
                 </p>
             ) : null}
 
-            <div className="repair-comments-feed" aria-live="polite">
+            <div className="repair-comments-stream" aria-live="polite">
                 {loading ? (
                     <p className="repair-comments-feed__placeholder muted-text">Загрузка…</p>
                 ) : items.length === 0 ? (
@@ -131,6 +154,7 @@ export function RepairRequestComments({ requestId, hasTrackerTicket, refreshKey,
                     {sending ? 'Отправка…' : 'Отправить'}
                 </button>
             </form>
+            <div ref={bottomRef} className="repair-comments-bottom-anchor" aria-hidden="true" />
         </>
     );
 

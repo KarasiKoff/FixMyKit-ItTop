@@ -11,6 +11,10 @@ import { formatApiError } from '../utils/formatApiError';
 import { type RepairWorkflowState, workflowFromRequest } from '../utils/repairWorkflow';
 import { RepairWorkflowModal, type RepairWorkflowModalMode } from './RepairWorkflowModal';
 import type { RepairCloseResolution } from '../utils/repairWorkflow';
+import iconInWork from '../icon/in-work.svg';
+import iconNew from '../icon/new.svg';
+import iconTakenBySysadmin from '../icon/take-by-sysadmin.svg';
+import iconNeedInfo from '../icon/need-info.svg';
 
 
 type Props = {
@@ -44,6 +48,41 @@ function statusPillClass(workflow: RepairWorkflowState, current: RepairWorkflowS
     return `${base} repair-pill-btn--active`;
 }
 
+function IconOpen() {
+    return <span className="repair-status-icon-asset" style={{ '--icon-url': `url(${iconNew})` } as React.CSSProperties} aria-hidden="true" />;
+}
+
+function IconInProgress() {
+    return <span className="repair-status-icon-asset" style={{ '--icon-url': `url(${iconInWork})` } as React.CSSProperties} aria-hidden="true" />;
+}
+
+function IconNeedsInfo() {
+    return <span className="repair-status-icon-asset" style={{ '--icon-url': `url(${iconNeedInfo})` } as React.CSSProperties} aria-hidden="true" />;
+}
+
+function IconClosed() {
+    return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="2" />
+            <path d="m8.8 12.2 2.2 2.2 4.2-4.2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+    );
+}
+
+function IconTaken() {
+    return <span className="repair-status-icon-asset" style={{ '--icon-url': `url(${iconTakenBySysadmin})` } as React.CSSProperties} aria-hidden="true" />;
+}
+
+function IconSync() {
+    return (
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M20 7v5h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M4 17v-5h5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M6.5 9.5A7 7 0 0 1 18 7M17.5 14.5A7 7 0 0 1 6 17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+        </svg>
+    );
+}
+
 
 
 export function RepairRequestStatusPanel({
@@ -60,6 +99,8 @@ export function RepairRequestStatusPanel({
     const current = workflowFromRequest(request);
     const canChange = hasTrackerTicket && !busy;
     const showTrackerStatusRetry = Boolean(request.trackerStatusSyncPending && hasTrackerTicket);
+    const sliderValue: 'open' | 'in_progress' | null =
+        current === 'open' || current === 'in_progress' ? current : null;
 
 
 
@@ -160,105 +201,104 @@ export function RepairRequestStatusPanel({
 
     return (
         <>
-            <section className="card card-form repair-status-panel-card">
-                <div className="repair-status-panel__head">
-                    <h3 className="repair-status-panel-card__title">Статус заявки</h3>
-                    {!hasTrackerTicket ? (
-                        <p className="repair-status-panel__hint muted-text">
-                            Смена статуса доступна после синхронизации с Трекером.
-                        </p>
-                    ) : null}
-                </div>
-
-                {showTrackerStatusRetry ? (
-                    <div className="repair-status-panel__pending">
-                        <p className="repair-status-panel__pending-text muted-text">
-                            Статус на сайте обновлён, в Yandex Tracker не ушёл. Когда Трекер снова доступен — отправьте
-                            вручную.
-                        </p>
-                        <button
-                            type="button"
-                            className="repair-pill-btn repair-pill-btn--filled repair-status-panel__pending-btn"
-                            disabled={busy}
-                            onClick={() => void pushStatusToTracker()}
-                        >
-                            {busy ? 'Отправка…' : 'Отправить статус в Трекер'}
-                        </button>
-                    </div>
-                ) : null}
-
+            <section className={`repair-status-icon-panel ${!canChange ? 'repair-status-icon-panel--disabled' : ''}`} aria-label="Статус заявки">
                 <div
-                    className={`repair-status-stack ${!canChange ? 'repair-status-stack--disabled' : ''}`}
-                    role="tablist"
-                    aria-label="Статус заявки"
+                    className={`repair-status-vertical-switch ${
+                        sliderValue === 'open'
+                            ? 'repair-status-vertical-switch--open'
+                            : sliderValue === 'in_progress'
+                              ? 'repair-status-vertical-switch--in-progress'
+                              : 'repair-status-vertical-switch--none'
+                    }`}
+                    role="radiogroup"
+                    aria-label="Открыта или в работе"
+                    aria-disabled={!canChange}
                 >
-                    <div className="repair-status-row">
-                        <button
-                            type="button"
-                            role="tab"
-                            aria-selected={current === 'open'}
-                            className={statusPillClass('open', current, canChange)}
-                            disabled={!canChange}
-                            onClick={() => onSelect('open')}
-
-                        >
-                            Переоткрыть
-                        </button>
-
-                        <button
-                            type="button"
-                            role="tab"
-                            aria-selected={current === 'in_progress'}
-                            className={statusPillClass('in_progress', current, canChange)}
-                            disabled={!canChange}
-                            onClick={() => onSelect('in_progress')}
-
-                        >
-                            В работу
-                        </button>
-
-                    </div>
-
+                    <span className="repair-status-vertical-switch__thumb" aria-hidden="true" />
                     <button
                         type="button"
-                        role="tab"
-                        aria-selected={current === 'needs_info'}
-                        className={statusPillClass('needs_info', current, canChange)}
+                        role="radio"
+                        aria-checked={sliderValue === 'open'}
+                        className="repair-status-vertical-switch__option"
                         disabled={!canChange}
-                        onClick={() => onSelect('needs_info')}
+                        title="Открыта"
+                        aria-label="Открыта"
+                        onClick={() => onSelect('open')}
                     >
-                        Нужна информация
+                        <IconOpen />
+                        <span className="repair-status-tooltip" role="tooltip">Открыта</span>
                     </button>
-
                     <button
                         type="button"
-                        role="tab"
-                        aria-selected={current === 'closed'}
-                        className={statusPillClass('closed', current, canChange)}
+                        role="radio"
+                        aria-checked={sliderValue === 'in_progress'}
+                        className="repair-status-vertical-switch__option"
                         disabled={!canChange}
-                        onClick={() => onSelect('closed')}
+                        title="В работу"
+                        aria-label="В работу"
+                        onClick={() => onSelect('in_progress')}
                     >
-                        Закрыть
+                        <IconInProgress />
+                        <span className="repair-status-tooltip" role="tooltip">В работу</span>
                     </button>
-
                 </div>
 
+                <button
+                    type="button"
+                    className={`repair-status-icon-btn repair-status-icon-btn--warning ${current === 'needs_info' ? 'is-active' : ''}`}
+                    disabled={!canChange}
+                    onClick={() => onSelect('needs_info')}
+                    title="Нужна информация"
+                    aria-label="Нужна информация"
+                >
+                    <IconNeedsInfo />
+                    <span className="repair-status-tooltip" role="tooltip">Нужна информация</span>
+                </button>
+
+                <button
+                    type="button"
+                    className={`repair-status-icon-btn repair-status-icon-btn--success ${current === 'closed' ? 'is-active' : ''}`}
+                    disabled={!canChange}
+                    onClick={() => onSelect('closed')}
+                    title="Закрыть"
+                    aria-label="Закрыть"
+                >
+                    <IconClosed />
+                    <span className="repair-status-tooltip" role="tooltip">Закрыть</span>
+                </button>
 
                 {current !== 'closed' ? (
-                    <div className="repair-status-panel__taken-row">
-                        <button
-                            type="button"
-                            className={
-                                request.takenBySysadmin
-                                    ? 'repair-pill-btn repair-pill-btn--ghost repair-status-panel__taken'
-                                    : 'repair-pill-btn repair-pill-btn--filled repair-status-panel__taken'
-                            }
-                            disabled={!canChange}
-                            onClick={() => void onSetTaken(!request.takenBySysadmin)}
-                        >
+                    <button
+                        type="button"
+                        className={`repair-status-icon-btn repair-status-icon-btn--taken ${
+                            request.takenBySysadmin ? 'is-active' : ''
+                        }`}
+                        disabled={!canChange}
+                        onClick={() => void onSetTaken(!request.takenBySysadmin)}
+                        title={request.takenBySysadmin ? 'Вернуть на место' : 'Забрал сисадмин'}
+                        aria-label={request.takenBySysadmin ? 'Вернуть на место' : 'Забрал сисадмин'}
+                    >
+                        <IconTaken />
+                        <span className="repair-status-tooltip" role="tooltip">
                             {request.takenBySysadmin ? 'Вернуть на место' : 'Забрал сисадмин'}
-                        </button>
-                    </div>
+                        </span>
+                    </button>
+                ) : null}
+
+                {showTrackerStatusRetry ? (
+                    <button
+                        type="button"
+                        className="repair-status-icon-btn repair-status-icon-btn--sync"
+                        disabled={busy}
+                        onClick={() => void pushStatusToTracker()}
+                        title={busy ? 'Отправка статуса…' : 'Отправить статус в Трекер'}
+                        aria-label={busy ? 'Отправка статуса…' : 'Отправить статус в Трекер'}
+                    >
+                        <IconSync />
+                        <span className="repair-status-tooltip" role="tooltip">
+                            {busy ? 'Отправка статуса…' : 'Отправить статус в Трекер'}
+                        </span>
+                    </button>
                 ) : null}
             </section>
 

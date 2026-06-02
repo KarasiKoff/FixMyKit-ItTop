@@ -24,6 +24,14 @@ export function formatCommentTime(iso: string): string {
         return '';
     }
     const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    if (diffMs >= 0 && diffMs < 60_000) {
+        return 'только что';
+    }
+    if (diffMs >= 0 && diffMs < 3_600_000) {
+        const mins = Math.max(1, Math.floor(diffMs / 60_000));
+        return `${mins} мин. назад`;
+    }
     const sameDay =
         date.getFullYear() === now.getFullYear() &&
         date.getMonth() === now.getMonth() &&
