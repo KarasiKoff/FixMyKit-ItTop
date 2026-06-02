@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import avatarImg from '../icon/account-avatar.svg';
+import { authorInitials } from '../utils/commentDisplay';
 
 export function UserAccountMenu() {
     const { user, signOut } = useAuth();
@@ -26,6 +26,7 @@ export function UserAccountMenu() {
     }
 
     const roleLabel = user.role === 'admin' ? 'Администратор' : 'Системный администратор';
+    const displayName = user.name?.trim() || user.login?.trim() || 'Пользователь';
 
     return (
         <div className="topbar-account" ref={rootRef}>
@@ -37,7 +38,9 @@ export function UserAccountMenu() {
                 aria-label={`Меню аккаунта (${user.login ?? user.name})`}
                 onClick={() => setOpen((v) => !v)}
             >
-                <img src={avatarImg} alt="" className="topbar-account-avatar" />
+                <span className="topbar-account-avatar" aria-hidden="true">
+                    {authorInitials(displayName)}
+                </span>
             </button>
             {open ? (
                 <div className="topbar-account-dropdown" role="menu">

@@ -99,32 +99,38 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px;
+  padding: 0;
   margin: 0;
   border: none;
   background: transparent;
   cursor: pointer;
   line-height: 0;
-  border-radius: 0;
+  border-radius: 50%;
 }
 
 .topbar-account-trigger:hover .topbar-account-avatar {
-  opacity: 0.82;
+  filter: brightness(0.92);
 }
 
 .topbar-account-trigger:focus-visible {
   outline: 2px solid var(--accent, #7b92ff);
   outline-offset: 2px;
-  border-radius: 4px;
 }
 
 .topbar-account-avatar {
-  width: 28px;
-  height: 28px;
-  display: block;
-  border-radius: 0;
-  object-fit: contain;
-  opacity: 0.92;
+  flex: 0 0 36px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #0b0e14;
+  background: var(--accent);
+  user-select: none;
 }
 
 .topbar-account-dropdown {

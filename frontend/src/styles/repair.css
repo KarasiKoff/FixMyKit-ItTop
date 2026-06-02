@@ -321,6 +321,9 @@
   position: relative;
   width: min(520px, 100%);
   margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 }
 
 .repair-detail-layout__card {
@@ -375,9 +378,12 @@
 
 .repair-detail-comments-block {
   width: 100%;
-  max-width: none;
   margin-inline: 0;
+  padding: 0;
   text-align: left;
+  background: none;
+  border: none;
+  box-shadow: none;
 }
 
 .repair-comments-block__title {
@@ -389,7 +395,7 @@
   display: flex;
   flex-direction: column;
   min-height: 0;
-  gap: 12px;
+  gap: 14px;
 }
 
 .repair-pill-btn {
@@ -1024,8 +1030,7 @@
 }
 
 .repair-comments-stream {
-  border-top: 1px solid var(--border-subtle);
-  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .repair-comments-feed__placeholder {
@@ -1130,6 +1135,8 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
 }
 
 .repair-comments-compose__label {
@@ -1162,8 +1169,9 @@
   opacity: 0.55;
 }
 
-.repair-comments-show-more {
-  margin-top: 12px;
+.repair-comments-bottom-anchor {
+  height: 0;
+  overflow: hidden;
 }
 
 .repair-detail-actions {

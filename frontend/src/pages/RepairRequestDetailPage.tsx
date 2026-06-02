@@ -428,10 +428,9 @@ export function RepairRequestDetailPage() {
                     </button>
                 </div>
             </section>
-            </div>
 
             {id ? (
-                <section className="card card-form repair-detail-comments-block">
+                <section className="repair-detail-comments-block">
                     <RepairRequestComments
                         embedded
                         requestId={id}
@@ -440,6 +439,7 @@ export function RepairRequestDetailPage() {
                     />
                 </section>
             ) : null}
+            </div>
             </div>
 
             {showMapModal && device?.audienceId != null ? (
