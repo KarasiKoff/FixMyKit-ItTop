@@ -244,8 +244,22 @@ export function RepairRequestDetailPage() {
             </div>
 
             <div className="repair-detail-page">
-            <div className="repair-detail-layout">
-            <section className="card card-form card--narrow-device repair-detail-card repair-detail-layout__main repair-detail-layout__card">
+            <div className="repair-detail-main-with-side">
+            {id ? (
+                <aside className="repair-detail-floating-status">
+                    <RepairRequestStatusPanel
+                        requestId={id}
+                        request={request}
+                        hasTrackerTicket={hasTrackerTicket}
+                        onUpdated={async (updated) => {
+                            setRequest(updated);
+                            setDevice(await fetchDeviceById(updated.deviceId));
+                        }}
+                        onCommentsChanged={() => setCommentsRefreshKey((k) => k + 1)}
+                    />
+                </aside>
+            ) : null}
+            <section className="card card-form card--narrow-device repair-detail-card repair-detail-layout__card">
                 <div className="device-title-row repair-detail-head">
                     <p className="repair-detail-status-line">
                         <span className={repairRequestStatusPillClassForRequest(request)}>
@@ -414,21 +428,6 @@ export function RepairRequestDetailPage() {
                     </button>
                 </div>
             </section>
-
-            {id ? (
-                <aside className="repair-detail-layout__side">
-                    <RepairRequestStatusPanel
-                        requestId={id}
-                        request={request}
-                        hasTrackerTicket={hasTrackerTicket}
-                        onUpdated={async (updated) => {
-                            setRequest(updated);
-                            setDevice(await fetchDeviceById(updated.deviceId));
-                        }}
-                        onCommentsChanged={() => setCommentsRefreshKey((k) => k + 1)}
-                    />
-                </aside>
-            ) : null}
             </div>
 
             {id ? (
