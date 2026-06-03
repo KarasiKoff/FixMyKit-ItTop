@@ -18,6 +18,7 @@ class DeviceBase(BaseModel):
     category_id: UUID | None = None
     responsible_id: UUID | None = None
     repair_status: RepairStatus = RepairStatus.NOT_IN_REPAIR
+    note: str | None = None
 
 
 class DeviceCreate(DeviceBase):
@@ -32,6 +33,7 @@ class DeviceUpdate(BaseModel):
     category_id: UUID | None = None
     responsible_id: UUID | None = None
     repair_status: RepairStatus | None = None
+    note: str | None = None
 
 
 class Device(DeviceBase):
@@ -43,10 +45,6 @@ class Device(DeviceBase):
     category: Category | None = None
     audience: Audience | None = None
     responsible: UserResponse | None = None
-
-
-class DeviceDetail(Device):
-    taken_by_sysadmin: bool = False
 
 
 class DeviceListResponse(BaseModel):

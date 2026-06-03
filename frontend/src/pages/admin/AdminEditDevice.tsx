@@ -31,6 +31,7 @@ export function AdminEditDevice() {
     const [audienceId, setAudienceId] = useState<string>('');
     const [responsibleId, setResponsibleId] = useState('');
     const [status, setStatus] = useState<Device['status']>('not_in_repair');
+    const [note, setNote] = useState('');
 
     useEffect(() => {
         if (!id) return;
@@ -51,6 +52,7 @@ export function AdminEditDevice() {
                 setAudienceId(device.audienceId != null ? String(device.audienceId) : '');
                 setResponsibleId(device.responsibleId ?? '');
                 setStatus(device.status);
+                setNote(device.note ?? '');
                 setCategories(cats);
                 setAudiences(auds);
                 setUsersList(usersRes.items);
@@ -83,6 +85,7 @@ export function AdminEditDevice() {
                 audience_id: audienceId || null,
                 responsible_id: responsibleId || null,
                 repair_status: status,
+                note: note.trim() || null,
             });
             await refresh();
             showSuccess('Устройство обновлено');
@@ -188,6 +191,16 @@ export function AdminEditDevice() {
                             <option value="not_in_repair">{deviceRepairStatusLabel('not_in_repair')}</option>
                             <option value="in_repair">{deviceRepairStatusLabel('in_repair')}</option>
                         </select>
+                    </label>
+                    <label className="admin-device-field">
+                        <span className="admin-inline-label">Заметка</span>
+                        <textarea
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            rows={3}
+                            placeholder="Необязательно: особенности устройства для сисадминов"
+                            disabled={saving}
+                        />
                     </label>
                     <div className="admin-device-actions">
                         <Link to={`/devices/${id ?? ''}`} className="btn-ghost" tabIndex={saving ? -1 : 0}>

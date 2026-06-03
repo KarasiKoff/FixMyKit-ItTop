@@ -12,7 +12,7 @@ type DeviceApi = {
     audience?: { id: string; name: string } | null;
     responsible?: { id: string; full_name?: string | null; login: string } | null;
     repair_status: Device['status'];
-    taken_by_sysadmin?: boolean;
+    note?: string | null;
 };
 
 export function mapDevice(item: DeviceApi): Device {
@@ -28,7 +28,7 @@ export function mapDevice(item: DeviceApi): Device {
         responsible: item.responsible?.full_name ?? item.responsible?.login ?? '',
         responsibleId: item.responsible?.id ?? null,
         status: item.repair_status,
-        takenBySysadmin: item.taken_by_sysadmin ?? false,
+        note: item.note ?? null,
     };
 }
 
@@ -145,6 +145,7 @@ export async function createDevice(payload: {
     category_id?: string | null;
     responsible_id?: string | null;
     repair_status: Device['status'];
+    note?: string | null;
 }) {
     return mapDevice(
         await apiRequest<DeviceApi>('/api/devices', {
@@ -178,6 +179,7 @@ export async function updateDevice(
         category_id?: string | null;
         responsible_id?: string | null;
         repair_status?: Device['status'];
+        note?: string | null;
     },
 ) {
     return mapDevice(

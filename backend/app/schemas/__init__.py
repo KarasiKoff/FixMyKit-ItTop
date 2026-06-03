@@ -1,5 +1,5 @@
 from backend.app.schemas.category import Category, CategoryCreate, CategoryUpdate
-from backend.app.schemas.device import Device, DeviceCreate, DeviceDetail, DeviceHistoryResponse, DeviceListResponse, DeviceQrResponse, DeviceUpdate
+from backend.app.schemas.device import Device, DeviceCreate, DeviceHistoryResponse, DeviceListResponse, DeviceQrResponse, DeviceUpdate
 from backend.app.schemas.health import HealthResponse
 from backend.app.schemas.repair_history import RepairHistoryCreate, RepairHistoryResponse
 from backend.app.schemas.repair_request import RepairRequestCreate, RepairRequestResponse, RepairRequestUpdate
@@ -17,7 +17,6 @@ __all__ = [
     "Device",
     "DeviceCreate",
     "DeviceListResponse",
-    "DeviceDetail",
     "DeviceUpdate",
     "DeviceQrResponse",
     "DeviceHistoryResponse",
