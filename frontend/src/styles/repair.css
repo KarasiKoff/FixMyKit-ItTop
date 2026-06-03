@@ -725,8 +725,6 @@
   height: 23px;
   display: block;
   background-color: currentColor;
-  -webkit-mask-image: var(--icon-url);
-  mask-image: var(--icon-url);
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-size: contain;
