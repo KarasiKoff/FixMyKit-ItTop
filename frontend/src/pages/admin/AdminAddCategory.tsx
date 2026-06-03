@@ -34,7 +34,6 @@ function CategoryRowIcon({ id, hasIcon }: { id: string; hasIcon: boolean }) {
     );
 }
 
-/** Пикер иконки для формы создания — высота совпадает с обычным input */
 function NewIconPicker({
     inputRef,
     fileName,
@@ -67,7 +66,6 @@ function NewIconPicker({
     );
 }
 
-/** Пикер иконки для режима редактирования — компактный, ✕ в углу */
 function EditIconPicker({
     categoryId,
     hasIcon,
@@ -106,7 +104,10 @@ function EditIconPicker({
                 <button
                     type="button"
                     className="category-edit-icon-field__remove"
-                    onClick={(e) => { e.stopPropagation(); onRemove(); }}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        onRemove();
+                    }}
                     title="Удалить иконку"
                     aria-label="Удалить иконку"
                 >
@@ -117,7 +118,7 @@ function EditIconPicker({
     );
 }
 
-function SubcategoriesCell({
+function SubcategoriesEditor({
     category,
     isAdmin,
     onReload,
@@ -159,7 +160,7 @@ function SubcategoriesCell({
         setEditActive(sub.is_active);
     }
 
-    async function saveEdit() {
+    async function saveSubEdit() {
         if (!isAdmin || !editingId) return;
         const n = editName.trim();
         if (!n) return;
@@ -195,7 +196,8 @@ function SubcategoriesCell({
     }
 
     return (
-        <div className="subcategory-admin-cell">
+        <div className="category-edit-modal__subcategories">
+            <h4 className="category-edit-modal__section-title">Подкатегории</h4>
             {items.length === 0 ? (
                 <p className="muted-text subcategory-admin-cell__empty">Нет подкатегорий</p>
             ) : (
@@ -235,7 +237,7 @@ function SubcategoriesCell({
                                                 type="button"
                                                 className="btn-icon-accent btn-compact btn-icon"
                                                 disabled={busy}
-                                                onClick={() => void saveEdit()}
+                                                onClick={() => void saveSubEdit()}
                                                 aria-label="Сохранить"
                                                 title="Сохранить"
                                             >
@@ -298,6 +300,158 @@ function SubcategoriesCell({
     );
 }
 
+function CategoryEditModal({
+    category,
+    isAdmin,
+    busy,
+    onBusyChange,
+    onClose,
+    onReload,
+}: {
+    category: CategoryDto;
+    isAdmin: boolean;
+    busy: boolean;
+    onBusyChange: (busy: boolean) => void;
+    onClose: () => void;
+    onReload: () => Promise<void>;
+}) {
+    const { showSuccess, showError } = useToast();
+    const [editName, setEditName] = useState(category.name);
+    const rowIconInputRef = useRef<HTMLInputElement>(null);
+    const [hasIcon, setHasIcon] = useState(category.has_icon);
+
+    useEffect(() => {
+        setEditName(category.name);
+        setHasIcon(category.has_icon);
+    }, [category.id, category.name, category.has_icon]);
+
+    useEffect(() => {
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape' && !busy) {
+                onClose();
+            }
+        };
+        document.addEventListener('keydown', onKeyDown);
+        return () => document.removeEventListener('keydown', onKeyDown);
+    }, [busy, onClose]);
+
+    async function handleSave() {
+        if (!isAdmin) return;
+        const n = editName.trim();
+        if (!n) return;
+        onBusyChange(true);
+        try {
+            await updateCategory(category.id, { name: n });
+            showSuccess('Категория сохранена');
+            await onReload();
+            onClose();
+        } catch (err) {
+            showError(formatApiError(err));
+        } finally {
+            onBusyChange(false);
+        }
+    }
+
+    async function onPickRowIcon(fileList: FileList | null) {
+        if (!isAdmin || !fileList?.[0]) return;
+        onBusyChange(true);
+        try {
+            const updated = await uploadCategoryIcon(category.id, fileList[0]);
+            setHasIcon(updated.has_icon);
+            if (rowIconInputRef.current) rowIconInputRef.current.value = '';
+            showSuccess('Иконка обновлена');
+            await onReload();
+        } catch (err) {
+            showError(formatApiError(err));
+        } finally {
+            onBusyChange(false);
+        }
+    }
+
+    async function onRemoveIcon() {
+        if (!isAdmin) return;
+        if (!window.confirm('Удалить иконку категории?')) return;
+        onBusyChange(true);
+        try {
+            await deleteCategoryIcon(category.id);
+            setHasIcon(false);
+            showSuccess('Иконка удалена');
+            await onReload();
+        } catch (err) {
+            showError(formatApiError(err));
+        } finally {
+            onBusyChange(false);
+        }
+    }
+
+    return (
+        <div
+            className="modal-backdrop"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="category-edit-modal-title"
+            onClick={() => {
+                if (!busy) onClose();
+            }}
+        >
+            <div className="modal-panel category-edit-modal card" onClick={(e) => e.stopPropagation()}>
+                <div className="modal-panel__head">
+                    <h3 id="category-edit-modal-title">Редактирование категории</h3>
+                    <button
+                        type="button"
+                        className="modal-panel__close"
+                        disabled={busy}
+                        onClick={onClose}
+                        aria-label="Закрыть"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <label className="admin-device-field">
+                    <span className="admin-inline-label">Название</span>
+                    <input
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                        disabled={!isAdmin || busy}
+                        autoFocus
+                    />
+                </label>
+
+                {isAdmin ? (
+                    <div className="admin-inline-field category-edit-modal__icon-field">
+                        <span className="admin-inline-label">Иконка</span>
+                        <EditIconPicker
+                            categoryId={category.id}
+                            hasIcon={hasIcon}
+                            inputRef={rowIconInputRef}
+                            onPick={(files) => void onPickRowIcon(files)}
+                            onRemove={() => void onRemoveIcon()}
+                            disabled={busy}
+                        />
+                    </div>
+                ) : null}
+
+                <SubcategoriesEditor category={category} isAdmin={isAdmin} onReload={onReload} />
+
+                <div className="modal-panel__actions">
+                    <button type="button" className="modal-panel__btn-ghost" disabled={busy} onClick={onClose}>
+                        Отмена
+                    </button>
+                    <button
+                        type="button"
+                        className="btn-primary"
+                        disabled={!isAdmin || busy || !editName.trim()}
+                        onClick={() => void handleSave()}
+                    >
+                        {busy ? 'Сохранение…' : 'Сохранить'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export function AdminAddCategory() {
     const { showSuccess, showError } = useToast();
     const { user } = useAuth();
@@ -308,12 +462,10 @@ export function AdminAddCategory() {
     const [newIconFile, setNewIconFile] = useState<File | null>(null);
     const newIconInputRef = useRef<HTMLInputElement>(null);
     const [loading, setLoading] = useState(true);
+    const [modalCategoryId, setModalCategoryId] = useState<string | null>(null);
+    const [modalBusy, setModalBusy] = useState(false);
 
-    const [editingId, setEditingId] = useState<string | null>(null);
-    const [editName, setEditName] = useState('');
-    const rowIconInputRef = useRef<HTMLInputElement>(null);
-
-    const editingRow = editingId ? rows.find((r) => r.id === editingId) : null;
+    const modalCategory = modalCategoryId ? rows.find((r) => r.id === modalCategoryId) ?? null : null;
 
     async function reload() {
         setLoading(true);
@@ -349,61 +501,24 @@ export function AdminAddCategory() {
         }
     }
 
-    function startEdit(row: CategoryDto) {
-        setEditingId(row.id);
-        setEditName(row.name);
+    function openEditModal(row: CategoryDto) {
+        setModalCategoryId(row.id);
     }
 
-    function cancelEdit() {
-        setEditingId(null);
-        if (rowIconInputRef.current) rowIconInputRef.current.value = '';
-    }
-
-    async function saveEdit() {
-        if (!isAdmin || !editingId) return;
-        const n = editName.trim();
-        if (!n) return;
-        try {
-            await updateCategory(editingId, { name: n });
-            setEditingId(null);
-            showSuccess('Сохранено');
-            await reload();
-        } catch (err) {
-            showError(formatApiError(err));
-        }
+    function closeEditModal() {
+        if (modalBusy) return;
+        setModalCategoryId(null);
     }
 
     async function removeRow(row: CategoryDto) {
         if (!isAdmin) return;
-        if (!window.confirm(`Удалить категорию «${row.name}»? У связанных устройств поле категории будет сброшено.`)) return;
+        if (!window.confirm(`Удалить категорию «${row.name}»? У связанных устройств поле категории будет сброшено.`)) {
+            return;
+        }
         try {
             await deleteCategory(row.id);
-            if (editingId === row.id) setEditingId(null);
+            if (modalCategoryId === row.id) setModalCategoryId(null);
             showSuccess('Категория удалена');
-            await reload();
-        } catch (err) {
-            showError(formatApiError(err));
-        }
-    }
-
-    async function onPickRowIcon(fileList: FileList | null) {
-        if (!isAdmin || !editingId || !fileList?.[0]) return;
-        try {
-            await uploadCategoryIcon(editingId, fileList[0]);
-            if (rowIconInputRef.current) rowIconInputRef.current.value = '';
-            showSuccess('Иконка обновлена');
-            await reload();
-        } catch (err) {
-            showError(formatApiError(err));
-        }
-    }
-
-    async function onRemoveIcon() {
-        if (!isAdmin || !editingId) return;
-        if (!window.confirm('Удалить иконку категории?')) return;
-        try {
-            await deleteCategoryIcon(editingId);
-            showSuccess('Иконка удалена');
             await reload();
         } catch (err) {
             showError(formatApiError(err));
@@ -454,106 +569,65 @@ export function AdminAddCategory() {
                 ) : sortedRows.length === 0 ? (
                     <p className="admin-crud-empty muted-text">Категории не добавлены</p>
                 ) : (
-                <div className="table-wrap admin-table-wrap">
-                    <table className="admin-table">
-                        <thead>
-                            <tr>
-                                <th className="table-col-start">Название</th>
-                                <th className="table-col-start">Подкатегории</th>
-                                <th className="table-col-center table-col--narrow">Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <div className="table-wrap admin-table-wrap">
+                        <table className="admin-table">
+                            <thead>
+                                <tr>
+                                    <th className="table-col-start">Название</th>
+                                    <th className="table-col-center table-col--narrow">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                                 {sortedRows.map((row) => (
-                                    <tr key={row.id} className={editingId === row.id ? 'admin-table-row--editing' : undefined}>
-                                        <td className="table-col-start admin-table-cell--input">
-                                            {editingId === row.id ? (
-                                                <input
-                                                    value={editName}
-                                                    onChange={(e) => setEditName(e.target.value)}
-                                                    disabled={!isAdmin}
-                                                    autoFocus
-                                                />
-                                            ) : (
-                                                <span className="category-name-cell">
-                                                    {row.has_icon && <CategoryRowIcon id={row.id} hasIcon={row.has_icon} />}
-                                                    {row.name}
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="table-col-start admin-table-cell--subcategories">
-                                            <SubcategoriesCell
-                                                category={row}
-                                                isAdmin={isAdmin}
-                                                onReload={reload}
-                                            />
+                                    <tr key={row.id}>
+                                        <td className="table-col-start">
+                                            <span className="category-name-cell">
+                                                {row.has_icon && <CategoryRowIcon id={row.id} hasIcon={row.has_icon} />}
+                                                {row.name}
+                                            </span>
                                         </td>
                                         <td className="table-col-center table-col--narrow">
                                             <div className="admin-row-actions">
-                                                {editingId === row.id ? (
-                                                    <>
-                                                        <button
-                                                            type="button"
-                                                            className="btn-icon-accent btn-compact btn-icon"
-                                                            disabled={!isAdmin}
-                                                            onClick={() => void saveEdit()}
-                                                            aria-label="Сохранить"
-                                                            title="Сохранить"
-                                                        >
-                                                            <IconCheck />
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className="btn-danger btn-compact btn-icon"
-                                                            onClick={cancelEdit}
-                                                            aria-label="Отмена"
-                                                            title="Отмена"
-                                                        >
-                                                            <IconClose />
-                                                        </button>
-                                                        {isAdmin ? (
-                                                            <EditIconPicker
-                                                                categoryId={editingId}
-                                                                hasIcon={editingRow?.has_icon ?? false}
-                                                                inputRef={rowIconInputRef}
-                                                                onPick={(files) => void onPickRowIcon(files)}
-                                                                onRemove={() => void onRemoveIcon()}
-                                                            />
-                                                        ) : null}
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <button
-                                                            type="button"
-                                                            className="btn-icon-accent btn-compact btn-icon"
-                                                            disabled={!isAdmin}
-                                                            onClick={() => startEdit(row)}
-                                                            aria-label="Изменить"
-                                                            title="Изменить"
-                                                        >
-                                                            <IconEdit />
-                                                        </button>
-                                                        <button
-                                                            type="button"
-                                                            className="btn-danger btn-compact btn-icon"
-                                                            disabled={!isAdmin}
-                                                            onClick={() => void removeRow(row)}
-                                                            aria-label="Удалить"
-                                                            title="Удалить"
-                                                        >
-                                                            <IconTrash />
-                                                        </button>
-                                                    </>
-                                                )}
+                                                <button
+                                                    type="button"
+                                                    className="btn-icon-accent btn-compact btn-icon"
+                                                    disabled={!isAdmin}
+                                                    onClick={() => openEditModal(row)}
+                                                    aria-label="Изменить"
+                                                    title="Изменить"
+                                                >
+                                                    <IconEdit />
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="btn-danger btn-compact btn-icon"
+                                                    disabled={!isAdmin}
+                                                    onClick={() => void removeRow(row)}
+                                                    aria-label="Удалить"
+                                                    title="Удалить"
+                                                >
+                                                    <IconTrash />
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>
                                 ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </section>
+
+            {modalCategory ? (
+                <CategoryEditModal
+                    category={modalCategory}
+                    isAdmin={isAdmin}
+                    busy={modalBusy}
+                    onBusyChange={setModalBusy}
+                    onClose={closeEditModal}
+                    onReload={reload}
+                />
+            ) : null}
         </main>
     );
 }

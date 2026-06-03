@@ -450,6 +450,42 @@
 }
 
 /* ╨Ш╨║╨╛╨╜╨║╨░ ╨▓ ╨║╨╛╨╗╨╛╨╜╨║╨╡ "╨Э╨░╨╖╨▓╨░╨╜╨╕╨╡" ╤В╨░╨▒╨╗╨╕╤Ж╤Л ╨║╨░╤В╨╡╨│╨╛╤А╨╕╨╣ */
+.modal-panel.category-edit-modal {
+  width: min(420px, calc(100vw - 32px));
+  max-width: 420px;
+}
+
+.category-edit-modal {
+  display: grid;
+  gap: 16px;
+}
+
+.category-edit-modal__icon-field {
+  margin: 0;
+}
+
+.category-edit-modal__icon-field .category-edit-icon-field {
+  width: fit-content;
+  max-width: 100%;
+}
+
+.category-edit-modal .category-edit-icon-field--has-icon .category-edit-icon-field__label img {
+  filter: brightness(0) invert(1);
+}
+
+.category-edit-modal__section-title {
+  margin: 0 0 8px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.category-edit-modal__subcategories {
+  display: grid;
+  gap: 10px;
+  padding-top: 4px;
+  border-top: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.08));
+}
+
 .subcategory-admin-cell {
   display: grid;
   gap: 8px;
