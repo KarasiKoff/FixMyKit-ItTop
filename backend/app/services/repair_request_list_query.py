@@ -18,8 +18,9 @@ SUGGEST_LIMIT = 10
 _STATUS_ORDER = case(
     (RepairRequestModel.status == RequestStatus.OPEN, 0),
     (RepairRequestModel.status == RequestStatus.IN_PROGRESS, 1),
-    (RepairRequestModel.status == RequestStatus.CLOSED, 2),
-    else_=3,
+    (RepairRequestModel.status == RequestStatus.NEEDS_INFO, 2),
+    (RepairRequestModel.status == RequestStatus.CLOSED, 3),
+    else_=4,
 )
 
 

@@ -25,12 +25,15 @@ export function workflowFromRequest(
     if (request.status === 'new') {
         return 'open';
     }
-    const label = (request.trackerStatusLabel ?? '').trim().toLowerCase();
-    if (label === 'требуется информация') {
+    if (request.status === 'needs_info') {
         return 'needs_info';
     }
     if (request.status === 'in_progress') {
         return 'in_progress';
+    }
+    const label = (request.trackerStatusLabel ?? '').trim().toLowerCase();
+    if (label === 'требуется информация') {
+        return 'needs_info';
     }
     return 'open';
 }

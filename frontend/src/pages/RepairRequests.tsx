@@ -27,7 +27,7 @@ import { useRepairRequestSse } from '../hooks/useRepairRequestSse';
 type RequestFilters = {
     device: string;
     applicant: string;
-    status: '' | 'open' | 'in_progress' | 'closed';
+    status: '' | 'open' | 'in_progress' | 'needs_info' | 'closed';
 };
 
 const DEFAULT_SORT: RepairRequestSortBy = 'created_at';
@@ -200,6 +200,7 @@ export function RepairRequests() {
                             <option value="">Любой статус</option>
                             <option value="open">{repairRequestStatusLabel('new')}</option>
                             <option value="in_progress">{repairRequestStatusLabel('in_progress')}</option>
+                            <option value="needs_info">{repairRequestStatusLabel('needs_info')}</option>
                             <option value="closed">{repairRequestStatusLabel('closed')}</option>
                         </select>
                     </div>

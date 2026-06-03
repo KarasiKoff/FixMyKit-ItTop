@@ -63,7 +63,9 @@ def build_admin_stats(db: Session, date_from: date | None, date_to: date | None)
     open_count = int(open_q.scalar() or 0)
 
     in_progress_q = db.query(func.count(RepairRequest.id)).filter(
-        RepairRequest.status == RequestStatus.IN_PROGRESS,
+        RepairRequest.status.in_(
+            (RequestStatus.IN_PROGRESS, RequestStatus.NEEDS_INFO),
+        ),
     )
     if created_filter is not None:
         in_progress_q = in_progress_q.filter(created_filter)
