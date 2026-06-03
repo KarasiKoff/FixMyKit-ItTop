@@ -300,6 +300,9 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 |------------|----------|
 | `APP_NAME` | Название API в OpenAPI |
 | `API_DOCS_ENABLED` | Swagger/ReDoc (`true` в dev, `false` в prod) |
+| `LOG_LEVEL` | Уровень логов (`INFO`, `WARNING`, `ERROR`…) |
+| `LOG_DIR` | Каталог файлов `fixmykit.log` / `fixmykit-error.log` |
+| `LOG_JSON` | JSON-строки в логах (`true` рекомендуется) |
 | `JWT_SECRET_KEY` | Секрет подписи JWT |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Время жизни токена |
 | `ADMIN_LOGIN` / `ADMIN_PASSWORD` | Bootstrap admin при старте |
@@ -347,11 +350,22 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 
 Пример тела для publish/unpublish: [`deploy/yandex-tracker-webhook-publish-unpublish.body.example.json`](deploy/yandex-tracker-webhook-publish-unpublish.body.example.json).
 
-**Логи backend на проде** (имя контейнера из `docker-compose.prod.yml`):
+### Логирование и трассировка
+
+- **Консоль** (stdout Docker): все события от `LOG_LEVEL`.
+- **Файлы** в `LOG_DIR`: `fixmykit.log` (INFO и выше), `fixmykit-error.log` (только ERROR/CRITICAL), ротация по `LOG_MAX_BYTES` / `LOG_BACKUP_COUNT`.
+- Формат: JSON-строки с полями `ts`, `level`, `logger`, `message`, `request_id` и контекстом события.
+- В каждый HTTP-запрос добавляется `X-Request-ID` (сквозная трассировка).
+- Логируются: HTTP, PostgreSQL (ошибки пула), вход/валидация JWT, логин, вызовы Yandex Tracker API.
+
+**Просмотр в UI:** Админка → **Логи** (`/admin/logs`, только роль `admin`), API `GET /api/admin/logs`.
+
+**Docker на проде:**
 
 ```bash
 docker logs -f fixmykit-backend-prod
-docker logs --tail 200 fixmykit-backend-prod
+docker logs --tail 200 fixmykit-backend-prod 2>&1 | grep tracker_webhook
+# файлы на volume fixmykit-logs-prod (в контейнере /data/logs)
 ```
 
 ### Live-обновления (SSE)
@@ -382,6 +396,7 @@ GET /api/events/stream?access_token=<JWT>
 | Public | `/api/public` | Устройства и лимиты для гостей |
 | Users | `/api/users` | Управление пользователями |
 | Admin stats | `/api/admin/stats` | Статистика дашборда |
+| Admin logs | `/api/admin/logs` | Хвост файлов логов (только admin) |
 | Events | `/api/events/stream` | SSE |
 | Webhooks | `/api/webhooks` | Входящие вызовы Трекера |
 

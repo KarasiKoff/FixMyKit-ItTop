@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
@@ -9,13 +11,19 @@ from backend.app.schemas.auth import LoginRequest, SelfPasswordUpdate, Token
 from backend.app.schemas.user import UserResponse
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+logger = logging.getLogger("fixmykit.auth")
 
 
 def authenticate_user(login: str, password: str, db: Session) -> Token:
     user = db.query(User).filter(User.login == login, User.is_active.is_(True)).first()
     if user is None or not verify_password(password, user.password_hash):
+        logger.warning("auth_login_failed", extra={"login": login.strip()[:64]})
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect login or password")
     token = create_access_token(str(user.id))
+    logger.info(
+        "auth_login_success",
+        extra={"user_id": str(user.id), "login": user.login, "role": user.role.value},
+    )
     return Token(access_token=token)
 
 

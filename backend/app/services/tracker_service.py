@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import logging
 import mimetypes
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -13,6 +15,8 @@ from urllib.parse import quote as urlquote
 from backend.app.core.config import settings
 from backend.app.models.repair_request import RepairRequest
 from backend.app.models.user import User
+
+logger = logging.getLogger("fixmykit.tracker")
 
 
 class TrackerUnavailableError(Exception):
@@ -100,15 +104,50 @@ def _request_json(
         headers=_tracker_headers(token, org_id, json_body=data is not None),
     )
     timeout = settings.server.tracker_timeout_seconds
+    started = time.perf_counter()
+    safe_url = url.split("?", 1)[0]
     try:
         with request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read().decode("utf-8"))
+            body = json.loads(resp.read().decode("utf-8"))
+            logger.info(
+                "tracker_api_ok",
+                extra={
+                    "method": method,
+                    "url": safe_url,
+                    "status": getattr(resp, "status", 200),
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                },
+            )
+            return body
     except error.HTTPError as exc:
         text = exc.read().decode("utf-8", errors="replace")
+        logger.error(
+            "tracker_api_http_error",
+            extra={
+                "method": method,
+                "url": safe_url,
+                "status": exc.code,
+                "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                "body_preview": text[:300],
+            },
+        )
         raise TrackerUnavailableError(f"tracker_http_{exc.code}: {text}") from exc
     except error.URLError as exc:
+        logger.error(
+            "tracker_api_network_error",
+            extra={
+                "method": method,
+                "url": safe_url,
+                "reason": str(exc.reason),
+                "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+            },
+        )
         raise TrackerUnavailableError(f"tracker_network: {exc.reason}") from exc
     except json.JSONDecodeError as exc:
+        logger.error(
+            "tracker_api_invalid_json",
+            extra={"method": method, "url": safe_url},
+        )
         raise TrackerUnavailableError("tracker_invalid_json") from exc
 
 
@@ -127,14 +166,40 @@ def _request_bytes(
         headers.update(headers_extra)
     req = request.Request(url, data=data, method=method, headers=headers)
     timeout = timeout_seconds if timeout_seconds is not None else settings.server.tracker_timeout_seconds
+    started = time.perf_counter()
+    safe_url = url.split("?", 1)[0]
     try:
         with request.urlopen(req, timeout=timeout) as resp:
             content_type = resp.headers.get("Content-Type")
-            return resp.read(), content_type
+            data = resp.read()
+            logger.info(
+                "tracker_api_bytes_ok",
+                extra={
+                    "method": method,
+                    "url": safe_url,
+                    "status": getattr(resp, "status", 200),
+                    "bytes": len(data),
+                    "duration_ms": round((time.perf_counter() - started) * 1000, 2),
+                },
+            )
+            return data, content_type
     except error.HTTPError as exc:
         text = exc.read().decode("utf-8", errors="replace")
+        logger.error(
+            "tracker_api_bytes_http_error",
+            extra={
+                "method": method,
+                "url": safe_url,
+                "status": exc.code,
+                "body_preview": text[:300],
+            },
+        )
         raise TrackerUnavailableError(f"tracker_http_{exc.code}: {text}") from exc
     except error.URLError as exc:
+        logger.error(
+            "tracker_api_bytes_network_error",
+            extra={"method": method, "url": safe_url, "reason": str(exc.reason)},
+        )
         raise TrackerUnavailableError(f"tracker_network: {exc.reason}") from exc
 
 

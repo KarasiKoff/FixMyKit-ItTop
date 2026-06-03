@@ -50,6 +50,15 @@ const hubItems = [
         iconClass: 'admin-hub-card-icon--device',
         Icon: IconHubDevice,
     },
+    {
+        to: '/admin/logs',
+        title: 'Логи',
+        description: 'Журнал событий и ошибок сервера',
+        adminOnly: true,
+        titleOnly: false,
+        iconClass: 'admin-hub-card-icon--users',
+        Icon: IconHubUsers,
+    },
 ] as const;
 
 function HubIcon({ Icon, iconClass }: { Icon: React.ComponentType<SVGProps<SVGSVGElement>>; iconClass: string }) {

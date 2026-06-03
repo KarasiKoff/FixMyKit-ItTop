@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Generator
 from uuid import UUID
 
@@ -10,6 +11,8 @@ from backend.app.core.database import SessionLocal
 from backend.app.core.security import decode_access_token
 from backend.app.models.enums import UserRole
 from backend.app.models.user import User
+
+logger = logging.getLogger("fixmykit.auth")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
 
@@ -25,22 +28,27 @@ def get_db() -> Generator[Session, None, None]:
 def _user_from_access_token(token: str, db: Session) -> User:
     try:
         payload = decode_access_token(token)
-    except InvalidTokenError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token")
+    except InvalidTokenError as exc:
+        logger.warning("auth_token_invalid", extra={"reason": type(exc).__name__})
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token") from exc
 
     user_id = payload.get("sub")
     if not user_id:
+        logger.warning("auth_token_missing_sub")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token")
 
     try:
         user_uuid = UUID(user_id)
     except ValueError:
+        logger.warning("auth_token_invalid_sub", extra={"sub": str(user_id)[:36]})
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token")
 
     user = db.query(User).filter(User.id == user_uuid, User.is_active.is_(True)).first()
     if user is None:
+        logger.warning("auth_user_not_found_or_inactive", extra={"user_id": str(user_uuid)})
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token")
 
+    logger.debug("auth_token_ok", extra={"user_id": str(user.id), "login": user.login})
     return user
 
 
