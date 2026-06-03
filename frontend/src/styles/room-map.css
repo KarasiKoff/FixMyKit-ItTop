@@ -464,6 +464,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
   z-index: 1;
+  isolation: isolate;
 }
 
 .device-chip--map-square {
@@ -545,6 +546,7 @@
 
 .device-chip--in-repair {
   border-color: var(--danger);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.35), 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .device-chip--highlighted {

@@ -235,3 +235,12 @@
   gap: 8px;
 }
 
+.category-name-cell__icon {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: brightness(0) invert(1);
+  opacity: 0.85;
+}
+

@@ -178,6 +178,11 @@ export function AdminAddRoom() {
                     </section>
                 ) : null}
 
+                {loading ? (
+                    <p className="admin-crud-empty muted-text">Загрузка…</p>
+                ) : sortedRows.length === 0 ? (
+                    <p className="admin-crud-empty muted-text">Кабинеты не добавлены</p>
+                ) : (
                 <div className="table-wrap admin-table-wrap">
                     <table className="admin-table">
                         <thead>
@@ -195,16 +200,7 @@ export function AdminAddRoom() {
                             </tr>
                         </thead>
                         <tbody>
-                            {loading ? (
-                                <tr className="admin-table-placeholder-row">
-                                    <td colSpan={3}>Загрузка…</td>
-                                </tr>
-                            ) : sortedRows.length === 0 ? (
-                                <tr className="admin-table-placeholder-row">
-                                    <td colSpan={3} />
-                                </tr>
-                            ) : (
-                                sortedRows.map((row) => (
+                                {sortedRows.map((row) => (
                                     <tr key={row.id} className={editingId === row.id ? 'admin-table-row--editing' : undefined}>
                                         <td className="table-col-center">
                                             <input
@@ -290,11 +286,11 @@ export function AdminAddRoom() {
                                             </div>
                                         </td>
                                     </tr>
-                                ))
-                            )}
+                                ))}
                         </tbody>
                     </table>
                 </div>
+                )}
             </section>
 
             <QrSheetSettingsModal
