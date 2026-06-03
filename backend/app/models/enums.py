@@ -14,6 +14,7 @@ class RepairStatus(str, Enum):
 class RequestStatus(str, Enum):
     OPEN = "open"
     IN_PROGRESS = "in_progress"
+    NEEDS_INFO = "needs_info"
     CLOSED = "closed"
 
 

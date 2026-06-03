@@ -27,7 +27,7 @@ WORKFLOW_TRACKER_LABEL: dict[RepairWorkflowKind, str] = {
 WORKFLOW_REQUEST_STATUS: dict[RepairWorkflowKind, RequestStatus] = {
     "open": RequestStatus.OPEN,
     "in_progress": RequestStatus.IN_PROGRESS,
-    "needs_info": RequestStatus.IN_PROGRESS,
+    "needs_info": RequestStatus.NEEDS_INFO,
     "closed": RequestStatus.CLOSED,
 }
 

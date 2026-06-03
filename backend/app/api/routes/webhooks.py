@@ -54,16 +54,25 @@ WEBHOOK_ALLOWED: dict[RequestStatus, set[RequestStatus]] = {
     RequestStatus.OPEN: {
         RequestStatus.OPEN,
         RequestStatus.IN_PROGRESS,
+        RequestStatus.NEEDS_INFO,
         RequestStatus.CLOSED,
     },
     RequestStatus.IN_PROGRESS: {
         RequestStatus.OPEN,
         RequestStatus.IN_PROGRESS,
+        RequestStatus.NEEDS_INFO,
+        RequestStatus.CLOSED,
+    },
+    RequestStatus.NEEDS_INFO: {
+        RequestStatus.OPEN,
+        RequestStatus.IN_PROGRESS,
+        RequestStatus.NEEDS_INFO,
         RequestStatus.CLOSED,
     },
     RequestStatus.CLOSED: {
         RequestStatus.OPEN,
         RequestStatus.IN_PROGRESS,
+        RequestStatus.NEEDS_INFO,
         RequestStatus.CLOSED,
     },
 }
@@ -71,7 +80,7 @@ WEBHOOK_ALLOWED: dict[RequestStatus, set[RequestStatus]] = {
 TRACKER_STATUS_ALIASES: dict[str, RequestStatus] = {
     "Открыт": RequestStatus.OPEN,
     "В работе": RequestStatus.IN_PROGRESS,
-    "Требуется информация": RequestStatus.IN_PROGRESS,
+    "Требуется информация": RequestStatus.NEEDS_INFO,
     "Закрыт": RequestStatus.CLOSED,
 }
 
@@ -273,6 +282,14 @@ def yandex_tracker_close_repair_request(
         )
 
     raw_status = (payload.tracker_status or "").strip()
+    logger.info(
+        "tracker_webhook_status issue=%s id=%s raw_status=%r db_status=%s db_label=%r",
+        key or None,
+        iid or None,
+        raw_status or None,
+        repair_request.status.value,
+        repair_request.tracker_status_label,
+    )
     if not raw_status:
         return YandexTrackerWebhookResponse(
             status="noop",
@@ -284,6 +301,11 @@ def yandex_tracker_close_repair_request(
 
     mapped = _map_tracker_status_to_request(raw_status)
     if mapped is None:
+        logger.warning(
+            "tracker_webhook_unmapped_status issue=%s raw=%r",
+            key or iid,
+            raw_status,
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "unmapped_tracker_status", "value": raw_status},
@@ -291,10 +313,42 @@ def yandex_tracker_close_repair_request(
     target: RequestStatus = mapped
 
     if repair_request.status == target:
+        current_label = (repair_request.tracker_status_label or "").strip()
+        if current_label == raw_status:
+            logger.info(
+                "tracker_webhook_noop issue=%s status=%s label=%r",
+                key or iid,
+                repair_request.status.value,
+                raw_status,
+            )
+            return YandexTrackerWebhookResponse(
+                status="noop",
+                repair_request_id=str(repair_request.id),
+                detail="already_in_target_status",
+                request_status=repair_request.status.value,
+                closed_by_login=None,
+            )
+        repair_request.tracker_status_label = raw_status
+        add_repair_history(
+            db,
+            device_id=repair_request.device_id,
+            repair_request_id=repair_request.id,
+            old_status=None,
+            new_status=None,
+            note=f"Статус из Трекера: {raw_status}",
+        )
+        db.commit()
+        notify_repair_request_updated(repair_request, source="tracker_webhook")
+        logger.info(
+            "tracker_webhook_label_updated issue=%s db_status=%s label=%r",
+            key or iid,
+            repair_request.status.value,
+            raw_status,
+        )
         return YandexTrackerWebhookResponse(
-            status="noop",
+            status="updated",
             repair_request_id=str(repair_request.id),
-            detail="already_in_target_status",
+            detail="tracker_status_label_updated",
             request_status=repair_request.status.value,
             closed_by_login=None,
         )

@@ -9,6 +9,7 @@ import { PublicRepairSummary, PublicRepairRequestItem } from '../types/repairReq
 function statusLabel(status: string): string {
     if (status === 'open') return 'Новая';
     if (status === 'in_progress') return 'В работе';
+    if (status === 'needs_info') return 'Требуется информация';
     if (status === 'closed') return 'Закрыта';
     return status;
 }
@@ -16,6 +17,7 @@ function statusLabel(status: string): string {
 function statusPillClass(status: string): string {
     if (status === 'open') return 'status-pill status-pill--request-new';
     if (status === 'in_progress') return 'status-pill status-pill--request-progress';
+    if (status === 'needs_info') return 'status-pill status-pill--request-needs-info';
     if (status === 'closed') return 'status-pill status-pill--request-closed';
     return 'status-pill';
 }

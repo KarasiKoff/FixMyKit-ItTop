@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 REQUEST_STATUS_TRACKER_LABEL: dict[RequestStatus, str] = {
     RequestStatus.OPEN: "Открыт",
     RequestStatus.IN_PROGRESS: "В работе",
+    RequestStatus.NEEDS_INFO: "Требуется информация",
     RequestStatus.CLOSED: "Закрыт",
 }
 

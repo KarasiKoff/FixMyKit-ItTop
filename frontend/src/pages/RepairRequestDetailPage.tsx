@@ -21,7 +21,9 @@ import { fetchUserListItemById } from '../api/users';
 import { RoomMapModal } from '../components/RoomMapModal';
 import { IconSync } from '../components/admin/AdminDashboardIcons';
 import { useRepairRequestSse } from '../hooks/useRepairRequestSse';
-function apiStatusFromUi(s: RepairRequestDetail['status']): 'open' | 'in_progress' | 'closed' {
+function apiStatusFromUi(
+    s: RepairRequestDetail['status'],
+): 'open' | 'in_progress' | 'needs_info' | 'closed' {
     if (s === 'new') {
         return 'open';
     }

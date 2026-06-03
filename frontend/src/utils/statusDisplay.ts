@@ -7,24 +7,13 @@ export function repairRequestStatusLabel(
     status: RepairRequest['status'],
     trackerStatusLabel?: string | null,
 ): string {
-    if (trackerStatusLabel?.trim()) {
-        return workflowStatusLabel(workflowFromRequest({ status, trackerStatusLabel }));
-    }
-    const map: Record<RepairRequest['status'], string> = {
-        new: 'Открыто',
-        in_progress: 'В работе',
-        closed: 'Закрыто',
-    };
-    return map[status] ?? status;
+    return workflowStatusLabel(workflowFromRequest({ status, trackerStatusLabel }));
 }
 
 export function repairRequestStatusPillClassForRequest(
     request: Pick<RepairRequest, 'status' | 'trackerStatusLabel'>,
 ): string {
-    if (request.trackerStatusLabel?.trim()) {
-        return workflowPillClass(workflowFromRequest(request));
-    }
-    return repairRequestStatusPillClass(request.status);
+    return workflowPillClass(workflowFromRequest(request));
 }
 
 /**
@@ -38,7 +27,10 @@ export function repairRequestWorkflowBubble(
     if (request.status === 'closed') {
         return { label: 'Решён', className: 'status-pill status-pill--request-resolved' };
     }
-    if (request.status === 'in_progress' && request.takenBySysadmin) {
+    if (
+        (request.status === 'in_progress' || request.status === 'needs_info') &&
+        request.takenBySysadmin
+    ) {
         return { label: 'Забрал сисадмин', className: 'status-pill status-pill--sysadmin-taken' };
     }
     return null;
@@ -50,6 +42,8 @@ export function repairRequestStatusPillClass(status: RepairRequest['status']): s
             return 'status-pill status-pill--request-new';
         case 'in_progress':
             return 'status-pill status-pill--request-progress';
+        case 'needs_info':
+            return 'status-pill status-pill--request-needs-info';
         case 'closed':
             return 'status-pill status-pill--request-closed';
         default:

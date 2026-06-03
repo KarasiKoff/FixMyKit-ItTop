@@ -347,7 +347,12 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 
 Пример тела для publish/unpublish: [`deploy/yandex-tracker-webhook-publish-unpublish.body.example.json`](deploy/yandex-tracker-webhook-publish-unpublish.body.example.json).
 
-Маппинг статусов Трекера: «Открыт» → `open`, «В работе» / «Требуется информация» → `in_progress`, «Закрыт» → `closed`.
+**Логи backend на проде** (имя контейнера из `docker-compose.prod.yml`):
+
+```bash
+docker logs -f fixmykit-backend-prod
+docker logs --tail 200 fixmykit-backend-prod
+```
 
 ### Live-обновления (SSE)
 

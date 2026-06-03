@@ -14,7 +14,7 @@ type RepairRequestApi = {
     audience_id?: string | null;
     applicant_name?: string | null;
     description: string;
-    status: 'open' | 'in_progress' | 'closed';
+    status: 'open' | 'in_progress' | 'needs_info' | 'closed';
     is_published: boolean;
     taken_by_sysadmin_at?: string | null;
     created_at: string;
@@ -194,6 +194,7 @@ export async function createRepairRequest(payload: CreateRepairRequestPayload) {
     const statusMap: Record<string, RepairRequestApi['status']> = {
         open: 'open',
         in_progress: 'in_progress',
+        needs_info: 'needs_info',
         closed: 'closed',
     };
     const st = statusMap[pub.status] ?? 'open';
@@ -222,7 +223,7 @@ export async function createRepairRequest(payload: CreateRepairRequestPayload) {
 export type RepairRequestListParams = {
     device?: string;
     applicant?: string;
-    status?: 'open' | 'in_progress' | 'closed';
+    status?: 'open' | 'in_progress' | 'needs_info' | 'closed';
     sort_by?: string;
     sort_dir?: 'asc' | 'desc';
     limit?: number;
@@ -266,7 +267,11 @@ export async function fetchRepairRequest(id: string) {
     return mapDetail(await apiRequest<RepairRequestApi>(`/api/repair-requests/${id}`));
 }
 
-export async function patchRepairRequestStatus(id: string, status: 'open' | 'in_progress' | 'closed', resolutionNote?: string | null) {
+export async function patchRepairRequestStatus(
+    id: string,
+    status: 'open' | 'in_progress' | 'needs_info' | 'closed',
+    resolutionNote?: string | null,
+) {
     const body: Record<string, unknown> = { status };
     if (resolutionNote !== undefined && resolutionNote !== null) {
         body.resolution_note = resolutionNote;
@@ -411,7 +416,7 @@ export async function fetchPublicAudienceRepairSummary(audienceId: string): Prom
             ? {
                   id: data.active_request.id,
                   description: data.active_request.description,
-                  status: data.active_request.status as 'open' | 'in_progress' | 'closed',
+                  status: data.active_request.status as 'open' | 'in_progress' | 'needs_info' | 'closed',
                   createdAt: data.active_request.created_at,
                   closedAt: data.active_request.closed_at,
                   resolutionNote: data.active_request.resolution_note,
@@ -422,7 +427,7 @@ export async function fetchPublicAudienceRepairSummary(audienceId: string): Prom
         history: data.history.map((h) => ({
             id: h.id,
             description: h.description,
-            status: h.status as 'open' | 'in_progress' | 'closed',
+            status: h.status as 'open' | 'in_progress' | 'needs_info' | 'closed',
             createdAt: h.created_at,
             closedAt: h.closed_at,
             resolutionNote: h.resolution_note,
@@ -451,7 +456,7 @@ export async function fetchPublicRepairSummary(deviceId: string): Promise<Public
             ? {
                   id: data.active_request.id,
                   description: data.active_request.description,
-                  status: data.active_request.status as 'open' | 'in_progress' | 'closed',
+                  status: data.active_request.status as 'open' | 'in_progress' | 'needs_info' | 'closed',
                   createdAt: data.active_request.created_at,
                   closedAt: data.active_request.closed_at,
                   resolutionNote: data.active_request.resolution_note,
@@ -462,7 +467,7 @@ export async function fetchPublicRepairSummary(deviceId: string): Promise<Public
         history: data.history.map((h) => ({
             id: h.id,
             description: h.description,
-            status: h.status as 'open' | 'in_progress' | 'closed',
+            status: h.status as 'open' | 'in_progress' | 'needs_info' | 'closed',
             createdAt: h.created_at,
             closedAt: h.closed_at,
             resolutionNote: h.resolution_note,

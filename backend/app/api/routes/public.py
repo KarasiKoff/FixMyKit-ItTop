@@ -36,7 +36,11 @@ def _summarize_public_repair_requests(
     history: list[PublicRepairRequestItem] = []
 
     for rr in requests:
-        if rr.status in (RequestStatus.OPEN, RequestStatus.IN_PROGRESS):
+        if rr.status in (
+            RequestStatus.OPEN,
+            RequestStatus.IN_PROGRESS,
+            RequestStatus.NEEDS_INFO,
+        ):
             if rr.is_published:
                 active_request = PublicRepairRequestItem(
                     id=rr.id,

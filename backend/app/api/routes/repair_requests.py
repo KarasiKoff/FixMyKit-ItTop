@@ -84,10 +84,28 @@ _REPAIR_REQUEST_SORT_FIELDS: set[str] = {
 }
 _REPAIR_REQUEST_SUGGEST_FIELDS: set[str] = {"device", "applicant"}
 
-ACTIVE_STATUSES = (RequestStatus.OPEN, RequestStatus.IN_PROGRESS)
+ACTIVE_STATUSES = (
+    RequestStatus.OPEN,
+    RequestStatus.IN_PROGRESS,
+    RequestStatus.NEEDS_INFO,
+)
 ALLOWED_STATUS_TRANSITIONS = {
-    RequestStatus.OPEN: {RequestStatus.OPEN, RequestStatus.IN_PROGRESS, RequestStatus.CLOSED},
-    RequestStatus.IN_PROGRESS: {RequestStatus.IN_PROGRESS, RequestStatus.CLOSED},
+    RequestStatus.OPEN: {
+        RequestStatus.OPEN,
+        RequestStatus.IN_PROGRESS,
+        RequestStatus.NEEDS_INFO,
+        RequestStatus.CLOSED,
+    },
+    RequestStatus.IN_PROGRESS: {
+        RequestStatus.IN_PROGRESS,
+        RequestStatus.NEEDS_INFO,
+        RequestStatus.CLOSED,
+    },
+    RequestStatus.NEEDS_INFO: {
+        RequestStatus.NEEDS_INFO,
+        RequestStatus.IN_PROGRESS,
+        RequestStatus.CLOSED,
+    },
     RequestStatus.CLOSED: {RequestStatus.CLOSED},
 }
 

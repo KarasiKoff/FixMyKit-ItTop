@@ -12,7 +12,11 @@ from backend.app.models.device import Device
 from backend.app.models.enums import RequestStatus
 from backend.app.models.repair_request import RepairRequest
 
-ACTIVE_STATUSES = (RequestStatus.OPEN, RequestStatus.IN_PROGRESS)
+ACTIVE_STATUSES = (
+    RequestStatus.OPEN,
+    RequestStatus.IN_PROGRESS,
+    RequestStatus.NEEDS_INFO,
+)
 
 
 def parse_repair_target(
