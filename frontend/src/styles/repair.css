@@ -1266,6 +1266,24 @@
   color: var(--accent);
 }
 
+.repair-form-target-value {
+  display: block;
+  width: 100%;
+  max-width: min(480px, 100%);
+  padding: var(--control-padding-y) var(--control-padding-x);
+  border: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
+  border-radius: 11px;
+  font-family: inherit;
+  font-size: var(--control-font);
+  line-height: 1.4;
+  background: color-mix(in srgb, var(--bg-card) 88%, var(--text-muted) 12%);
+  color: var(--text-muted);
+  box-sizing: border-box;
+  cursor: default;
+  user-select: text;
+  opacity: 0.92;
+}
+
 .requests-toolbar {
   margin-bottom: 16px;
 }

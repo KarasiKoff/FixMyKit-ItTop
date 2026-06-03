@@ -5,6 +5,8 @@ import { fetchRepairRequest, isRepairRequestSynced, publishRepairRequest, syncRe
 import { RepairAttachmentsModal } from '../components/RepairAttachmentsModal';
 import { RepairRequestComments } from '../components/RepairRequestComments';
 import { RepairRequestStatusPanel } from '../components/RepairRequestStatusPanel';
+import { FormSubmitOverlay } from '../components/ui/FormSubmitOverlay';
+import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { Device } from '../types/device';
 import { RepairRequestDetail } from '../types/repairRequest';
 import { useToast } from '../context/ToastContext';
@@ -181,7 +183,7 @@ export function RepairRequestDetailPage() {
                         </button>
                     </div>
                 </div>
-                <p>Загрузка…</p>
+                <LoadingPanel title="Загружаем заявку…" />
             </main>
         );
     }
@@ -229,6 +231,11 @@ export function RepairRequestDetailPage() {
 
     return (
         <main className="page page--wide page--centered">
+            <FormSubmitOverlay
+                open={syncing}
+                title="Синхронизация с Трекером…"
+                detail="Создаём или обновляем задачу и загружаем вложения"
+            />
             <div className="admin-page-head admin-page-head--edges">
                 <button type="button" className="admin-back-link" onClick={() => navigate('/requests')}>
                     ← К заявкам

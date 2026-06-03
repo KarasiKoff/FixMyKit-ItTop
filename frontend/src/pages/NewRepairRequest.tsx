@@ -1,8 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AttachmentUploader, draftsToFiles, type AttachmentDraft } from '../components/AttachmentUploader';
 import { CabinetRepairForm } from '../components/CabinetRepairForm';
 import { RepairRequestForm } from '../components/RepairRequestForm';
+import { RepairSubmitSuccess } from '../components/RepairSubmitSuccess';
+import { FormSubmitOverlay } from '../components/ui/FormSubmitOverlay';
+import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
@@ -12,6 +15,7 @@ import { createRepairRequest as submitRepairRequest, fetchPublicAudienceRepairSu
 import { Device } from '../types/device';
 import type { PublicAudienceInfo, RepairRequest } from '../types/repairRequest';
 import { formatApiError } from '../utils/formatApiError';
+import { repairSubmitOverlayMessage } from '../utils/repairSubmitMessages';
 import { isUuid } from '../utils/uuid';
 
 type RequestTarget = 'device' | 'cabinet';
@@ -21,7 +25,6 @@ export function NewRepairRequest() {
     const { showSuccess, showError } = useToast();
     const { devices, refresh, isLoading: appDataLoading } = useAppData();
     const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
     const deviceIdRaw = searchParams.get('deviceId');
     const preselectedDeviceId = isUuid(deviceIdRaw) ? deviceIdRaw!.trim() : undefined;
     const audienceIdRaw = searchParams.get('audienceId');
@@ -39,17 +42,47 @@ export function NewRepairRequest() {
     const [publicAudience, setPublicAudience] = useState<PublicAudienceInfo | null>(null);
     const [publicLoading, setPublicLoading] = useState(false);
     const [publicError, setPublicError] = useState<string | null>(null);
-    const [guestDone, setGuestDone] = useState(false);
+    type SubmitSuccessState = {
+        targetKind: 'device' | 'cabinet';
+        targetId: string;
+        targetLabel: string;
+        hadFiles: boolean;
+        sentToTracker: boolean;
+    };
+    const [submitSuccess, setSubmitSuccess] = useState<SubmitSuccessState | null>(null);
     const [sendToTracker, setSendToTracker] = useState(true);
     const [attachmentDrafts, setAttachmentDrafts] = useState<AttachmentDraft[]>([]);
     const [audiences, setAudiences] = useState<AudienceDto[]>([]);
     const [audiencesLoading, setAudiencesLoading] = useState(false);
+    const [submitBusy, setSubmitBusy] = useState(false);
 
     useEffect(() => {
         if (lockedTarget) {
             setRequestTarget(lockedTarget);
         }
     }, [lockedTarget]);
+
+    const submitOverlay = useMemo(
+        () =>
+            repairSubmitOverlayMessage({
+                sendToTracker: isAuthenticated && sendToTracker,
+                fileCount: attachmentDrafts.length,
+                isGuest: !isAuthenticated,
+            }),
+        [attachmentDrafts.length, isAuthenticated, sendToTracker],
+    );
+
+    async function runSubmit(task: () => Promise<void>) {
+        if (submitBusy) {
+            return;
+        }
+        setSubmitBusy(true);
+        try {
+            await task();
+        } finally {
+            setSubmitBusy(false);
+        }
+    }
 
     function notifyAttachmentOutcome(created: RepairRequest, syncToTracker: boolean, hadFiles: boolean) {
         if (!hadFiles) {
@@ -163,9 +196,12 @@ export function NewRepairRequest() {
 
     useEffect(() => {
         if (isAuthenticated) {
-            setGuestDone(false);
+            setSubmitSuccess(null);
         }
     }, [isAuthenticated]);
+
+    const showSuccessScreenAfterSubmit =
+        !isAuthenticated || Boolean(preselectedDeviceId || preselectedAudienceId);
 
     const lockedGuest =
         !isAuthenticated &&
@@ -214,6 +250,26 @@ export function NewRepairRequest() {
     const hasGuestTarget =
         Boolean(preselectedDeviceId) || Boolean(preselectedAudienceId);
 
+    function deviceTargetLabel(deviceId: string): string {
+        const d = displayDevices.find((x) => x.id === deviceId);
+        if (!d?.inventoryNumber) {
+            return '—';
+        }
+        return d.inventoryNumber;
+    }
+
+    function cabinetTargetLabel(audienceId: string): string {
+        const a = displayAudiences.find((x) => String(x.id) === audienceId);
+        return a?.name?.trim() || '—';
+    }
+
+    function completeSubmit(state: SubmitSuccessState) {
+        setAttachmentDrafts([]);
+        if (showSuccessScreenAfterSubmit) {
+            setSubmitSuccess(state);
+        }
+    }
+
     async function submitDevice(data: { deviceId: string; name: string; description: string }) {
         const files = draftsToFiles(attachmentDrafts);
         if (isAuthenticated) {
@@ -224,8 +280,18 @@ export function NewRepairRequest() {
                 syncToTracker: sendToTracker,
                 files,
             });
-            notifyAttachmentOutcome(created, sendToTracker, files.length > 0);
-            setAttachmentDrafts([]);
+            if (showSuccessScreenAfterSubmit) {
+                completeSubmit({
+                    targetKind: 'device',
+                    targetId: data.deviceId,
+                    targetLabel: deviceTargetLabel(data.deviceId),
+                    hadFiles: files.length > 0,
+                    sentToTracker: sendToTracker,
+                });
+            } else {
+                notifyAttachmentOutcome(created, sendToTracker, files.length > 0);
+                setAttachmentDrafts([]);
+            }
             await refresh();
         } else {
             await submitRepairRequest({
@@ -234,9 +300,13 @@ export function NewRepairRequest() {
                 description: data.description,
                 files,
             });
-            showSuccess('Заявка отправлена');
-            setAttachmentDrafts([]);
-            setGuestDone(true);
+            completeSubmit({
+                targetKind: 'device',
+                targetId: data.deviceId,
+                targetLabel: deviceTargetLabel(data.deviceId),
+                hadFiles: files.length > 0,
+                sentToTracker: false,
+            });
         }
     }
 
@@ -250,8 +320,18 @@ export function NewRepairRequest() {
                 syncToTracker: sendToTracker,
                 files,
             });
-            notifyAttachmentOutcome(created, sendToTracker, files.length > 0);
-            setAttachmentDrafts([]);
+            if (showSuccessScreenAfterSubmit) {
+                completeSubmit({
+                    targetKind: 'cabinet',
+                    targetId: data.audienceId,
+                    targetLabel: cabinetTargetLabel(data.audienceId),
+                    hadFiles: files.length > 0,
+                    sentToTracker: sendToTracker,
+                });
+            } else {
+                notifyAttachmentOutcome(created, sendToTracker, files.length > 0);
+                setAttachmentDrafts([]);
+            }
             await refresh();
         } else {
             await submitRepairRequest({
@@ -260,28 +340,36 @@ export function NewRepairRequest() {
                 description: data.description,
                 files,
             });
-            showSuccess('Заявка отправлена');
-            setAttachmentDrafts([]);
-            setGuestDone(true);
+            completeSubmit({
+                targetKind: 'cabinet',
+                targetId: data.audienceId,
+                targetLabel: cabinetTargetLabel(data.audienceId),
+                hadFiles: files.length > 0,
+                sentToTracker: false,
+            });
         }
     }
 
     async function handleDeviceSubmit(data: { deviceId: string; name: string; description: string }) {
-        try {
-            await submitDevice(data);
-        } catch (err) {
-            showError(formatApiError(err));
-            throw err;
-        }
+        await runSubmit(async () => {
+            try {
+                await submitDevice(data);
+            } catch (err) {
+                showError(formatApiError(err));
+                throw err;
+            }
+        });
     }
 
     async function handleCabinetSubmit(data: { audienceId: string; name: string; description: string }) {
-        try {
-            await submitCabinet(data);
-        } catch (err) {
-            showError(formatApiError(err));
-            throw err;
-        }
+        await runSubmit(async () => {
+            try {
+                await submitCabinet(data);
+            } catch (err) {
+                showError(formatApiError(err));
+                throw err;
+            }
+        });
     }
 
     if (!isAuthenticated && !hasGuestTarget) {
@@ -306,7 +394,7 @@ export function NewRepairRequest() {
             <main className="page page--wide">
                 <h2>Новая заявка на ремонт</h2>
                 <section className="card card-form card--narrow-device">
-                    <p>Загрузка…</p>
+                    <LoadingPanel title="Загружаем данные…" detail="Подготавливаем форму заявки." />
                 </section>
             </main>
         );
@@ -331,16 +419,46 @@ export function NewRepairRequest() {
             <main className="page page--wide">
                 <h2>Новая заявка на ремонт</h2>
                 <section className="card card-form card--narrow-device">
-                    <p>Загрузка…</p>
+                    <LoadingPanel title="Загружаем справочники…" detail="Устройства и кабинеты." />
                 </section>
             </main>
         );
     }
 
-    const attachmentBlock = <AttachmentUploader files={attachmentDrafts} onChange={setAttachmentDrafts} />;
+    const attachmentBlock = (
+        <AttachmentUploader files={attachmentDrafts} onChange={setAttachmentDrafts} disabled={submitBusy} />
+    );
+
+    if (submitSuccess) {
+        const successLines: string[] = [
+            'Повторно отправлять заявку на этот объект не нужно — она уже принята',
+        ];
+        if (submitSuccess.hadFiles) {
+            successLines.push('Вложения сохранены вместе с заявкой');
+        }
+        if (submitSuccess.sentToTracker) {
+            successLines.push('Задача создана в Яндекс Трекере');
+        } else if (!isAuthenticated) {
+            successLines.push('Сисадмины обработают заявку в ближайшее время');
+        }
+
+        return (
+            <main className="page page--centered repair-submit-success-page">
+                <RepairSubmitSuccess
+                    title="Заявка успешно зарегистрирована"
+                    targetCaption={submitSuccess.targetKind === 'device' ? 'Инв. номер' : 'Кабинет'}
+                    targetLabel={submitSuccess.targetLabel}
+                    lines={successLines}
+                    primaryLabel={isAuthenticated ? 'К списку заявок' : 'Сканировать другой QR-код'}
+                    primaryTo={isAuthenticated ? '/requests' : '/scan'}
+                />
+            </main>
+        );
+    }
 
     return (
         <main className="page page--wide">
+            <FormSubmitOverlay open={submitBusy} title={submitOverlay.title} detail={submitOverlay.detail} />
             <h2>Новая заявка на ремонт</h2>
             <section className="card card-form card--narrow-device">
                 {isAuthenticated && lockedTarget == null ? (
@@ -350,6 +468,7 @@ export function NewRepairRequest() {
                             <select
                                 value={requestTarget}
                                 onChange={(e) => setRequestTarget(e.target.value as RequestTarget)}
+                                disabled={submitBusy}
                             >
                                 <option value="device">Устройство</option>
                                 <option value="cabinet">Кабинет</option>
@@ -387,13 +506,19 @@ export function NewRepairRequest() {
 
                 {isAuthenticated ? (
                     <label className="repair-tracker-toggle">
-                        <input type="checkbox" checked={sendToTracker} onChange={(e) => setSendToTracker(e.target.checked)} />
+                        <input
+                            type="checkbox"
+                            checked={sendToTracker}
+                            onChange={(e) => setSendToTracker(e.target.checked)}
+                            disabled={submitBusy}
+                        />
                         <span>Отправить заявку в Яндекс Трекер</span>
                     </label>
                 ) : null}
 
                 {requestTarget === 'cabinet' ? (
                     <CabinetRepairForm
+                        busy={submitBusy}
                         audiences={displayAudiences}
                         initialAudienceId={preselectedAudienceId}
                         audienceSelectDisabled={lockedGuest}
@@ -403,6 +528,7 @@ export function NewRepairRequest() {
                     />
                 ) : (
                     <RepairRequestForm
+                        busy={submitBusy}
                         devices={filteredDevices}
                         initialDeviceId={preselectedDeviceId}
                         deviceSelectDisabled={lockedGuest}
@@ -411,14 +537,6 @@ export function NewRepairRequest() {
                         childrenAfterDescription={attachmentBlock}
                     />
                 )}
-
-                {!isAuthenticated && guestDone ? (
-                    <div className="repair-guest-next">
-                        <button type="button" className="btn-primary" onClick={() => navigate('/scan')}>
-                            Добавить ещё одну заявку (сканирование QR)
-                        </button>
-                    </div>
-                ) : null}
             </section>
         </main>
     );
