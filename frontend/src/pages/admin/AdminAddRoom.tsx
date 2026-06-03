@@ -1,11 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { createAudience, deleteAudience, fetchAudiences, updateAudience, type AudienceDto } from '../../api/audiences';
 import { IconCheck, IconClose, IconEdit, IconTrash } from '../../components/admin/AdminDashboardIcons';
+import { QrSheetSettingsModal } from '../../components/QrSheetSettingsModal';
 import { ScrollToTopButton } from '../../components/ScrollToTopButton';
 import { formatApiError } from '../../utils/formatApiError';
+import { qrPrintTargetFromAudience } from '../../utils/qrGenerator';
 
 export function AdminAddRoom() {
     const { showSuccess, showError } = useToast();
@@ -14,9 +16,11 @@ export function AdminAddRoom() {
 
     const [rows, setRows] = useState<AudienceDto[]>([]);
     const [newRoom, setNewRoom] = useState('');
-    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [editNumber, setEditNumber] = useState('');
     const [loading, setLoading] = useState(true);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [sheetModalOpen, setSheetModalOpen] = useState(false);
 
     async function reload() {
         setLoading(true);
@@ -92,6 +96,11 @@ export function AdminAddRoom() {
             if (editingId === row.id) {
                 setEditingId(null);
             }
+            setSelectedIds((prev) => {
+                const next = new Set(prev);
+                next.delete(row.id);
+                return next;
+            });
             showSuccess('Кабинет и связанные устройства удалены');
             await reload();
         } catch (err) {
@@ -100,6 +109,36 @@ export function AdminAddRoom() {
     }
 
     const sortedRows = [...rows].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
+
+    const selectedRows = useMemo(
+        () => sortedRows.filter((r) => selectedIds.has(r.id)),
+        [sortedRows, selectedIds],
+    );
+
+    const selectedQrTargets = useMemo(
+        () => selectedRows.map(qrPrintTargetFromAudience),
+        [selectedRows],
+    );
+
+    function handleSelectAll() {
+        if (selectedIds.size === sortedRows.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(sortedRows.map((r) => r.id)));
+        }
+    }
+
+    function toggleSelect(id: string) {
+        setSelectedIds((prev) => {
+            const next = new Set(prev);
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+            return next;
+        });
+    }
 
     return (
         <main className="page page--centered">
@@ -128,10 +167,29 @@ export function AdminAddRoom() {
                     </div>
                 </form>
 
+                {selectedIds.size > 0 ? (
+                    <section className="card" style={{ marginTop: 16, marginBottom: 0 }}>
+                        <h3 style={{ marginTop: 0 }}>Действия с выбранными ({selectedIds.size})</h3>
+                        <div className="actions-row">
+                            <button type="button" onClick={() => setSheetModalOpen(true)}>
+                                Настройка и предпросмотр QR
+                            </button>
+                        </div>
+                    </section>
+                ) : null}
+
                 <div className="table-wrap admin-table-wrap">
                     <table className="admin-table">
                         <thead>
                             <tr>
+                                <th className="table-col-center table-col--narrow">
+                                    <input
+                                        type="checkbox"
+                                        checked={sortedRows.length > 0 && selectedIds.size === sortedRows.length}
+                                        onChange={handleSelectAll}
+                                        aria-label="Выбрать все кабинеты"
+                                    />
+                                </th>
                                 <th className="table-col-start">Номер / название</th>
                                 <th className="table-col-center table-col--narrow">Действия</th>
                             </tr>
@@ -139,15 +197,23 @@ export function AdminAddRoom() {
                         <tbody>
                             {loading ? (
                                 <tr className="admin-table-placeholder-row">
-                                    <td colSpan={2}>Загрузка…</td>
+                                    <td colSpan={3}>Загрузка…</td>
                                 </tr>
                             ) : sortedRows.length === 0 ? (
                                 <tr className="admin-table-placeholder-row">
-                                    <td colSpan={2} />
+                                    <td colSpan={3} />
                                 </tr>
                             ) : (
                                 sortedRows.map((row) => (
                                     <tr key={row.id} className={editingId === row.id ? 'admin-table-row--editing' : undefined}>
+                                        <td className="table-col-center">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedIds.has(row.id)}
+                                                onChange={() => toggleSelect(row.id)}
+                                                aria-label={`Выбрать кабинет ${row.name}`}
+                                            />
+                                        </td>
                                         <td className="table-col-start admin-table-cell--input">
                                             {editingId === row.id ? (
                                                 <input value={editNumber} onChange={(e) => setEditNumber(e.target.value)} disabled={!isAdmin} />
@@ -193,6 +259,12 @@ export function AdminAddRoom() {
                                                         >
                                                             Карта
                                                         </Link>
+                                                        <Link
+                                                            to={`/repair?audienceId=${row.id}`}
+                                                            className="btn-ghost btn-compact admin-row-actions__full"
+                                                        >
+                                                            Заявка
+                                                        </Link>
                                                         <button
                                                             type="button"
                                                             className="btn-icon-accent btn-compact btn-icon"
@@ -224,6 +296,14 @@ export function AdminAddRoom() {
                     </table>
                 </div>
             </section>
+
+            <QrSheetSettingsModal
+                open={sheetModalOpen}
+                onClose={() => setSheetModalOpen(false)}
+                items={selectedQrTargets}
+                variant="audience"
+            />
+
             <ScrollToTopButton />
         </main>
     );

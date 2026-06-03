@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useSta
 import { useToast } from '../context/ToastContext';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import type { Device } from '../types/device';
+import type { QrPrintTarget } from '../types/qrPrintTarget';
 import type { QrSheetSettings } from '../types/qrSheetSettings';
 import { QR_SHEET_DEFAULTS, QR_SHEET_SLIDER_BOUNDS } from '../types/qrSheetSettings';
 import {
@@ -18,7 +18,24 @@ import {
 } from '../utils/qrSheetLayout';
 import { buildPdfFilename, loadQrSheetSettings, saveQrSheetSettings } from '../utils/qrSheetStorage';
 import { buildEmbeddedSheetCss, buildPrintDocumentHtml, buildPrintPagesMarkup, chunkItems, qrRasterPxFromMm, type QrSheetItem } from '../utils/qrSheetHtml';
-import { buildRepairRequestUrl } from '../utils/qrGenerator';
+import { resolveScanShortLinkCaption } from '../utils/qrPayload';
+export type QrSheetVariant = 'device' | 'audience';
+
+const QR_SHEET_VARIANT_META: Record<
+    QrSheetVariant,
+    { countNoun: string; labelFontSlider: string; modalTitle: string }
+> = {
+    device: {
+        countNoun: 'Устройств',
+        labelFontSlider: 'Шрифт подписи (инв. номер)',
+        modalTitle: 'QR для оборудования',
+    },
+    audience: {
+        countNoun: 'Кабинетов',
+        labelFontSlider: 'Шрифт подписи (кабинет)',
+        modalTitle: 'QR для кабинетов',
+    },
+};
 import {
     MAX_QR_LOGO_FILE_BYTES,
     generateRepairQrPngDataUrl,
@@ -29,7 +46,8 @@ import {
 type QrSheetSettingsModalProps = {
     open: boolean;
     onClose: () => void;
-    devices: Device[];
+    items: QrPrintTarget[];
+    variant?: QrSheetVariant;
 };
 
 type NumericFieldKey = 'qrSizeMm' | 'cellPaddingMm' | 'labelFontPt' | 'labelGapMm' | 'logoSizePercent';
@@ -136,13 +154,13 @@ function QrSheetPreview({
     settings,
     nCols,
     nRows,
-    firstPageDevices,
+    firstPageItems,
     logoDataUrl,
 }: {
     settings: QrSheetSettings;
     nCols: number;
     nRows: number;
-    firstPageDevices: Device[];
+    firstPageItems: QrPrintTarget[];
     logoDataUrl: string | null;
 }) {
     const wrapRef = useRef<HTMLDivElement>(null);
@@ -179,7 +197,7 @@ function QrSheetPreview({
         settings.labelGapMm,
         settings.labelBold,
         settings.logoSizePercent,
-        firstPageDevices.length,
+        firstPageItems.length,
         logoDataUrl,
     ]);
 
@@ -217,9 +235,9 @@ function QrSheetPreview({
                 }}
             >
                 {Array.from({ length: slots }).map((_, i) => {
-                    const dev = firstPageDevices[i];
-                    const filled = Boolean(dev);
-                    const inv = dev?.inventoryNumber ?? '';
+                    const item = firstPageItems[i];
+                    const filled = Boolean(item);
+                    const inv = item?.label ?? '';
                     return (
                         <div
                             key={i}
@@ -284,24 +302,26 @@ function QrSheetPreview({
 }
 
 async function generateQrDataUrls(
-    devices: Device[],
+    items: QrPrintTarget[],
     settings: QrSheetSettings,
     logoDataUrl: string | null,
 ): Promise<QrSheetItem[]> {
     const px = qrRasterPxFromMm(settings.qrSizeMm);
+    const scanShortCaption = settings.showScanShortLink ? await resolveScanShortLinkCaption() : undefined;
     const results: QrSheetItem[] = [];
-    for (const device of devices) {
-        const url = buildRepairRequestUrl(device.id, device.inventoryNumber);
-        const dataUrl = await generateRepairQrPngDataUrl(url, px, {
+    for (const item of items) {
+        const encodeUrl = item.directUrl;
+        const dataUrl = await generateRepairQrPngDataUrl(encodeUrl, px, {
             logoDataUrl,
             logoSizePercent: settings.logoSizePercent,
         });
-        results.push({ dataUrl, inventoryNumber: device.inventoryNumber });
+        results.push({ dataUrl, label: item.label, linkCaption: scanShortCaption });
     }
     return results;
 }
 
-export function QrSheetSettingsModal({ open, onClose, devices }: QrSheetSettingsModalProps) {
+export function QrSheetSettingsModal({ open, onClose, items, variant = 'device' }: QrSheetSettingsModalProps) {
+    const meta = QR_SHEET_VARIANT_META[variant];
     const { showError } = useToast();
     const [settings, setSettings] = useState<QrSheetSettings>(QR_SHEET_DEFAULTS);
     const [busy, setBusy] = useState(false);
@@ -358,20 +378,20 @@ export function QrSheetSettingsModal({ open, onClose, devices }: QrSheetSettings
     const cols = computeColsPerRow(settings.qrSizeMm, settings.cellPaddingMm);
     const rows = computeRowsPerPage(settings);
     const slots = slotsPerPage(cols, rows);
-    const pagesEst = slots > 0 ? estimatePageCount(devices.length, cols, rows) : null;
+    const pagesEst = slots > 0 ? estimatePageCount(items.length, cols, rows) : null;
 
-    const pageSlots = slots > 0 ? slots : Math.max(1, devices.length);
+    const pageSlots = slots > 0 ? slots : Math.max(1, items.length);
 
-    const firstPageDevices = useMemo(() => {
+    const firstPageItems = useMemo(() => {
         const colsCss = Math.max(1, cols);
         const rowsCss = Math.max(1, rows);
         const gridSlots = colsCss * rowsCss;
-        return devices.slice(0, Math.min(gridSlots, devices.length));
-    }, [devices, cols, rows]);
+        return items.slice(0, Math.min(gridSlots, items.length));
+    }, [items, cols, rows]);
 
     const warnings = useMemo(
-        () => collectQrSheetWarnings(settings, cols, rows, devices.length),
-        [settings, cols, rows, devices.length],
+        () => collectQrSheetWarnings(settings, cols, rows, items.length),
+        [settings, cols, rows, items.length],
     );
 
     const patch = useCallback((p: Partial<QrSheetSettings>) => {
@@ -405,13 +425,13 @@ export function QrSheetSettingsModal({ open, onClose, devices }: QrSheetSettings
     );
 
     const runPrint = useCallback(async () => {
-        if (devices.length === 0) {
+        if (items.length === 0) {
             return;
         }
         setBusy(true);
         try {
-            const qrs = await generateQrDataUrls(devices, settings, logoDataUrl);
-            const ps = slots > 0 ? slots : Math.max(1, devices.length);
+            const qrs = await generateQrDataUrls(items, settings, logoDataUrl);
+            const ps = slots > 0 ? slots : Math.max(1, items.length);
             const pages = chunkItems(qrs, ps);
             const w = window.open('', '_blank');
             if (!w) {
@@ -428,17 +448,17 @@ export function QrSheetSettingsModal({ open, onClose, devices }: QrSheetSettings
         } finally {
             setBusy(false);
         }
-    }, [devices, settings, slots, logoDataUrl]);
+    }, [items, settings, slots, logoDataUrl]);
 
     const runPdf = useCallback(async () => {
-        if (devices.length === 0) {
+        if (items.length === 0) {
             return;
         }
         setBusy(true);
         let container: HTMLDivElement | null = null;
         try {
-            const qrs = await generateQrDataUrls(devices, settings, logoDataUrl);
-            const ps = slots > 0 ? slots : Math.max(1, devices.length);
+            const qrs = await generateQrDataUrls(items, settings, logoDataUrl);
+            const ps = slots > 0 ? slots : Math.max(1, items.length);
             const pages = chunkItems(qrs, ps);
             const css = buildEmbeddedSheetCss(settings);
             const markup = buildPrintPagesMarkup(pages);
@@ -495,7 +515,7 @@ export function QrSheetSettingsModal({ open, onClose, devices }: QrSheetSettings
             }
             setBusy(false);
         }
-    }, [devices, settings, slots, logoDataUrl]);
+    }, [items, settings, slots, logoDataUrl]);
 
     if (!open) {
         return null;
@@ -511,13 +531,13 @@ export function QrSheetSettingsModal({ open, onClose, devices }: QrSheetSettings
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="qr-sheet-modal__head">
-                    <h3 id="qr-sheet-modal-title">Настройка и предпросмотр</h3>
+                    <h3 id="qr-sheet-modal-title">{meta.modalTitle}</h3>
                     <button type="button" className="modal-panel__close" onClick={onClose} aria-label="Закрыть">
                         ×
                     </button>
                 </div>
                 <p className="qr-sheet-modal__sub">
-                    Устройств в печати: <strong>{devices.length}</strong>
+                    {meta.countNoun} в печати: <strong>{items.length}</strong>
                     {pagesEst !== null && slots > 0 && (
                         <>
                             {' '}
@@ -557,7 +577,7 @@ export function QrSheetSettingsModal({ open, onClose, devices }: QrSheetSettings
                             lastValidRef={lastValidRef}
                         />
                         <NumericSliderRow
-                            label="Шрифт подписи (инв. номер)"
+                            label={meta.labelFontSlider}
                             unit="pt"
                             sliderMin={QR_SHEET_SLIDER_BOUNDS.labelFontPt.min}
                             sliderMax={QR_SHEET_SLIDER_BOUNDS.labelFontPt.max}
@@ -585,7 +605,16 @@ export function QrSheetSettingsModal({ open, onClose, devices }: QrSheetSettings
                                 checked={settings.labelBold}
                                 onChange={(e) => patch({ labelBold: e.target.checked })}
                             />
-                            Жирный шрифт подписи (инв. номер)
+                            Жирный шрифт подписи
+                        </label>
+
+                        <label className="qr-sheet-check">
+                            <input
+                                type="checkbox"
+                                checked={settings.showScanShortLink}
+                                onChange={(e) => patch({ showScanShortLink: e.target.checked })}
+                            />
+                            Под QR — короткая ссылка на общую страницу /scan (clck.ru)
                         </label>
 
                         <div className="qr-sheet-field">
@@ -685,10 +714,10 @@ export function QrSheetSettingsModal({ open, onClose, devices }: QrSheetSettings
                         )}
 
                         <div className="qr-sheet-modal__actions">
-                            <button type="button" disabled={busy || devices.length === 0} onClick={() => void runPrint()}>
+                            <button type="button" disabled={busy || items.length === 0} onClick={() => void runPrint()}>
                                 Печать
                             </button>
-                            <button type="button" disabled={busy || devices.length === 0} onClick={() => void runPdf()}>
+                            <button type="button" disabled={busy || items.length === 0} onClick={() => void runPdf()}>
                                 Сохранить в PDF
                             </button>
                             <button type="button" className="modal-panel__btn-ghost" disabled={busy} onClick={onClose}>
@@ -703,7 +732,7 @@ export function QrSheetSettingsModal({ open, onClose, devices }: QrSheetSettings
                                 settings={settings}
                                 nCols={cols}
                                 nRows={rows}
-                                firstPageDevices={firstPageDevices}
+                                firstPageItems={firstPageItems}
                                 logoDataUrl={logoDataUrl}
                             />
                         </div>

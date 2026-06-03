@@ -52,8 +52,12 @@ export function RepairRequestDetailPage() {
             try {
                 const req = await fetchRepairRequest(id);
                 setRequest(req);
-                const dev = await fetchDeviceById(req.deviceId);
-                setDevice(dev);
+                if (req.deviceId) {
+                    const dev = await fetchDeviceById(req.deviceId);
+                    setDevice(dev);
+                } else {
+                    setDevice(null);
+                }
             } catch (err) {
                 if (!opts?.silent) {
                     setRequest(null);
@@ -253,7 +257,11 @@ export function RepairRequestDetailPage() {
                         hasTrackerTicket={hasTrackerTicket}
                         onUpdated={async (updated) => {
                             setRequest(updated);
-                            setDevice(await fetchDeviceById(updated.deviceId));
+                            if (updated.deviceId) {
+                                setDevice(await fetchDeviceById(updated.deviceId));
+                            } else {
+                                setDevice(null);
+                            }
                         }}
                         onCommentsChanged={() => setCommentsRefreshKey((k) => k + 1)}
                     />
@@ -312,28 +320,35 @@ export function RepairRequestDetailPage() {
                     </p>
                 </div>
                 <ul className="repair-detail-list">
-                    <li>
-                        <strong>Устройство:</strong>
-                        <span>
-                            {device ? (
-                                <Link to={`/devices/${device.id}`}>
-                                    {device.inventoryNumber} — {device.name}
-                                </Link>
-                            ) : (
-                                request.deviceId
-                            )}
-                            {device?.audienceId != null ? (
-                                <button
-                                    type="button"
-                                    className="btn-ghost btn-compact"
-                                    style={{ marginLeft: 10 }}
-                                    onClick={() => setShowMapModal(true)}
-                                >
-                                    Показать на карте
-                                </button>
-                            ) : null}
-                        </span>
-                    </li>
+                    {request.audienceId != null ? (
+                        <li>
+                            <strong>Кабинет:</strong>
+                            <span>{request.audienceName ?? `Кабинет #${request.audienceId}`}</span>
+                        </li>
+                    ) : (
+                        <li>
+                            <strong>Устройство:</strong>
+                            <span>
+                                {device ? (
+                                    <Link to={`/devices/${device.id}`}>
+                                        {device.inventoryNumber} — {device.name}
+                                    </Link>
+                                ) : (
+                                    request.deviceId
+                                )}
+                                {device?.audienceId != null ? (
+                                    <button
+                                        type="button"
+                                        className="btn-ghost btn-compact"
+                                        style={{ marginLeft: 10 }}
+                                        onClick={() => setShowMapModal(true)}
+                                    >
+                                        Показать на карте
+                                    </button>
+                                ) : null}
+                            </span>
+                        </li>
+                    )}
                     <li>
                         <strong>Заявитель:</strong>
                         <span>{request.requesterName || '—'}</span>

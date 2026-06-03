@@ -6,7 +6,7 @@ export type Device = {
     categoryId: string | null;
     serialNumber: string;
     room: string;
-    audienceId: number | null;
+    audienceId: string | null;
     responsible: string;
     responsibleId: string | null;
     status: 'not_in_repair' | 'in_repair';

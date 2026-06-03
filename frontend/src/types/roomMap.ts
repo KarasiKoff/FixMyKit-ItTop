@@ -14,7 +14,7 @@ export type DeviceOnMap = {
 export type MapDoorEdge = 'top' | 'bottom';
 
 export type RoomMapData = {
-    audienceId: number;
+    audienceId: string;
     gridCols: number;
     gridRows: number;
     doorEdge: MapDoorEdge;

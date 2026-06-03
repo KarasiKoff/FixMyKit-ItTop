@@ -147,7 +147,7 @@ export function QRScanner({ onScan }: { onScan: (value: string) => void | Promis
                 }}
             >
                 <input
-                    placeholder="Инвентарный номер или UUID устройства"
+                    placeholder="Инв. номер, название кабинета"
                     value={manualValue}
                     onChange={(event) => setManualValue(event.target.value)}
                     autoComplete="off"

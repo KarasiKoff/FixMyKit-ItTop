@@ -1,8 +1,8 @@
 from datetime import datetime
-from typing import Literal
+from typing import Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.app.models.enums import AttachmentsSyncStatus, RequestStatus
 
@@ -10,18 +10,28 @@ RepairWorkflowKind = Literal["open", "in_progress", "needs_info", "closed"]
 RepairCloseResolution = Literal["resolved", "wont_fix"]
 
 
-class RepairRequestBase(BaseModel):
-    device_id: UUID
+class _RepairTargetFields(BaseModel):
+    device_id: UUID | None = None
+    audience_id: UUID | None = None
+
+    @model_validator(mode="after")
+    def exactly_one_target(self) -> Self:
+        has_device = self.device_id is not None
+        has_audience = self.audience_id is not None
+        if has_device == has_audience:
+            raise ValueError("device_id_xor_audience_id_required")
+        return self
+
+
+class RepairRequestCreate(_RepairTargetFields):
     description: str
     applicant_name: str | None = None
-
-
-class RepairRequestCreate(RepairRequestBase):
     author_user_id: UUID | None = None
     sync_to_tracker: bool = True
 
 
-class PublicRepairRequestCreate(RepairRequestBase):
+class PublicRepairRequestCreate(_RepairTargetFields):
+    description: str
     applicant_name: str
 
 
@@ -59,10 +69,14 @@ class RepairRequestWorkflowUpdate(BaseModel):
     comment: str | None = Field(default=None, max_length=10000)
 
 
-class RepairRequestResponse(RepairRequestBase):
+class RepairRequestResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    device_id: UUID | None = None
+    audience_id: UUID | None = None
+    description: str
+    applicant_name: str | None = None
     author_user_id: UUID | None
     closed_by_user_id: UUID | None
     taken_by_sysadmin_by_user_id: UUID | None
@@ -86,6 +100,7 @@ class RepairRequestResponse(RepairRequestBase):
     updated_at: datetime
     device_inventory_number: str | None = None
     device_name: str | None = None
+    audience_name: str | None = None
 
 
 class RepairRequestList(BaseModel):

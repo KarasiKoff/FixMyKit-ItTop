@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -16,7 +18,7 @@ class AudienceUpdate(BaseModel):
 class Audience(AudienceBase):
     model_config = ConfigDict(from_attributes=True)
 
-    id: int
+    id: UUID
 
 
 class AudienceList(BaseModel):

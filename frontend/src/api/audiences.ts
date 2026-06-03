@@ -2,7 +2,7 @@ import { apiRequest } from './client';
 import type { DeviceOnMap, MapDoorEdge, RoomDeviceListItem, RoomMapData } from '../types/roomMap';
 
 export type AudienceDto = {
-    id: number;
+    id: string;
     name: string;
 };
 
@@ -19,14 +19,14 @@ export async function createAudience(name: string) {
     });
 }
 
-export async function updateAudience(id: number, payload: { name: string }) {
+export async function updateAudience(id: string, payload: { name: string }) {
     return apiRequest<AudienceDto>(`/api/audiences/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(payload),
     });
 }
 
-export async function deleteAudience(id: number) {
+export async function deleteAudience(id: string) {
     await apiRequest<void>(`/api/audiences/${id}`, { method: 'DELETE' });
 }
 
@@ -64,9 +64,9 @@ function parseDoorEdge(value: string | undefined): MapDoorEdge {
     return value === 'top' ? 'top' : 'bottom';
 }
 
-export async function fetchRoomMap(audienceId: number): Promise<RoomMapData> {
+export async function fetchRoomMap(audienceId: string): Promise<RoomMapData> {
     const data = await apiRequest<{
-        audience_id: number;
+        audience_id: string;
         grid_cols: number;
         grid_rows: number;
         door_edge?: string;
@@ -82,7 +82,7 @@ export async function fetchRoomMap(audienceId: number): Promise<RoomMapData> {
 }
 
 export async function saveRoomMap(
-    audienceId: number,
+    audienceId: string,
     positions: Array<{
         device_id: string;
         x_pct: number;
@@ -93,7 +93,7 @@ export async function saveRoomMap(
     grid: { gridCols: number; gridRows: number; doorEdge: MapDoorEdge },
 ): Promise<RoomMapData> {
     const data = await apiRequest<{
-        audience_id: number;
+        audience_id: string;
         grid_cols: number;
         grid_rows: number;
         door_edge?: string;
@@ -116,7 +116,7 @@ export async function saveRoomMap(
     };
 }
 
-export async function fetchAudienceDevices(audienceId: number): Promise<RoomDeviceListItem[]> {
+export async function fetchAudienceDevices(audienceId: string): Promise<RoomDeviceListItem[]> {
     const data = await apiRequest<{
         items: Array<{
             id: string;

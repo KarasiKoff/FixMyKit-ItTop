@@ -6,6 +6,7 @@ import { ScrollToTopButton } from '../components/ScrollToTopButton';
 import { FilterCombobox } from '../components/FilterCombobox';
 import { ListPagination } from '../components/ListPagination';
 import { QrSheetSettingsModal } from '../components/QrSheetSettingsModal';
+import { qrPrintTargetFromDevice } from '../utils/qrGenerator';
 import { SortableTh } from '../components/SortableTh';
 import { useAppData } from '../context/AppDataContext';
 import { useToast } from '../context/ToastContext';
@@ -109,6 +110,11 @@ export function DevicesList() {
     const filtersPending = !filtersEqual(draftFilters, appliedFilters);
 
     const selectedDevicesList = useMemo(() => items.filter((d) => selectedDevices.has(d.id)), [items, selectedDevices]);
+
+    const selectedQrTargets = useMemo(
+        () => selectedDevicesList.map(qrPrintTargetFromDevice),
+        [selectedDevicesList],
+    );
 
     const handleSelectAll = () => {
         if (selectedDevices.size === items.length) {
@@ -423,7 +429,8 @@ export function DevicesList() {
             <QrSheetSettingsModal
                 open={sheetModalOpen}
                 onClose={() => setSheetModalOpen(false)}
-                devices={selectedDevicesList}
+                items={selectedQrTargets}
+                variant="device"
             />
 
             <ConfirmDialog

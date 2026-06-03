@@ -5,6 +5,7 @@ from typing import Literal
 from sqlalchemy import case, func, or_
 from sqlalchemy.orm import Query, Session, joinedload
 
+from backend.app.models.audience import Audience as AudienceModel
 from backend.app.models.device import Device as DeviceModel
 from backend.app.models.enums import RequestStatus
 from backend.app.models.repair_request import RepairRequest as RepairRequestModel
@@ -23,8 +24,10 @@ _STATUS_ORDER = case(
 
 
 def _repair_request_list_query(db: Session) -> Query:
-    return db.query(RepairRequestModel).outerjoin(
-        DeviceModel, RepairRequestModel.device_id == DeviceModel.id
+    return (
+        db.query(RepairRequestModel)
+        .outerjoin(DeviceModel, RepairRequestModel.device_id == DeviceModel.id)
+        .outerjoin(AudienceModel, RepairRequestModel.audience_id == AudienceModel.id)
     )
 
 
@@ -41,6 +44,7 @@ def _apply_repair_request_filters(
             or_(
                 DeviceModel.inventory_number.ilike(pattern),
                 DeviceModel.name.ilike(pattern),
+                AudienceModel.name.ilike(pattern),
             )
         )
     if applicant:
@@ -55,7 +59,7 @@ def _apply_repair_request_sort(query: Query, sort_by: RepairRequestSortBy, sort_
     if sort_by == "created_at":
         col = RepairRequestModel.created_at
     elif sort_by == "device_inventory_number":
-        col = DeviceModel.inventory_number
+        col = func.coalesce(DeviceModel.inventory_number, AudienceModel.name)
     elif sort_by == "applicant_name":
         col = RepairRequestModel.applicant_name
     else:
@@ -91,7 +95,10 @@ def fetch_repair_requests_page(
     total = base.with_entities(func.count(func.distinct(RepairRequestModel.id))).scalar() or 0
     items = (
         _apply_repair_request_sort(base, sort_by, sort_dir)
-        .options(joinedload(RepairRequestModel.device))
+        .options(
+            joinedload(RepairRequestModel.device),
+            joinedload(RepairRequestModel.audience),
+        )
         .offset(offset)
         .limit(limit)
         .all()
@@ -137,9 +144,17 @@ def suggest_repair_requests(db: Session, field: str, q: str) -> list[str]:
             .limit(limit)
             .all()
         )
+        aud_rows = (
+            db.query(AudienceModel.name)
+            .filter(AudienceModel.name.ilike(pattern))
+            .distinct()
+            .order_by(AudienceModel.name)
+            .limit(limit)
+            .all()
+        )
         seen: set[str] = set()
         out: list[str] = []
-        for (value,) in inv_rows + name_rows:
+        for (value,) in inv_rows + name_rows + aud_rows:
             if value not in seen:
                 seen.add(value)
                 out.append(value)

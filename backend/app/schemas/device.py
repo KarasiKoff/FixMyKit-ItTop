@@ -14,7 +14,7 @@ class DeviceBase(BaseModel):
     inventory_number: str
     name: str
     serial_number: str | None = None
-    audience_id: int | None = None
+    audience_id: UUID | None = None
     category_id: UUID | None = None
     responsible_id: UUID | None = None
     repair_status: RepairStatus = RepairStatus.NOT_IN_REPAIR
@@ -28,7 +28,7 @@ class DeviceUpdate(BaseModel):
     inventory_number: str | None = None
     name: str | None = None
     serial_number: str | None = None
-    audience_id: int | None = None
+    audience_id: UUID | None = None
     category_id: UUID | None = None
     responsible_id: UUID | None = None
     repair_status: RepairStatus | None = None

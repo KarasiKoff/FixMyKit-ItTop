@@ -1,11 +1,17 @@
 import { getStoredAuthToken } from './auth';
 import { apiRequest } from './client';
-import { PublicRepairSummary, RepairRequest, RepairRequestDetail } from '../types/repairRequest';
+import {
+    PublicAudienceRepairSummary,
+    PublicRepairSummary,
+    RepairRequest,
+    RepairRequestDetail,
+} from '../types/repairRequest';
 import { RepairRequestComment } from '../types/repairRequestComment';
 
 type RepairRequestApi = {
     id: string;
-    device_id: string;
+    device_id?: string | null;
+    audience_id?: string | null;
     applicant_name?: string | null;
     description: string;
     status: 'open' | 'in_progress' | 'closed';
@@ -25,6 +31,7 @@ type RepairRequestApi = {
     closed_by_tracker_display?: string | null;
     device_inventory_number?: string | null;
     device_name?: string | null;
+    audience_name?: string | null;
     has_attachments?: boolean;
     attachments_sync_status?: 'none' | 'partial' | 'complete';
     attachments_count?: number;
@@ -37,7 +44,7 @@ type PublicRepairSummaryApi = {
         inventory_number: string;
         name: string;
         category?: { id: string; name: string } | null;
-        audience?: { id: number; name: string } | null;
+        audience?: { id: string; name: string } | null;
     };
     active_request: {
         id: string;
@@ -63,7 +70,9 @@ type PublicRepairSummaryApi = {
 function mapRepairRequest(item: RepairRequestApi): RepairRequest {
     return {
         id: item.id,
-        deviceId: item.device_id,
+        deviceId: item.device_id ?? undefined,
+        audienceId: item.audience_id ?? undefined,
+        audienceName: item.audience_name ?? undefined,
         requesterName: item.applicant_name ?? '',
         description: item.description,
         status: item.status === 'open' ? 'new' : item.status,
@@ -84,15 +93,22 @@ function mapRepairRequest(item: RepairRequestApi): RepairRequest {
     };
 }
 
-function buildRepairRequestFormData(payload: {
-    deviceId: string;
+export type CreateRepairRequestPayload = {
+    deviceId?: string;
+    audienceId?: string;
     requesterName: string;
     description: string;
     syncToTracker?: boolean;
     files?: File[];
-}): FormData {
+};
+
+function buildRepairRequestFormData(payload: CreateRepairRequestPayload): FormData {
     const form = new FormData();
-    form.append('device_id', payload.deviceId);
+    if (payload.deviceId) {
+        form.append('device_id', payload.deviceId);
+    } else if (payload.audienceId != null) {
+        form.append('audience_id', String(payload.audienceId));
+    }
     form.append('description', payload.description);
     if (payload.requesterName.trim()) {
         form.append('applicant_name', payload.requesterName.trim());
@@ -122,13 +138,23 @@ export function isRepairRequestSynced(r: Pick<RepairRequest, 'ticketId' | 'ticke
     return Boolean(r.ticketKey || r.ticketId || r.lastSyncedAt);
 }
 
-export async function createRepairRequest(payload: {
-    deviceId: string;
-    requesterName: string;
-    description: string;
-    syncToTracker?: boolean;
-    files?: File[];
-}) {
+function buildRepairRequestJsonBody(payload: CreateRepairRequestPayload, syncToTracker?: boolean): string {
+    const body: Record<string, unknown> = {
+        applicant_name: payload.requesterName?.trim() || null,
+        description: payload.description,
+    };
+    if (payload.deviceId) {
+        body.device_id = payload.deviceId;
+    } else if (payload.audienceId != null) {
+        body.audience_id = payload.audienceId;
+    }
+    if (syncToTracker !== undefined) {
+        body.sync_to_tracker = syncToTracker;
+    }
+    return JSON.stringify(body);
+}
+
+export async function createRepairRequest(payload: CreateRepairRequestPayload) {
     const token = getStoredAuthToken();
     const hasFiles = (payload.files?.length ?? 0) > 0;
     if (token) {
@@ -139,12 +165,7 @@ export async function createRepairRequest(payload: {
               }
             : {
                   method: 'POST' as const,
-                  body: JSON.stringify({
-                      device_id: payload.deviceId,
-                      applicant_name: payload.requesterName?.trim() || null,
-                      description: payload.description,
-                      sync_to_tracker: payload.syncToTracker ?? true,
-                  }),
+                  body: buildRepairRequestJsonBody(payload, payload.syncToTracker ?? true),
               };
         const response = await apiRequest<RepairRequestApi>('/api/repair-requests', init);
         return mapRepairRequest(response);
@@ -153,21 +174,12 @@ export async function createRepairRequest(payload: {
     const pubInit = hasFiles
         ? {
               method: 'POST' as const,
-              body: buildRepairRequestFormData({
-                  deviceId: payload.deviceId,
-                  requesterName: payload.requesterName,
-                  description: payload.description,
-                  files: payload.files,
-              }),
+              body: buildRepairRequestFormData(payload),
               skipAuth: true as const,
           }
         : {
               method: 'POST' as const,
-              body: JSON.stringify({
-                  device_id: payload.deviceId,
-                  applicant_name: payload.requesterName,
-                  description: payload.description,
-              }),
+              body: buildRepairRequestJsonBody(payload),
               skipAuth: true as const,
           };
     const pub = await apiRequest<{
@@ -188,7 +200,8 @@ export async function createRepairRequest(payload: {
 
     return mapRepairRequest({
         id: pub.id,
-        device_id: payload.deviceId,
+        device_id: payload.deviceId ?? null,
+        audience_id: payload.audienceId ?? null,
         applicant_name: payload.requesterName,
         description: payload.description,
         status: st,
@@ -380,7 +393,48 @@ export async function postRepairRequestComment(requestId: string, body: string):
     );
 }
 
+type PublicAudienceRepairSummaryApi = {
+    audience: { id: string; name: string };
+    active_request: PublicRepairSummaryApi['active_request'];
+    has_unpublished_active: boolean;
+    history: PublicRepairSummaryApi['history'];
+};
+
+export async function fetchPublicAudienceRepairSummary(audienceId: string): Promise<PublicAudienceRepairSummary> {
+    const data = await apiRequest<PublicAudienceRepairSummaryApi>(
+        `/api/public/audiences/${audienceId}/repair-summary`,
+        { skipAuth: true },
+    );
+    return {
+        audience: { id: data.audience.id, name: data.audience.name },
+        activeRequest: data.active_request
+            ? {
+                  id: data.active_request.id,
+                  description: data.active_request.description,
+                  status: data.active_request.status as 'open' | 'in_progress' | 'closed',
+                  createdAt: data.active_request.created_at,
+                  closedAt: data.active_request.closed_at,
+                  resolutionNote: data.active_request.resolution_note,
+                  applicantName: data.active_request.applicant_name,
+              }
+            : null,
+        hasUnpublishedActive: data.has_unpublished_active,
+        history: data.history.map((h) => ({
+            id: h.id,
+            description: h.description,
+            status: h.status as 'open' | 'in_progress' | 'closed',
+            createdAt: h.created_at,
+            closedAt: h.closed_at,
+            resolutionNote: h.resolution_note,
+            applicantName: h.applicant_name,
+        })),
+    };
+}
+
 export async function fetchPublicRepairSummary(deviceId: string): Promise<PublicRepairSummary> {
+    if (!deviceId?.trim() || deviceId.trim() === 'undefined') {
+        throw new Error('invalid_device_id');
+    }
     const data = await apiRequest<PublicRepairSummaryApi>(
         `/api/public/devices/${deviceId}/repair-summary`,
         { skipAuth: true },

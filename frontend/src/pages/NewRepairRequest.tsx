@@ -1,15 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { AttachmentUploader, draftsToFiles, type AttachmentDraft } from '../components/AttachmentUploader';
+import { CabinetRepairForm } from '../components/CabinetRepairForm';
 import { RepairRequestForm } from '../components/RepairRequestForm';
 import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
+import { fetchAudiences, type AudienceDto } from '../api/audiences';
 import { fetchPublicDeviceById } from '../api/devices';
-import { createRepairRequest as submitRepairRequest } from '../api/repairRequests';
+import { createRepairRequest as submitRepairRequest, fetchPublicAudienceRepairSummary } from '../api/repairRequests';
 import { Device } from '../types/device';
-import type { RepairRequest } from '../types/repairRequest';
+import type { PublicAudienceInfo, RepairRequest } from '../types/repairRequest';
 import { formatApiError } from '../utils/formatApiError';
+import { isUuid } from '../utils/uuid';
+
+type RequestTarget = 'device' | 'cabinet';
 
 export function NewRepairRequest() {
     const { isAuthenticated, user } = useAuth();
@@ -17,14 +22,34 @@ export function NewRepairRequest() {
     const { devices, refresh, isLoading: appDataLoading } = useAppData();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const preselectedDeviceId = searchParams.get('deviceId') ?? undefined;
+    const deviceIdRaw = searchParams.get('deviceId');
+    const preselectedDeviceId = isUuid(deviceIdRaw) ? deviceIdRaw!.trim() : undefined;
+    const audienceIdRaw = searchParams.get('audienceId');
+    const preselectedAudienceId = isUuid(audienceIdRaw) ? audienceIdRaw!.trim() : undefined;
+
+    const lockedTarget: RequestTarget | null = preselectedAudienceId
+        ? 'cabinet'
+        : preselectedDeviceId
+          ? 'device'
+          : null;
+
+    const [requestTarget, setRequestTarget] = useState<RequestTarget>(lockedTarget ?? 'device');
 
     const [publicDevice, setPublicDevice] = useState<Device | null>(null);
+    const [publicAudience, setPublicAudience] = useState<PublicAudienceInfo | null>(null);
     const [publicLoading, setPublicLoading] = useState(false);
     const [publicError, setPublicError] = useState<string | null>(null);
     const [guestDone, setGuestDone] = useState(false);
     const [sendToTracker, setSendToTracker] = useState(true);
     const [attachmentDrafts, setAttachmentDrafts] = useState<AttachmentDraft[]>([]);
+    const [audiences, setAudiences] = useState<AudienceDto[]>([]);
+    const [audiencesLoading, setAudiencesLoading] = useState(false);
+
+    useEffect(() => {
+        if (lockedTarget) {
+            setRequestTarget(lockedTarget);
+        }
+    }, [lockedTarget]);
 
     function notifyAttachmentOutcome(created: RepairRequest, syncToTracker: boolean, hadFiles: boolean) {
         if (!hadFiles) {
@@ -46,21 +71,25 @@ export function NewRepairRequest() {
     }
 
     useEffect(() => {
-        if (isAuthenticated || !preselectedDeviceId) {
-            setPublicDevice(null);
-            setPublicError(null);
-            setPublicLoading(false);
-            return;
+        if (isAuthenticated || !preselectedDeviceId || requestTarget !== 'device') {
+            if (!preselectedDeviceId) {
+                setPublicDevice(null);
+            }
+            if (requestTarget !== 'device') {
+                setPublicError(null);
+                setPublicLoading(false);
+            }
+            if (!isAuthenticated || requestTarget !== 'device') {
+                return;
+            }
         }
 
         let cancelled = false;
         setPublicLoading(true);
         setPublicError(null);
-        fetchPublicDeviceById(preselectedDeviceId)
+        fetchPublicDeviceById(preselectedDeviceId!)
             .then((d) => {
-                if (!cancelled) {
-                    setPublicDevice(d);
-                }
+                if (!cancelled) setPublicDevice(d);
             })
             .catch((err) => {
                 if (!cancelled) {
@@ -69,15 +98,68 @@ export function NewRepairRequest() {
                 }
             })
             .finally(() => {
-                if (!cancelled) {
-                    setPublicLoading(false);
-                }
+                if (!cancelled) setPublicLoading(false);
             });
 
         return () => {
             cancelled = true;
         };
-    }, [isAuthenticated, preselectedDeviceId]);
+    }, [isAuthenticated, preselectedDeviceId, requestTarget]);
+
+    useEffect(() => {
+        if (
+            isAuthenticated ||
+            !preselectedAudienceId ||
+            requestTarget !== 'cabinet'
+        ) {
+            if (preselectedAudienceId == null) {
+                setPublicAudience(null);
+            }
+            return;
+        }
+
+        let cancelled = false;
+        setPublicLoading(true);
+        setPublicError(null);
+        fetchPublicAudienceRepairSummary(preselectedAudienceId)
+            .then((s) => {
+                if (!cancelled) setPublicAudience(s.audience);
+            })
+            .catch((err) => {
+                if (!cancelled) {
+                    setPublicAudience(null);
+                    setPublicError(formatApiError(err));
+                }
+            })
+            .finally(() => {
+                if (!cancelled) setPublicLoading(false);
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated, preselectedAudienceId, requestTarget]);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            return;
+        }
+        let cancelled = false;
+        setAudiencesLoading(true);
+        fetchAudiences()
+            .then((items) => {
+                if (!cancelled) setAudiences(items);
+            })
+            .catch(() => {
+                if (!cancelled) setAudiences([]);
+            })
+            .finally(() => {
+                if (!cancelled) setAudiencesLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [isAuthenticated]);
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -85,13 +167,26 @@ export function NewRepairRequest() {
         }
     }, [isAuthenticated]);
 
-    const lockedGuest = !isAuthenticated && Boolean(preselectedDeviceId);
+    const lockedGuest =
+        !isAuthenticated &&
+        Boolean(
+            (requestTarget === 'device' && preselectedDeviceId) ||
+                (requestTarget === 'cabinet' && Boolean(preselectedAudienceId)),
+        );
+
     const displayDevices: Device[] = useMemo(() => {
         if (lockedGuest && publicDevice) {
             return [publicDevice];
         }
         return devices;
     }, [lockedGuest, publicDevice, devices]);
+
+    const displayAudiences: AudienceDto[] = useMemo(() => {
+        if (lockedGuest && publicAudience) {
+            return [{ id: publicAudience.id, name: publicAudience.name }];
+        }
+        return audiences;
+    }, [lockedGuest, publicAudience, audiences]);
 
     const [selectedRoom, setSelectedRoom] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
@@ -116,43 +211,88 @@ export function NewRepairRequest() {
         });
     }, [devices, displayDevices, isAuthenticated, selectedCategory, selectedRoom]);
 
-    async function handleSubmit(data: { deviceId: string; name: string; description: string }) {
+    const hasGuestTarget =
+        Boolean(preselectedDeviceId) || Boolean(preselectedAudienceId);
+
+    async function submitDevice(data: { deviceId: string; name: string; description: string }) {
         const files = draftsToFiles(attachmentDrafts);
+        if (isAuthenticated) {
+            const created = await submitRepairRequest({
+                deviceId: data.deviceId,
+                requesterName: user?.name ?? user?.login ?? '',
+                description: data.description,
+                syncToTracker: sendToTracker,
+                files,
+            });
+            notifyAttachmentOutcome(created, sendToTracker, files.length > 0);
+            setAttachmentDrafts([]);
+            await refresh();
+        } else {
+            await submitRepairRequest({
+                deviceId: data.deviceId,
+                requesterName: data.name,
+                description: data.description,
+                files,
+            });
+            showSuccess('Заявка отправлена');
+            setAttachmentDrafts([]);
+            setGuestDone(true);
+        }
+    }
+
+    async function submitCabinet(data: { audienceId: string; name: string; description: string }) {
+        const files = draftsToFiles(attachmentDrafts);
+        if (isAuthenticated) {
+            const created = await submitRepairRequest({
+                audienceId: data.audienceId,
+                requesterName: user?.name ?? user?.login ?? '',
+                description: data.description,
+                syncToTracker: sendToTracker,
+                files,
+            });
+            notifyAttachmentOutcome(created, sendToTracker, files.length > 0);
+            setAttachmentDrafts([]);
+            await refresh();
+        } else {
+            await submitRepairRequest({
+                audienceId: data.audienceId,
+                requesterName: data.name,
+                description: data.description,
+                files,
+            });
+            showSuccess('Заявка отправлена');
+            setAttachmentDrafts([]);
+            setGuestDone(true);
+        }
+    }
+
+    async function handleDeviceSubmit(data: { deviceId: string; name: string; description: string }) {
         try {
-            if (isAuthenticated) {
-                const created = await submitRepairRequest({
-                    deviceId: data.deviceId,
-                    requesterName: user?.name ?? user?.login ?? '',
-                    description: data.description,
-                    syncToTracker: sendToTracker,
-                    files,
-                });
-                notifyAttachmentOutcome(created, sendToTracker, files.length > 0);
-                setAttachmentDrafts([]);
-                await refresh();
-            } else {
-                await submitRepairRequest({
-                    deviceId: data.deviceId,
-                    requesterName: data.name,
-                    description: data.description,
-                    files,
-                });
-                showSuccess('Заявка отправлена');
-                setAttachmentDrafts([]);
-                setGuestDone(true);
-            }
+            await submitDevice(data);
         } catch (err) {
             showError(formatApiError(err));
             throw err;
         }
     }
 
-    if (!isAuthenticated && !preselectedDeviceId) {
+    async function handleCabinetSubmit(data: { audienceId: string; name: string; description: string }) {
+        try {
+            await submitCabinet(data);
+        } catch (err) {
+            showError(formatApiError(err));
+            throw err;
+        }
+    }
+
+    if (!isAuthenticated && !hasGuestTarget) {
         return (
             <main className="page page--wide">
                 <h2>Новая заявка на ремонт</h2>
                 <section className="card card-form card--narrow-device">
-                    <p>Чтобы создать заявку, отсканируйте QR-код на устройстве — откроется эта страница с уже выбранным оборудованием.</p>
+                    <p>
+                        Чтобы создать заявку, отсканируйте QR-код на устройстве или на табличке кабинета — откроется
+                        эта страница с уже выбранным объектом.
+                    </p>
                     <p>
                         <Link to="/scan">Перейти к сканированию QR</Link>
                     </p>
@@ -161,18 +301,18 @@ export function NewRepairRequest() {
         );
     }
 
-    if (!isAuthenticated && preselectedDeviceId && publicLoading) {
+    if (!isAuthenticated && hasGuestTarget && publicLoading) {
         return (
             <main className="page page--wide">
                 <h2>Новая заявка на ремонт</h2>
                 <section className="card card-form card--narrow-device">
-                    <p>Загрузка данных об устройстве…</p>
+                    <p>Загрузка…</p>
                 </section>
             </main>
         );
     }
 
-    if (!isAuthenticated && preselectedDeviceId && publicError) {
+    if (!isAuthenticated && hasGuestTarget && publicError) {
         return (
             <main className="page page--wide">
                 <h2>Новая заявка на ремонт</h2>
@@ -186,7 +326,7 @@ export function NewRepairRequest() {
         );
     }
 
-    if (isAuthenticated && appDataLoading) {
+    if (isAuthenticated && (appDataLoading || (requestTarget === 'cabinet' && audiencesLoading))) {
         return (
             <main className="page page--wide">
                 <h2>Новая заявка на ремонт</h2>
@@ -197,11 +337,28 @@ export function NewRepairRequest() {
         );
     }
 
+    const attachmentBlock = <AttachmentUploader files={attachmentDrafts} onChange={setAttachmentDrafts} />;
+
     return (
         <main className="page page--wide">
             <h2>Новая заявка на ремонт</h2>
             <section className="card card-form card--narrow-device">
-                {isAuthenticated ? (
+                {isAuthenticated && lockedTarget == null ? (
+                    <div className="repair-filters-row" style={{ marginBottom: 16 }}>
+                        <label>
+                            Объект заявки
+                            <select
+                                value={requestTarget}
+                                onChange={(e) => setRequestTarget(e.target.value as RequestTarget)}
+                            >
+                                <option value="device">Устройство</option>
+                                <option value="cabinet">Кабинет</option>
+                            </select>
+                        </label>
+                    </div>
+                ) : null}
+
+                {isAuthenticated && requestTarget === 'device' ? (
                     <div className="repair-filters-row">
                         <label>
                             Кабинет
@@ -235,16 +392,25 @@ export function NewRepairRequest() {
                     </label>
                 ) : null}
 
-                <RepairRequestForm
-                    devices={filteredDevices}
-                    initialDeviceId={preselectedDeviceId}
-                    deviceSelectDisabled={lockedGuest}
-                    nameRequired={!isAuthenticated}
-                    onSubmit={handleSubmit}
-                    childrenAfterDescription={
-                        <AttachmentUploader files={attachmentDrafts} onChange={setAttachmentDrafts} />
-                    }
-                />
+                {requestTarget === 'cabinet' ? (
+                    <CabinetRepairForm
+                        audiences={displayAudiences}
+                        initialAudienceId={preselectedAudienceId}
+                        audienceSelectDisabled={lockedGuest}
+                        nameRequired={!isAuthenticated}
+                        onSubmit={handleCabinetSubmit}
+                        childrenAfterDescription={attachmentBlock}
+                    />
+                ) : (
+                    <RepairRequestForm
+                        devices={filteredDevices}
+                        initialDeviceId={preselectedDeviceId}
+                        deviceSelectDisabled={lockedGuest}
+                        nameRequired={!isAuthenticated}
+                        onSubmit={handleDeviceSubmit}
+                        childrenAfterDescription={attachmentBlock}
+                    />
+                )}
 
                 {!isAuthenticated && guestDone ? (
                     <div className="repair-guest-next">

@@ -279,52 +279,75 @@ def _requester_line(repair_request: RepairRequest) -> str:
 
 
 def _build_issue_payload(repair_request: RepairRequest, queue: str) -> dict:
-    device = repair_request.device
-    device_name = device.name if device is not None else "устройство (нет данных)"
-    audience_name = (
-        device.audience.name
-        if device is not None and device.audience is not None
-        else None
-    )
-    inv = device.inventory_number if device is not None else None
-    audience_display = (
-        audience_name.strip() if audience_name and str(audience_name).strip() else "—"
-    )
-    inv_display = inv if inv else "—"
-
-    audience_part = (
-        f", аудитория {audience_name}"
-        if audience_name and str(audience_name).strip()
-        else ""
-    )
-    summary = f"Ремонт: {device_name}{audience_part}"
-    summary = summary[:255]
-
     requester = _requester_line(repair_request)
-
     desc_text = (repair_request.description or "—").strip() or "—"
     desc_lines = desc_text.splitlines()
     quoted_desc = "\n".join(f"> {line}" if line else ">" for line in desc_lines)
 
-    lines: list[str] = [
-        "### Устройство",
-        f"- **Название:** {device_name}",
-        f"- **Аудитория:** {audience_display}",
-        f"- **Инв. номер:** {inv_display}",
-        "",
-        "### Заявитель",
-        requester,
-        "",
-        "### Описание проблемы",
-        quoted_desc,
-        "",
-        "### Ссылка на заявку в Fix My Kit",
-        f"https://app.fixmykit.karasikoff.ru/requests/{repair_request.id}",
-        "",
-        "### Отладка",
-        f"- **id заявки:** `{repair_request.id}`",
-        f"- **id устройства:** `{repair_request.device_id}`",
-    ]
+    if repair_request.audience_id is not None:
+        audience = repair_request.audience
+        cabinet_name = (
+            audience.name.strip()
+            if audience is not None and audience.name and audience.name.strip()
+            else "—"
+        )
+        summary = f"Кабинет: {cabinet_name}"[:255]
+        lines: list[str] = [
+            "### Кабинет",
+            f"- **Название:** {cabinet_name}",
+            "",
+            "### Заявитель",
+            requester,
+            "",
+            "### Описание проблемы",
+            quoted_desc,
+            "",
+            "### Ссылка на заявку в Fix My Kit",
+            f"https://app.fixmykit.karasikoff.ru/requests/{repair_request.id}",
+            "",
+            "### Отладка",
+            f"- **id заявки:** `{repair_request.id}`",
+            f"- **id кабинета:** `{repair_request.audience_id}`",
+        ]
+    else:
+        device = repair_request.device
+        device_name = device.name if device is not None else "устройство (нет данных)"
+        room_name = (
+            device.audience.name
+            if device is not None and device.audience is not None
+            else None
+        )
+        inv = device.inventory_number if device is not None else None
+        audience_display = (
+            room_name.strip() if room_name and str(room_name).strip() else "—"
+        )
+        inv_display = inv if inv else "—"
+        audience_part = (
+            f", кабинет {room_name}"
+            if room_name and str(room_name).strip()
+            else ""
+        )
+        summary = f"Ремонт: {device_name}{audience_part}"[:255]
+        lines = [
+            "### Устройство",
+            f"- **Название:** {device_name}",
+            f"- **Кабинет:** {audience_display}",
+            f"- **Инв. номер:** {inv_display}",
+            "",
+            "### Заявитель",
+            requester,
+            "",
+            "### Описание проблемы",
+            quoted_desc,
+            "",
+            "### Ссылка на заявку в Fix My Kit",
+            f"https://app.fixmykit.karasikoff.ru/requests/{repair_request.id}",
+            "",
+            "### Отладка",
+            f"- **id заявки:** `{repair_request.id}`",
+            f"- **id устройства:** `{repair_request.device_id}`",
+        ]
+
     if repair_request.author_user_id is not None:
         lines.append(f"- **id автора:** `{repair_request.author_user_id}`")
 
