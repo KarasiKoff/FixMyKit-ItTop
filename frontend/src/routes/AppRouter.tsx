@@ -20,6 +20,7 @@ import { RoomMapsPage } from '../pages/RoomMapsPage';
 import { NotFoundPage } from '../pages/NotFoundPage';
 import { PrivacyPage } from '../pages/PrivacyPage';
 import { DevicePublicPage } from '../pages/DevicePublicPage';
+import { AudiencePublicPage } from '../pages/AudiencePublicPage';
 import { useAuth } from '../hooks/useAuth';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { UserAccountMenu } from '../components/UserAccountMenu';
@@ -120,6 +121,7 @@ function AppShell() {
                 <Route path="/admin/add/user" element={<Navigate to="/admin/users" replace />} />
                 <Route path="/scan" element={<ErrorBoundary><QRScan /></ErrorBoundary>} />
                 <Route path="/device/:id/public" element={<DevicePublicPage />} />
+                <Route path="/audience/:id/public" element={<AudiencePublicPage />} />
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="*" element={<NotFoundPage />} />
             </Routes>

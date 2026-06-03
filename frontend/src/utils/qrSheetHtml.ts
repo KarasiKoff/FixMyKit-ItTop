@@ -17,7 +17,7 @@ function escapeHtml(s: string): string {
         .replace(/'/g, '&#39;');
 }
 
-export type QrSheetItem = { dataUrl: string; inventoryNumber: string };
+export type QrSheetItem = { dataUrl: string; label: string; linkCaption?: string };
 
 function pageAndItemBorders(s: QrSheetSettings): string {
     if (!s.dashedGuides) {
@@ -91,16 +91,23 @@ export function buildEmbeddedSheetCss(s: QrSheetSettings): string {
             max-width: 100%;
             width: ${s.qrSizeMm}mm;
         }
+        .qr-item__link {
+            font-size: ${Math.max(5, s.labelFontPt - 2)}pt !important;
+            font-weight: 400 !important;
+            opacity: 0.85;
+        }
         ${borders}
     `;
 }
 
 export function buildPrintPageInnerHtml(items: QrSheetItem[]): string {
     return items
-        .map(
-            (qr) =>
-                `<div class="qr-item"><img src="${qr.dataUrl}" alt="QR" /><p>${escapeHtml(qr.inventoryNumber)}</p></div>`,
-        )
+        .map((qr) => {
+            const caption = qr.linkCaption
+                ? `<p class="qr-item__link">${escapeHtml(qr.linkCaption)}</p>`
+                : '';
+            return `<div class="qr-item"><img src="${qr.dataUrl}" alt="QR" /><p>${escapeHtml(qr.label)}</p>${caption}</div>`;
+        })
         .join('');
 }
 

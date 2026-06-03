@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -53,7 +55,7 @@ def create_audience(
     return audience
 
 
-def _delete_devices_for_audience(db: Session, audience_id: int) -> None:
+def _delete_devices_for_audience(db: Session, audience_id: UUID) -> None:
     device_ids = [row[0] for row in db.query(DeviceModel.id).filter(DeviceModel.audience_id == audience_id).all()]
     for device_id in device_ids:
         db.query(RepairHistory).filter(RepairHistory.device_id == device_id).delete(synchronize_session=False)
@@ -63,7 +65,7 @@ def _delete_devices_for_audience(db: Session, audience_id: int) -> None:
 
 @router.patch("/{audience_id}", response_model=Audience)
 def update_audience(
-    audience_id: int,
+    audience_id: UUID,
     payload: AudienceUpdate,
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN})),
@@ -89,7 +91,7 @@ def update_audience(
 
 @router.delete("/{audience_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_audience(
-    audience_id: int,
+    audience_id: UUID,
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN})),
 ) -> None:

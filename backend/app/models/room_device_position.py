@@ -7,7 +7,7 @@ class RoomDevicePosition(Base):
     __tablename__ = "room_device_positions"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    audience_id = Column(Integer, ForeignKey("audience.id", ondelete="CASCADE"), nullable=False)
+    audience_id = Column(Uuid, ForeignKey("audience.id", ondelete="CASCADE"), nullable=False)
     device_id = Column(Uuid, ForeignKey("devices.id", ondelete="CASCADE"), nullable=False)
     x_pct = Column(Float, nullable=False)
     y_pct = Column(Float, nullable=False)

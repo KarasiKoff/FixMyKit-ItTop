@@ -9,7 +9,7 @@ type DeviceApi = {
     name: string;
     category?: { id: string; name: string } | null;
     serial_number?: string | null;
-    audience?: { id: number; name: string } | null;
+    audience?: { id: string; name: string } | null;
     responsible?: { id: string; full_name?: string | null; login: string } | null;
     repair_status: Device['status'];
     taken_by_sysadmin?: boolean;
@@ -112,6 +112,9 @@ export async function fetchDeviceById(id: string) {
 }
 
 export async function fetchPublicDeviceById(id: string, init?: ApiRequestOptions) {
+    if (!id?.trim() || id.trim() === 'undefined') {
+        throw new Error('invalid_device_id');
+    }
     return mapDevice(
         await apiRequest<DeviceApi>(`/api/public/devices/${id}`, {
             ...init,
@@ -138,7 +141,7 @@ export async function createDevice(payload: {
     inventory_number: string;
     name: string;
     serial_number?: string | null;
-    audience_id?: number | null;
+    audience_id?: string | null;
     category_id?: string | null;
     responsible_id?: string | null;
     repair_status: Device['status'];
@@ -171,7 +174,7 @@ export async function updateDevice(
         inventory_number?: string;
         name?: string;
         serial_number?: string | null;
-        audience_id?: number | null;
+        audience_id?: string | null;
         category_id?: string | null;
         responsible_id?: string | null;
         repair_status?: Device['status'];

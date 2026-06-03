@@ -123,7 +123,7 @@ export function AdminAddDevice() {
         const serialPrefix = serialNumber.trim();
         const sharedPayload = {
             category_id: categoryId || null,
-            audience_id: audienceId ? Number(audienceId) : null,
+            audience_id: audienceId || null,
             responsible_id: responsibleId || null,
             repair_status: status,
         };

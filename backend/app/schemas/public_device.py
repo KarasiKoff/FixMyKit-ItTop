@@ -35,6 +35,8 @@ class PublicRepairRequestItem(BaseModel):
 class PublicRepairSummaryResponse(BaseModel):
     """Публичная история ремонтов устройства."""
 
+    model_config = ConfigDict(from_attributes=True)
+
     device: PublicDeviceResponse
     active_request: PublicRepairRequestItem | None = None
     has_unpublished_active: bool

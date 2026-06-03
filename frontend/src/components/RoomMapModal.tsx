@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { RoomMapView } from './RoomMapView';
 
 type Props = {
-    audienceId: number;
+    audienceId: string;
     audienceName: string;
     highlightedDeviceId: string;
     onClose: () => void;

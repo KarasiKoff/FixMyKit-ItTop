@@ -2,7 +2,13 @@ import { QR_SHEET_DEFAULTS, type QrSheetSettings } from '../types/qrSheetSetting
 
 const STORAGE_KEY = 'fixmykit-qr-sheet-settings';
 
-type PartialSettings = Partial<QrSheetSettings> & { evenColumns?: boolean; gapMm?: number };
+type PartialSettings = Partial<QrSheetSettings> & {
+    evenColumns?: boolean;
+    gapMm?: number;
+    /** устар. */
+    useClckShortener?: boolean;
+    showLinkCaption?: boolean;
+};
 
 function parseNumber(v: unknown, fallback: number): number {
     const n = typeof v === 'number' ? v : Number(v);
@@ -33,6 +39,10 @@ export function loadQrSheetSettings(): QrSheetSettings {
             logoSizePercent: parseNumber(o.logoSizePercent, QR_SHEET_DEFAULTS.logoSizePercent),
             dashedGuides: parseBool(o.dashedGuides, QR_SHEET_DEFAULTS.dashedGuides),
             pdfNameSuffix: parseString(o.pdfNameSuffix, QR_SHEET_DEFAULTS.pdfNameSuffix),
+            showScanShortLink: parseBool(
+                o.showScanShortLink ?? o.showLinkCaption ?? o.useClckShortener,
+                QR_SHEET_DEFAULTS.showScanShortLink,
+            ),
         };
     } catch {
         return { ...QR_SHEET_DEFAULTS };

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, defer, joinedload, load_only
 
@@ -17,14 +19,14 @@ from backend.app.schemas.room_map import (
 router = APIRouter(prefix="/api/audiences", tags=["room-map"])
 
 
-def _get_audience_or_404(db: Session, audience_id: int) -> Audience:
+def _get_audience_or_404(db: Session, audience_id: UUID) -> Audience:
     obj = db.query(Audience).filter(Audience.id == audience_id).first()
     if obj is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="audience_not_found")
     return obj
 
 
-def _build_map_response(audience_id: int, db: Session) -> RoomMapResponse:
+def _build_map_response(audience_id: UUID, db: Session) -> RoomMapResponse:
     audience = _get_audience_or_404(db, audience_id)
     rows = (
         db.query(RoomDevicePosition, DeviceModel, CategoryModel)
@@ -64,7 +66,7 @@ def _build_map_response(audience_id: int, db: Session) -> RoomMapResponse:
 
 @router.get("/{audience_id}/map", response_model=RoomMapResponse)
 def get_room_map(
-    audience_id: int,
+    audience_id: UUID,
     db: Session = Depends(get_db),
     _=Depends(require_admin_or_sysadmin),
 ) -> RoomMapResponse:
@@ -74,7 +76,7 @@ def get_room_map(
 
 @router.get("/{audience_id}/devices", response_model=RoomDeviceListResponse)
 def get_audience_devices(
-    audience_id: int,
+    audience_id: UUID,
     db: Session = Depends(get_db),
     _=Depends(require_admin_or_sysadmin),
 ) -> RoomDeviceListResponse:
@@ -116,7 +118,7 @@ def get_audience_devices(
 
 @router.put("/{audience_id}/map", response_model=RoomMapResponse)
 def save_room_map(
-    audience_id: int,
+    audience_id: UUID,
     payload: RoomMapSaveRequest,
     db: Session = Depends(get_db),
     _=Depends(require_admin_only),

@@ -59,6 +59,11 @@ class ServerConfig(BaseSettings):
         alias="PUBLIC_FRONTEND_BASE_URL",
         description="Базовый URL фронта для QR (публичная страница устройства /device/{id}/public).",
     )
+    clck_shortener_enabled: bool = Field(
+        default=True,
+        alias="CLCK_SHORTENER_ENABLED",
+        description="Сокращать ссылки для QR через clck.ru (POST /api/public/shorten-url).",
+    )
     cors_origins: str = Field(
         default="",
         alias="CORS_ORIGINS",

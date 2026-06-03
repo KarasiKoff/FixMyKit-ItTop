@@ -1,6 +1,6 @@
 from uuid import uuid4
 
-from sqlalchemy import Boolean, Column, Enum as SQLEnum
+from sqlalchemy import Boolean, Column, Enum as SQLEnum, Integer
 from sqlalchemy import ForeignKey, String, Text, Uuid
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import TIMESTAMP
@@ -19,7 +19,8 @@ class RepairRequest(Base):
     __tablename__ = "repair_requests"
 
     id = Column(Uuid, primary_key=True, default=uuid4)
-    device_id = Column(Uuid, ForeignKey("devices.id"), nullable=False)
+    device_id = Column(Uuid, ForeignKey("devices.id"), nullable=True)
+    audience_id = Column(Uuid, ForeignKey("audience.id"), nullable=True)
     author_user_id = Column(Uuid, ForeignKey("users.id"), nullable=True)
     closed_by_user_id = Column(Uuid, ForeignKey("users.id"), nullable=True)
     taken_by_sysadmin_by_user_id = Column(Uuid, ForeignKey("users.id"), nullable=True)
@@ -62,6 +63,7 @@ class RepairRequest(Base):
 
     # Relationships
     device = relationship("Device", backref="repair_requests")
+    audience = relationship("Audience", backref="repair_requests")
     author = relationship("User", foreign_keys=[author_user_id], backref="repair_requests_created")
     closed_by = relationship("User", foreign_keys=[closed_by_user_id], backref="repair_requests_closed")
     taken_by_sysadmin = relationship("User", foreign_keys=[taken_by_sysadmin_by_user_id], backref="repair_requests_taken")

@@ -8,7 +8,7 @@ import { MapCanvasStack } from './MapCanvasStack';
 import { MapDeviceChip } from './MapDeviceChip';
 
 type Props = {
-    audienceId: number;
+    audienceId: string;
     highlightedDeviceId?: string;
     onDeviceClick?: (deviceId: string) => void;
     emptyMessage?: string;

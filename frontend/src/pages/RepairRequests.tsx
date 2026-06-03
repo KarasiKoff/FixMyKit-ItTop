@@ -36,13 +36,19 @@ const DEFAULT_DIR: SortDir = 'desc';
 const EMPTY_FILTERS: RequestFilters = { device: '', applicant: '', status: '' };
 
 function deviceLabel(request: RepairRequest): string {
+    if (request.audienceName) {
+        return `Кабинет: ${request.audienceName}`;
+    }
+    if (request.audienceId != null) {
+        return `Кабинет #${request.audienceId}`;
+    }
     if (request.deviceInventoryNumber) {
         return request.deviceInventoryNumber;
     }
     if (request.deviceName) {
         return request.deviceName;
     }
-    return request.deviceId;
+    return request.deviceId ?? '—';
 }
 
 export function RepairRequests() {

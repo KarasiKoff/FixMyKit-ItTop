@@ -1,6 +1,8 @@
 export type RepairRequest = {
     id: string;
-    deviceId: string;
+    deviceId?: string;
+    audienceId?: string;
+    audienceName?: string;
     requesterName: string;
     description: string;
     status: 'new' | 'in_progress' | 'closed';
@@ -53,11 +55,23 @@ export type PublicDeviceInfo = {
     inventoryNumber: string;
     name: string;
     category?: { id: string; name: string } | null;
-    audience?: { id: number; name: string } | null;
+    audience?: { id: string; name: string } | null;
 };
 
 export type PublicRepairSummary = {
     device: PublicDeviceInfo;
+    activeRequest: PublicRepairRequestItem | null;
+    hasUnpublishedActive: boolean;
+    history: PublicRepairRequestItem[];
+};
+
+export type PublicAudienceInfo = {
+    id: string;
+    name: string;
+};
+
+export type PublicAudienceRepairSummary = {
+    audience: PublicAudienceInfo;
     activeRequest: PublicRepairRequestItem | null;
     hasUnpublishedActive: boolean;
     history: PublicRepairRequestItem[];

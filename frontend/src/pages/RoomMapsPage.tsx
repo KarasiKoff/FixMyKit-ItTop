@@ -6,7 +6,7 @@ import { RoomMapView } from '../components/RoomMapView';
 export function RoomMapsPage() {
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
-    const audienceLookupRef = useRef<Map<string, number>>(new Map());
+    const audienceLookupRef = useRef<Map<string, string>>(new Map());
     const [roomQuery, setRoomQuery] = useState('');
     const [selectedAudience, setSelectedAudience] = useState<AudienceDto | null>(null);
     const [initializing, setInitializing] = useState(true);
@@ -35,10 +35,9 @@ export function RoomMapsPage() {
 
     useEffect(() => {
         let cancelled = false;
-        const raw = searchParams.get('audience');
-        const id = raw ? Number.parseInt(raw, 10) : Number.NaN;
+        const raw = searchParams.get('audience')?.trim();
 
-        if (!raw || Number.isNaN(id)) {
+        if (!raw) {
             setInitializing(false);
             return;
         }
@@ -46,7 +45,7 @@ export function RoomMapsPage() {
         fetchAudiences()
             .then((items) => {
                 if (cancelled) return;
-                const found = items.find((a) => a.id === id);
+                const found = items.find((a) => a.id === raw);
                 if (found) {
                     audienceLookupRef.current.set(found.name, found.id);
                     setRoomQuery(found.name);

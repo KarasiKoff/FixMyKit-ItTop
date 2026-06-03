@@ -25,7 +25,7 @@ class DeviceOnMap(DevicePositionItem):
 
 
 class RoomMapResponse(BaseModel):
-    audience_id: int
+    audience_id: UUID
     grid_cols: int = 4
     grid_rows: int = 4
     door_edge: MapDoorEdge = "bottom"

@@ -80,7 +80,7 @@ export function AdminEditDevice() {
                 name: name.trim(),
                 serial_number: serialNumber.trim() || null,
                 category_id: categoryId || null,
-                audience_id: audienceId ? Number(audienceId) : null,
+                audience_id: audienceId || null,
                 responsible_id: responsibleId || null,
                 repair_status: status,
             });

@@ -5,12 +5,14 @@ export type QrSheetSettings = {
     cellPaddingMm: number;
     labelFontPt: number;
     labelGapMm: number;
-    /** Жирный шрифт подписи с инвентарным номером. */
+    /** Жирный шрифт подписи. */
     labelBold: boolean;
     /** Размер логотипа в центре QR, % от ширины QR (при наличии изображения). */
     logoSizePercent: number;
     dashedGuides: boolean;
     pdfNameSuffix: string;
+    /** Под подписью: одна сокращённая ссылка на общую страницу /scan (clck.ru). */
+    showScanShortLink: boolean;
 };
 
 /** Значения по умолчанию и границы ползунков (поле ввода может выходить за них). */
@@ -23,6 +25,7 @@ export const QR_SHEET_DEFAULTS: QrSheetSettings = {
     logoSizePercent: 22,
     dashedGuides: true,
     pdfNameSuffix: '',
+    showScanShortLink: false,
 };
 
 export const QR_SHEET_SLIDER_BOUNDS = {

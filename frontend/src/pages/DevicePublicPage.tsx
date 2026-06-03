@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { fetchPublicRepairSummary } from '../api/repairRequests';
 import { useAuth } from '../hooks/useAuth';
 import { formatApiError } from '../utils/formatApiError';
+import { isUuid } from '../utils/uuid';
 import { PublicRepairSummary, PublicRepairRequestItem } from '../types/repairRequest';
 
 function statusLabel(status: string): string {
@@ -102,7 +103,7 @@ export function DevicePublicPage() {
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!id) return;
+        if (!id || !isUuid(id)) return;
         setLoading(true);
         setError(null);
         fetchPublicRepairSummary(id)

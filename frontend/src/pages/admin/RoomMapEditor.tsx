@@ -63,7 +63,7 @@ export function RoomMapEditor() {
 
     const { id } = useParams<{ id: string }>();
 
-    const audienceId = Number(id);
+    const audienceId = id ?? '';
 
     const { showSuccess, showError } = useToast();
 

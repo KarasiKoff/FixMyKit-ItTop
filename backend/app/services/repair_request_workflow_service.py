@@ -92,14 +92,15 @@ def apply_workflow_change(
             comment_text or None,
         )
         repair_request.tracker_status_label = label
-        add_repair_history(
-            db,
-            device_id=repair_request.device_id,
-            repair_request_id=repair_request.id,
-            old_status=None,
-            new_status=None,
-            note=f"Закрыто с сайта: {resolution_label}",
-        )
+        if repair_request.device_id is not None:
+            add_repair_history(
+                db,
+                device_id=repair_request.device_id,
+                repair_request_id=repair_request.id,
+                old_status=None,
+                new_status=None,
+                note=f"Закрыто с сайта: {resolution_label}",
+            )
         db.commit()
         db.refresh(repair_request)
         sync_tracker_label_with_pending(
@@ -117,14 +118,15 @@ def apply_workflow_change(
 
     repair_request.status = target_status
     repair_request.tracker_status_label = label
-    add_repair_history(
-        db,
-        device_id=repair_request.device_id,
-        repair_request_id=repair_request.id,
-        old_status=None,
-        new_status=None,
-        note=f"Статус с сайта: {label}",
-    )
+    if repair_request.device_id is not None:
+        add_repair_history(
+            db,
+            device_id=repair_request.device_id,
+            repair_request_id=repair_request.id,
+            old_status=None,
+            new_status=None,
+            note=f"Статус с сайта: {label}",
+        )
     db.commit()
     db.refresh(repair_request)
     sync_tracker_label_with_pending(db, repair_request, label)

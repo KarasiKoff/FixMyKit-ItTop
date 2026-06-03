@@ -18,7 +18,7 @@ class Device(Base):
     name = Column(String, nullable=False)
     category_id = Column(Uuid, ForeignKey("categories.id"), nullable=True)
     serial_number = Column(String, nullable=True)
-    audience_id = Column(Integer, ForeignKey("audience.id"), nullable=True)
+    audience_id = Column(Uuid, ForeignKey("audience.id"), nullable=True)
     responsible_id = Column(Uuid, ForeignKey("users.id"), nullable=True)
     repair_status = Column(SQLEnum(RepairStatus, name="repair_status"), nullable=False, default=RepairStatus.NOT_IN_REPAIR)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())

@@ -62,6 +62,11 @@ from backend.app.services.repair_request_attachment_service import (
 from backend.app.services.repair_request_closure_service import record_repair_request_closed
 from backend.app.services.repair_request_sysadmin_taken_service import clear_sysadmin_taken_fields
 from backend.app.services.repair_request_list_query import fetch_repair_requests_page, suggest_repair_requests
+from backend.app.services.repair_request_target import (
+    ensure_no_active_request,
+    ensure_target_exists,
+    parse_repair_target,
+)
 from backend.app.services.tracker_service import (
     TrackerUnavailableError,
     fetch_attachment_content,
@@ -92,28 +97,13 @@ def get_repair_request_or_404(db: Session, request_id: UUID, *, for_tracker: boo
     if for_tracker:
         q = q.options(
             joinedload(RepairRequest.device).joinedload(Device.audience),
+            joinedload(RepairRequest.audience),
             joinedload(RepairRequest.author),
         )
     repair_request = q.first()
     if repair_request is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="repair_request_not_found")
     return repair_request
-
-
-def ensure_device_exists(db: Session, device_id: UUID) -> None:
-    exists = db.query(Device.id).filter(Device.id == device_id).first()
-    if exists is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found")
-
-
-def ensure_no_active_request(db: Session, device_id: UUID) -> None:
-    active_request = (
-        db.query(RepairRequest.id)
-        .filter(RepairRequest.device_id == device_id, RepairRequest.status.in_(ACTIVE_STATUSES))
-        .first()
-    )
-    if active_request is not None:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="active_request_exists")
 
 
 def _try_tracker_sync(db: Session, request_id: UUID) -> bool:
@@ -134,8 +124,10 @@ def _collect_upload_files(form) -> list[UploadFile]:
 async def _parse_multipart_create(request: Request) -> tuple[dict, list[UploadFile]]:
     form = await request.form()
     device_raw = form.get("device_id")
-    if device_raw is None:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="device_id_required")
+    audience_raw = form.get("audience_id")
+    device_id = UUID(str(device_raw)) if device_raw is not None else None
+    audience_id = UUID(str(audience_raw)) if audience_raw is not None else None
+    device_id, audience_id = parse_repair_target(device_id=device_id, audience_id=audience_id)
     description = str(form.get("description") or "").strip()
     if not description:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="description_required")
@@ -146,10 +138,32 @@ async def _parse_multipart_create(request: Request) -> tuple[dict, list[UploadFi
     if sync_raw is not None:
         sync_to_tracker = str(sync_raw).lower() in ("1", "true", "yes", "on")
     return {
-        "device_id": UUID(str(device_raw)),
+        "device_id": device_id,
+        "audience_id": audience_id,
         "description": description,
         "applicant_name": applicant_name,
         "sync_to_tracker": sync_to_tracker,
+    }, _collect_upload_files(form)
+
+
+async def _parse_public_multipart_create(request: Request) -> tuple[dict, list[UploadFile]]:
+    form = await request.form()
+    device_raw = form.get("device_id")
+    audience_raw = form.get("audience_id")
+    device_id = UUID(str(device_raw)) if device_raw is not None else None
+    audience_id = UUID(str(audience_raw)) if audience_raw is not None else None
+    device_id, audience_id = parse_repair_target(device_id=device_id, audience_id=audience_id)
+    applicant_raw = form.get("applicant_name")
+    if applicant_raw is None or not str(applicant_raw).strip():
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="applicant_name_required")
+    description = str(form.get("description") or "").strip()
+    if not description:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="description_required")
+    return {
+        "device_id": device_id,
+        "audience_id": audience_id,
+        "applicant_name": str(applicant_raw).strip(),
+        "description": description,
     }, _collect_upload_files(form)
 
 
@@ -232,14 +246,15 @@ def list_repair_requests(
 
 def _repair_request_list_item(item: RepairRequest) -> RepairRequestResponse:
     payload = RepairRequestResponse.model_validate(item)
-    if item.device is None:
+    updates: dict = {}
+    if item.device is not None:
+        updates["device_inventory_number"] = item.device.inventory_number
+        updates["device_name"] = item.device.name
+    if item.audience is not None:
+        updates["audience_name"] = item.audience.name
+    if not updates:
         return payload
-    return payload.model_copy(
-        update={
-            "device_inventory_number": item.device.inventory_number,
-            "device_name": item.device.name,
-        }
-    )
+    return payload.model_copy(update=updates)
 
 
 @router.post(
@@ -284,6 +299,7 @@ async def create_repair_request(
     if "multipart/form-data" in content_type:
         fields, uploads = await _parse_multipart_create(request)
         device_id = fields["device_id"]
+        audience_id = fields["audience_id"]
         description = fields["description"]
         applicant_name = fields["applicant_name"]
         sync_to_tracker = fields["sync_to_tracker"]
@@ -295,17 +311,19 @@ async def create_repair_request(
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_json") from exc
         payload = RepairRequestCreate.model_validate(body)
         device_id = payload.device_id
+        audience_id = payload.audience_id
         description = payload.description
         applicant_name = payload.applicant_name
         sync_to_tracker = payload.sync_to_tracker
         author_user_id = payload.author_user_id or current_user.id
         uploads = []
 
-    ensure_device_exists(db, device_id)
-    ensure_no_active_request(db, device_id)
+    ensure_target_exists(db, device_id, audience_id)
+    ensure_no_active_request(db, device_id=device_id, audience_id=audience_id)
 
     repair_request = RepairRequest(
         device_id=device_id,
+        audience_id=audience_id,
         description=description,
         applicant_name=applicant_name,
         author_user_id=author_user_id,
@@ -336,19 +354,11 @@ async def create_public_repair_request(
 ) -> PublicRepairRequestResponse:
     content_type = (request.headers.get("content-type") or "").lower()
     if "multipart/form-data" in content_type:
-        form = await request.form()
-        device_raw = form.get("device_id")
-        if device_raw is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="device_id_required")
-        applicant_raw = form.get("applicant_name")
-        if applicant_raw is None or not str(applicant_raw).strip():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="applicant_name_required")
-        description = str(form.get("description") or "").strip()
-        if not description:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="description_required")
-        device_id = UUID(str(device_raw))
-        applicant_name = str(applicant_raw).strip()
-        uploads = _collect_upload_files(form)
+        fields, uploads = await _parse_public_multipart_create(request)
+        device_id = fields["device_id"]
+        audience_id = fields["audience_id"]
+        applicant_name = fields["applicant_name"]
+        description = fields["description"]
     else:
         try:
             body = await request.json()
@@ -356,15 +366,17 @@ async def create_public_repair_request(
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_json") from exc
         payload = PublicRepairRequestCreate.model_validate(body)
         device_id = payload.device_id
+        audience_id = payload.audience_id
         applicant_name = payload.applicant_name
         description = payload.description
         uploads = []
 
-    ensure_device_exists(db, device_id)
-    ensure_no_active_request(db, device_id)
+    ensure_target_exists(db, device_id, audience_id)
+    ensure_no_active_request(db, device_id=device_id, audience_id=audience_id)
 
     repair_request = RepairRequest(
         device_id=device_id,
+        audience_id=audience_id,
         applicant_name=applicant_name,
         description=description,
     )
@@ -398,7 +410,7 @@ def get_repair_request(
 ) -> RepairRequestDetail:
     repair_request = (
         db.query(RepairRequest)
-        .options(joinedload(RepairRequest.device))
+        .options(joinedload(RepairRequest.device), joinedload(RepairRequest.audience))
         .filter(RepairRequest.id == request_id)
         .first()
     )
