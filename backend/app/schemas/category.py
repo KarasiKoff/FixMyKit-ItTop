@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
+from backend.app.schemas.subcategory import Subcategory
+
 
 class CategoryBase(BaseModel):
     name: str
@@ -26,5 +28,9 @@ class Category(CategoryBase):
     has_icon: bool = False
 
 
+class CategoryWithSubcategories(Category):
+    subcategories: list[Subcategory] = []
+
+
 class CategoryList(BaseModel):
-    items: list[Category]
+    items: list[CategoryWithSubcategories]

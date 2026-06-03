@@ -70,6 +70,12 @@
   border: 1px solid rgba(34, 197, 94, 0.35);
 }
 
+.status-pill--device-subcategory {
+  background: rgba(99, 102, 241, 0.22);
+  color: #c7d2fe;
+  border: 1px solid rgba(99, 102, 241, 0.38);
+}
+
 .status-pill--device-in-repair {
   background: rgba(248, 113, 113, 0.15);
   color: #fecaca;
@@ -135,6 +141,15 @@ tbody tr:hover {
   justify-content: space-between;
   align-items: center;
   gap: 12px;
+}
+
+.device-title-row__pills {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .badge {

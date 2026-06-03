@@ -1,5 +1,6 @@
 from backend.app.models.base import Base
 from backend.app.models.category import Category
+from backend.app.models.subcategory import Subcategory
 from backend.app.models.device import Device
 from backend.app.models.audience import Audience
 from backend.app.models.enums import RepairStatus, RequestStatus, UserRole
@@ -12,6 +13,7 @@ from backend.app.models.user import User
 __all__ = [
     "Base",
     "Category",
+    "Subcategory",
     "User",
     "UserRole",
     "Device",

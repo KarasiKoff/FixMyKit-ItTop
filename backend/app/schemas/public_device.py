@@ -5,6 +5,7 @@ from pydantic import BaseModel, ConfigDict
 
 from backend.app.schemas.audience import Audience
 from backend.app.schemas.category import Category
+from backend.app.schemas.subcategory import Subcategory
 from backend.app.models.enums import RequestStatus
 
 
@@ -17,6 +18,7 @@ class PublicDeviceResponse(BaseModel):
     inventory_number: str
     name: str
     category: Category | None = None
+    subcategory: Subcategory | None = None
     audience: Audience | None = None
 
 

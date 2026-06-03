@@ -17,6 +17,7 @@ class Device(Base):
     inventory_number = Column(String, nullable=False, unique=True)
     name = Column(String, nullable=False)
     category_id = Column(Uuid, ForeignKey("categories.id"), nullable=True)
+    subcategory_id = Column(Uuid, ForeignKey("subcategories.id"), nullable=True)
     serial_number = Column(String, nullable=True)
     audience_id = Column(Uuid, ForeignKey("audience.id"), nullable=True)
     responsible_id = Column(Uuid, ForeignKey("users.id"), nullable=True)
@@ -33,4 +34,5 @@ class Device(Base):
     # Relationships
     audience = relationship("Audience", backref="devices")
     category = relationship("Category", backref="devices")
+    subcategory = relationship("Subcategory", backref="devices")
     responsible = relationship("User", foreign_keys=[responsible_id], backref="responsible_for_devices")

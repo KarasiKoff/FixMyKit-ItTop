@@ -61,6 +61,10 @@ export function deviceRepairStatusPillClass(status: Device['status']): string {
         : 'status-pill status-pill--device-ok';
 }
 
+export function deviceSubcategoryPillClass(): string {
+    return 'status-pill status-pill--device-subcategory';
+}
+
 export function deviceHistoryStatusLabel(value?: RepairHistoryEntry['oldStatus']): string {
     if (value === 'not_in_repair' || value === 'in_repair') {
         return deviceRepairStatusLabel(value);

@@ -44,6 +44,7 @@ type PublicRepairSummaryApi = {
         inventory_number: string;
         name: string;
         category?: { id: string; name: string } | null;
+        subcategory?: { id: string; name: string } | null;
         audience?: { id: string; name: string } | null;
     };
     active_request: {
@@ -450,6 +451,7 @@ export async function fetchPublicRepairSummary(deviceId: string): Promise<Public
             inventoryNumber: data.device.inventory_number,
             name: data.device.name,
             category: data.device.category ?? null,
+            subcategory: data.device.subcategory ?? null,
             audience: data.device.audience ?? null,
         },
         activeRequest: data.active_request
