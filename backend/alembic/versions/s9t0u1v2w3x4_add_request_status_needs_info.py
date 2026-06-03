@@ -1,15 +1,15 @@
 """request_status: значение needs_info (Требуется информация)
 
-Revision ID: r8s9t0u1v2w3
-Revises: q7r8s9t0u1v2
+Revision ID: s9t0u1v2w3x4
+Revises: r8s9t0u1v2w3
 Create Date: 2026-06-04 00:00:00.000000
 """
 
 from alembic import op
 import sqlalchemy as sa
 
-revision = "r8s9t0u1v2w3"
-down_revision = "q7r8s9t0u1v2"
+revision = "s9t0u1v2w3x4"
+down_revision = "r8s9t0u1v2w3"
 branch_labels = None
 depends_on = None
 
