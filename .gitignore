@@ -224,3 +224,4 @@ package-lock.json
 .vite/
 
 data/uploads/
+data/logs/

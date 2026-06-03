@@ -23,6 +23,26 @@ class ServerConfig(BaseSettings):
         description="Swagger (/docs), ReDoc (/redoc), OpenAPI JSON (/openapi.json)",
     )
     log_level: str = Field(default="INFO", alias="LOG_LEVEL")
+    log_dir: str = Field(
+        default="data/logs",
+        alias="LOG_DIR",
+        description="Каталог ротируемых логов (fixmykit.log, fixmykit-error.log).",
+    )
+    log_max_bytes: int = Field(
+        default=10 * 1024 * 1024,
+        alias="LOG_MAX_BYTES",
+        description="Макс. размер одного файла лога до ротации.",
+    )
+    log_backup_count: int = Field(
+        default=10,
+        alias="LOG_BACKUP_COUNT",
+        description="Число архивных файлов при ротации.",
+    )
+    log_json: bool = Field(
+        default=True,
+        alias="LOG_JSON",
+        description="JSON-строки в логах (иначе текст в консоли).",
+    )
     jwt_secret_key: str = Field(default="change_me_secret", alias="JWT_SECRET_KEY")
     jwt_algorithm: str = Field(default="HS256", alias="JWT_ALGORITHM")
     access_token_expire_minutes: int = Field(
