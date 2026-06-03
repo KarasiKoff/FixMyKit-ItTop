@@ -10,5 +10,5 @@ export type Device = {
     responsible: string;
     responsibleId: string | null;
     status: 'not_in_repair' | 'in_repair';
-    takenBySysadmin: boolean;
+    note: string | null;
 };

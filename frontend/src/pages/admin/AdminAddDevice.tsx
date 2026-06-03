@@ -80,6 +80,7 @@ export function AdminAddDevice() {
     const [audienceId, setAudienceId] = useState<string>('');
     const [responsibleId, setResponsibleId] = useState('');
     const [status, setStatus] = useState<Device['status']>('not_in_repair');
+    const [note, setNote] = useState('');
     const [bulkMode, setBulkMode] = useState(false);
     const [bulkCount, setBulkCount] = useState(16);
 
@@ -126,6 +127,7 @@ export function AdminAddDevice() {
             audience_id: audienceId ? Number(audienceId) : null,
             responsible_id: responsibleId || null,
             repair_status: status,
+            note: note.trim() || null,
         };
 
         try {
@@ -171,6 +173,7 @@ export function AdminAddDevice() {
                 setInventoryNumber('');
                 setName('');
                 setSerialNumber('');
+                setNote('');
                 setStatus('not_in_repair');
             }
 
@@ -307,6 +310,15 @@ export function AdminAddDevice() {
                             <option value="not_in_repair">{deviceRepairStatusLabel('not_in_repair')}</option>
                             <option value="in_repair">{deviceRepairStatusLabel('in_repair')}</option>
                         </select>
+                    </label>
+                    <label className="admin-device-field">
+                        <span className="admin-inline-label">Заметка</span>
+                        <textarea
+                            value={note}
+                            onChange={(e) => setNote(e.target.value)}
+                            rows={3}
+                            placeholder="Необязательно: особенности устройства для сисадминов"
+                        />
                     </label>
                     <div className="admin-device-actions">
                         <button type="submit" className="btn-primary" disabled={bulkMode && !selectedAudience}>

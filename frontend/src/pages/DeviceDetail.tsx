@@ -4,6 +4,7 @@ import { fetchDeviceById, fetchDeviceHistory } from '../api/devices';
 import { Device } from '../types/device';
 import { RepairHistoryEntry } from '../types/repairHistory';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { DeviceNote } from '../components/DeviceNote';
 import { useAppData } from '../context/AppDataContext';
 import { useToast } from '../context/ToastContext';
 import { deviceHistoryStatusLabel, deviceRepairStatusLabel, deviceRepairStatusPillClass } from '../utils/statusDisplay';
@@ -77,27 +78,6 @@ function IconPerson() {
             <path
                 d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 9a7 7 0 0 1 14 0H5z"
                 fill="currentColor"
-            />
-        </svg>
-    );
-}
-
-function IconCheck() {
-    return (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path d="M9.5 16.2 4.8 11.5l1.4-1.4 3.3 3.3 8.1-8.1 1.4 1.4-9.5 9.5z" fill="currentColor" />
-        </svg>
-    );
-}
-
-function IconCross() {
-    return (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-                d="M6.4 6.4 17.6 17.6M17.6 6.4 6.4 17.6"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
             />
         </svg>
     );
@@ -275,17 +255,11 @@ export function DeviceDetail() {
                             <DeviceMetaItem icon={<IconPerson />} label="Ответственный" value={device.responsible || '—'} />
                         </div>
 
-                        <p className="device-sysadmin-row">
-                            <span
-                                className={`device-sysadmin-row__icon device-sysadmin-row__icon--${device.takenBySysadmin ? 'yes' : 'no'}`}
-                                aria-hidden="true"
-                            >
-                                {device.takenBySysadmin ? <IconCheck /> : <IconCross />}
-                            </span>
-                            <span>
-                                Забрал сисадмин: <strong>{device.takenBySysadmin ? 'Да' : 'Нет'}</strong>
-                            </span>
-                        </p>
+                        <DeviceNote
+                            deviceId={device.id}
+                            note={device.note}
+                            onSaved={(note) => setDevice((current) => (current ? { ...current, note } : current))}
+                        />
 
                         <div className="actions-row device-detail-actions">
                             <Link className="btn-primary device-detail-actions__primary" to={`/repair?deviceId=${device.id}`}>

@@ -9,10 +9,10 @@ from backend.app.api.deps import get_db, require_roles
 from backend.app.core.config import settings
 from backend.app.models.category import Category as CategoryModel
 from backend.app.models.device import Device as DeviceModel
-from backend.app.models.enums import RepairStatus, RequestStatus, UserRole
+from backend.app.models.enums import RepairStatus, UserRole
 from backend.app.models.repair_history import RepairHistory
 from backend.app.models.repair_request import RepairRequest
-from backend.app.schemas.device import Device, DeviceCreate, DeviceDetail, DeviceHistoryResponse, DeviceListResponse, DeviceQrResponse, DeviceUpdate
+from backend.app.schemas.device import Device, DeviceCreate, DeviceHistoryResponse, DeviceListResponse, DeviceQrResponse, DeviceUpdate
 from backend.app.schemas.repair_history import RepairHistoryResponse
 from backend.app.schemas.suggest import SuggestResponse
 from backend.app.services.device_list_query import fetch_devices_page, suggest_devices
@@ -31,22 +31,11 @@ _DEVICE_SORT_FIELDS: set[str] = {
 _DEVICE_SUGGEST_FIELDS: set[str] = {"inventory_number", "name", "category", "room", "responsible"}
 
 
-def _taken_by_sysadmin_for_device(db: Session, device_id: UUID) -> bool:
-    request = (
-        db.query(RepairRequest)
-        .filter(RepairRequest.device_id == device_id, RepairRequest.status != RequestStatus.CLOSED)
-        .order_by(RepairRequest.created_at.desc())
-        .first()
-    )
-    return request is not None and request.taken_by_sysadmin_at is not None
-
-
-def _to_device_detail(db: Session, device: DeviceModel) -> DeviceDetail:
-    base = Device.model_validate(device)
-    return DeviceDetail(
-        **base.model_dump(),
-        taken_by_sysadmin=_taken_by_sysadmin_for_device(db, device.id),
-    )
+def _normalize_note(value: str | None) -> str | None:
+    if value is None:
+        return None
+    stripped = value.strip()
+    return stripped if stripped else None
 
 
 def _device_base_query(db: Session):
@@ -122,7 +111,9 @@ def list_devices(
     dependencies=[Depends(require_roles(UserRole.ADMIN, UserRole.SYSADMIN))],
 )
 def create_device(payload: DeviceCreate, db: Session = Depends(get_db)) -> Device:
-    device = DeviceModel(**payload.model_dump())
+    data = payload.model_dump()
+    data["note"] = _normalize_note(data.get("note"))
+    device = DeviceModel(**data)
     db.add(device)
     try:
         db.commit()
@@ -137,27 +128,29 @@ def create_device(payload: DeviceCreate, db: Session = Depends(get_db)) -> Devic
 
 @router.get(
     "/{device_id}",
-    response_model=DeviceDetail,
+    response_model=Device,
     dependencies=[Depends(require_roles(UserRole.ADMIN, UserRole.SYSADMIN))],
 )
-def get_device(device_id: UUID, db: Session = Depends(get_db)) -> DeviceDetail:
+def get_device(device_id: UUID, db: Session = Depends(get_db)) -> Device:
     device = _device_base_query(db).filter(DeviceModel.id == device_id).first()
     if device is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found")
-    return _to_device_detail(db, device)
+    return Device.model_validate(device)
 
 
 @router.patch(
     "/{device_id}",
-    response_model=DeviceDetail,
+    response_model=Device,
     dependencies=[Depends(require_roles(UserRole.ADMIN, UserRole.SYSADMIN))],
 )
-def patch_device(device_id: UUID, payload: DeviceUpdate, db: Session = Depends(get_db)) -> DeviceDetail:
+def patch_device(device_id: UUID, payload: DeviceUpdate, db: Session = Depends(get_db)) -> Device:
     device = db.query(DeviceModel).filter(DeviceModel.id == device_id).first()
     if device is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found")
 
     patch_data = payload.model_dump(exclude_unset=True)
+    if "note" in patch_data:
+        patch_data["note"] = _normalize_note(patch_data["note"])
     old_repair_status = device.repair_status
     for field, value in patch_data.items():
         setattr(device, field, value)
@@ -181,7 +174,7 @@ def patch_device(device_id: UUID, payload: DeviceUpdate, db: Session = Depends(g
     refreshed = _device_base_query(db).filter(DeviceModel.id == device_id).first()
     if refreshed is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found")
-    return _to_device_detail(db, refreshed)
+    return Device.model_validate(refreshed)
 
 
 @router.delete(
