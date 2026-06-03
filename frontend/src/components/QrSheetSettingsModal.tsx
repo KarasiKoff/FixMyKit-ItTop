@@ -39,7 +39,7 @@ const QR_SHEET_VARIANT_META: Record<
 import {
     MAX_QR_LOGO_FILE_BYTES,
     generateRepairQrPngDataUrl,
-    readFileAsDataUrl,
+    readLogoFileAsDataUrl,
     validateLogoImageFile,
 } from '../utils/repairQrImage';
 
@@ -406,7 +406,7 @@ export function QrSheetSettingsModal({ open, onClose, items, variant = 'device' 
         async (file: File) => {
             const v = validateLogoImageFile(file);
             if (v === 'type') {
-                showError('Допустимы только PNG и JPEG.');
+                showError('Допустимы PNG, JPEG и SVG.');
                 return;
             }
             if (v === 'size') {
@@ -414,7 +414,7 @@ export function QrSheetSettingsModal({ open, onClose, items, variant = 'device' 
                 return;
             }
             try {
-                const dataUrl = await readFileAsDataUrl(file);
+                const dataUrl = await readLogoFileAsDataUrl(file);
                 setLogoDataUrl(dataUrl);
                 setLogoName(file.name);
             } catch {
@@ -618,11 +618,13 @@ export function QrSheetSettingsModal({ open, onClose, items, variant = 'device' 
                         </label>
 
                         <div className="qr-sheet-field">
-                            <span className="qr-sheet-field__label">Логотип в центре QR (PNG / JPEG, до 16 МБ)</span>
+                            <span className="qr-sheet-field__label">
+                                Логотип в центре QR (PNG, JPEG, SVG, до 16 МБ)
+                            </span>
                             <input
                                 ref={fileInputRef}
                                 type="file"
-                                accept="image/png,image/jpeg,.jpg,.jpeg,.png"
+                                accept="image/png,image/jpeg,image/svg+xml,.png,.jpg,.jpeg,.svg"
                                 className="qr-sheet-logo-input"
                                 onChange={(e) => {
                                     const f = e.target.files?.[0];
