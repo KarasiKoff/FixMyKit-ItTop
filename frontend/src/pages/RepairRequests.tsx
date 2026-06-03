@@ -243,7 +243,7 @@ export function RepairRequests() {
                                     className="table-col-center"
                                 />
                                 <SortableTh
-                                    label="Устройство"
+                                    label="Устройство/Кабинет"
                                     sortKey="device_inventory_number"
                                     activeSortBy={sortBy}
                                     sortDir={sortDir}
