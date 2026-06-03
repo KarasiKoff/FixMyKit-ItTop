@@ -459,6 +459,12 @@ td.table-col-start {
 }
 
 
+.admin-crud-empty {
+  margin: 8px 0 0;
+  text-align: center;
+  font-size: 0.9375rem;
+}
+
 .admin-category-page-form {
   margin-bottom: 20px;
 }

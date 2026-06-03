@@ -24,8 +24,8 @@ function CategoryRowIcon({ id, hasIcon }: { id: string; hasIcon: boolean }) {
         <img
             src={src}
             alt=""
+            className="category-name-cell__icon"
             draggable={false}
-            style={{ width: 20, height: 20, objectFit: 'contain', flexShrink: 0, opacity: 0.85 }}
         />
     );
 }
@@ -264,6 +264,11 @@ export function AdminAddCategory() {
                     </div>
                 </form>
 
+                {loading ? (
+                    <p className="admin-crud-empty muted-text">Загрузка…</p>
+                ) : sortedRows.length === 0 ? (
+                    <p className="admin-crud-empty muted-text">Категории не добавлены</p>
+                ) : (
                 <div className="table-wrap admin-table-wrap">
                     <table className="admin-table">
                         <thead>
@@ -273,16 +278,7 @@ export function AdminAddCategory() {
                             </tr>
                         </thead>
                         <tbody>
-                            {loading ? (
-                                <tr className="admin-table-placeholder-row">
-                                    <td colSpan={2}>Загрузка…</td>
-                                </tr>
-                            ) : sortedRows.length === 0 ? (
-                                <tr className="admin-table-placeholder-row">
-                                    <td colSpan={2} />
-                                </tr>
-                            ) : (
-                                sortedRows.map((row) => (
+                                {sortedRows.map((row) => (
                                     <tr key={row.id} className={editingId === row.id ? 'admin-table-row--editing' : undefined}>
                                         <td className="table-col-start admin-table-cell--input">
                                             {editingId === row.id ? (
@@ -359,11 +355,11 @@ export function AdminAddCategory() {
                                             </div>
                                         </td>
                                     </tr>
-                                ))
-                            )}
+                                ))}
                         </tbody>
                     </table>
                 </div>
+                )}
             </section>
         </main>
     );
