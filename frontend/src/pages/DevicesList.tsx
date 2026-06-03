@@ -225,9 +225,9 @@ export function DevicesList() {
                         fetchSuggestions={suggest('name')}
                     />
                     <FilterCombobox
-                        label="Категория"
+                        label="Категория / подкатегория"
                         value={draftFilters.category}
-                        placeholder="Категория"
+                        placeholder="Категория или подкатегория"
                         onChange={(v) => setDraftFilters((p) => ({ ...p, category: v }))}
                         fetchSuggestions={suggest('category')}
                     />
@@ -336,6 +336,14 @@ export function DevicesList() {
                                     className="table-col-center"
                                 />
                                 <SortableTh
+                                    label="Подкатегория"
+                                    sortKey="subcategory_name"
+                                    activeSortBy={sortBy}
+                                    sortDir={sortDir}
+                                    onSort={handleSort}
+                                    className="table-col-center"
+                                />
+                                <SortableTh
                                     label="Кабинет"
                                     sortKey="audience_name"
                                     activeSortBy={sortBy}
@@ -389,6 +397,7 @@ export function DevicesList() {
                                     <td className="table-col-center">{device.inventoryNumber}</td>
                                     <td className="table-col-center">{device.name}</td>
                                     <td className="table-col-center">{device.category}</td>
+                                    <td className="table-col-center">{device.subcategory || '—'}</td>
                                     <td className="table-col-center">{device.room}</td>
                                     <td className="table-col-center">{device.responsible}</td>
                                     <td className="status-cell table-col-center">

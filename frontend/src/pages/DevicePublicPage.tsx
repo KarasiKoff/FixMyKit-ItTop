@@ -4,6 +4,7 @@ import { fetchPublicRepairSummary } from '../api/repairRequests';
 import { useAuth } from '../hooks/useAuth';
 import { formatApiError } from '../utils/formatApiError';
 import { isUuid } from '../utils/uuid';
+import { DeviceTitlePills } from '../components/DeviceTitlePills';
 import { PublicRepairSummary, PublicRepairRequestItem } from '../types/repairRequest';
 
 function statusLabel(status: string): string {
@@ -149,9 +150,12 @@ export function DevicePublicPage() {
 
             {/* Device info */}
             <section className="card card--narrow-device">
-                <h2 className="card-heading" style={{ textAlign: 'left', marginBottom: 12 }}>
-                    {device.name}
-                </h2>
+                <div className="device-title-row" style={{ marginBottom: 12 }}>
+                    <h2 className="card-heading" style={{ textAlign: 'left', margin: 0 }}>
+                        {device.name}
+                    </h2>
+                    <DeviceTitlePills subcategory={device.subcategory?.name} />
+                </div>
                 <ul className="repair-detail-list">
                     <li>
                         <strong>Инв. номер:</strong>

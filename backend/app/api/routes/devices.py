@@ -16,6 +16,7 @@ from backend.app.schemas.device import Device, DeviceCreate, DeviceHistoryRespon
 from backend.app.schemas.repair_history import RepairHistoryResponse
 from backend.app.schemas.suggest import SuggestResponse
 from backend.app.services.device_list_query import fetch_devices_page, suggest_devices
+from backend.app.services.device_subcategory_validation import validate_device_subcategory
 from backend.app.services.repair_history_service import add_repair_history
 
 router = APIRouter(prefix="/api/devices", tags=["devices"])
@@ -24,6 +25,7 @@ _DEVICE_SORT_FIELDS: set[str] = {
     "inventory_number",
     "name",
     "category_name",
+    "subcategory_name",
     "audience_name",
     "responsible_name",
     "repair_status",
@@ -41,9 +43,26 @@ def _normalize_note(value: str | None) -> str | None:
 def _device_base_query(db: Session):
     return db.query(DeviceModel).options(
         joinedload(DeviceModel.category).defer(CategoryModel.icon_data),
+        joinedload(DeviceModel.subcategory),
         joinedload(DeviceModel.audience),
         joinedload(DeviceModel.responsible),
     )
+
+
+def _resolved_category_subcategory(
+    device: DeviceModel,
+    patch_data: dict,
+) -> tuple[UUID | None, UUID | None]:
+    category_id = patch_data["category_id"] if "category_id" in patch_data else device.category_id
+    if category_id is None:
+        return None, None
+    if "subcategory_id" in patch_data:
+        subcategory_id = patch_data["subcategory_id"]
+    elif "category_id" in patch_data and patch_data["category_id"] != device.category_id:
+        subcategory_id = None
+    else:
+        subcategory_id = device.subcategory_id
+    return category_id, subcategory_id
 
 
 def _delete_device_and_related(db: Session, device_id: UUID) -> None:
@@ -113,6 +132,11 @@ def list_devices(
 def create_device(payload: DeviceCreate, db: Session = Depends(get_db)) -> Device:
     data = payload.model_dump()
     data["note"] = _normalize_note(data.get("note"))
+    validate_device_subcategory(
+        db,
+        category_id=data.get("category_id"),
+        subcategory_id=data.get("subcategory_id"),
+    )
     device = DeviceModel(**data)
     db.add(device)
     try:
@@ -151,9 +175,18 @@ def patch_device(device_id: UUID, payload: DeviceUpdate, db: Session = Depends(g
     patch_data = payload.model_dump(exclude_unset=True)
     if "note" in patch_data:
         patch_data["note"] = _normalize_note(patch_data["note"])
+
+    category_id, subcategory_id = _resolved_category_subcategory(device, patch_data)
+    validate_device_subcategory(db, category_id=category_id, subcategory_id=subcategory_id)
+
     old_repair_status = device.repair_status
     for field, value in patch_data.items():
         setattr(device, field, value)
+    if "category_id" in patch_data:
+        if patch_data["category_id"] is None:
+            device.subcategory_id = None
+        elif "subcategory_id" not in patch_data and patch_data["category_id"] != device.category_id:
+            device.subcategory_id = None
 
     if "repair_status" in patch_data and device.repair_status != old_repair_status:
         add_repair_history(

@@ -4,6 +4,8 @@ export type Device = {
     name: string;
     category: string;
     categoryId: string | null;
+    subcategory: string;
+    subcategoryId: string | null;
     serialNumber: string;
     room: string;
     audienceId: string | null;

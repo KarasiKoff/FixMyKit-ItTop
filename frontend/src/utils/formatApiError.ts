@@ -27,6 +27,12 @@ const DETAIL_RU: Record<string, string> = {
     files_required: 'Выберите хотя бы один файл',
     category_exists: 'Такая категория уже существует',
     category_not_found: 'Категория не найдена',
+    subcategory_exists: 'Такая подкатегория уже есть в этой категории',
+    subcategory_not_found: 'Подкатегория не найдена',
+    subcategory_required: 'Выберите подкатегорию для этой категории',
+    subcategory_requires_category: 'Сначала выберите категорию',
+    subcategory_category_mismatch: 'Подкатегория не относится к выбранной категории',
+    subcategory_name_empty: 'Укажите название подкатегории',
     audience_exists: 'Такая аудитория уже существует',
     audience_not_found: 'Аудитория не найдена',
 };

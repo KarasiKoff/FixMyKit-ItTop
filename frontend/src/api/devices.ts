@@ -8,6 +8,7 @@ type DeviceApi = {
     inventory_number: string;
     name: string;
     category?: { id: string; name: string } | null;
+    subcategory?: { id: string; name: string; category_id?: string; is_active?: boolean } | null;
     serial_number?: string | null;
     audience?: { id: string; name: string } | null;
     responsible?: { id: string; full_name?: string | null; login: string } | null;
@@ -22,6 +23,8 @@ export function mapDevice(item: DeviceApi): Device {
         name: item.name,
         category: item.category?.name ?? '',
         categoryId: item.category?.id ?? null,
+        subcategory: item.subcategory?.name ?? '',
+        subcategoryId: item.subcategory?.id ?? null,
         serialNumber: item.serial_number ?? '',
         room: item.audience?.name ?? '',
         audienceId: item.audience?.id ?? null,
@@ -143,6 +146,7 @@ export async function createDevice(payload: {
     serial_number?: string | null;
     audience_id?: string | null;
     category_id?: string | null;
+    subcategory_id?: string | null;
     responsible_id?: string | null;
     repair_status: Device['status'];
     note?: string | null;
@@ -177,6 +181,7 @@ export async function updateDevice(
         serial_number?: string | null;
         audience_id?: string | null;
         category_id?: string | null;
+        subcategory_id?: string | null;
         responsible_id?: string | null;
         repair_status?: Device['status'];
         note?: string | null;

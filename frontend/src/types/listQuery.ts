@@ -6,6 +6,7 @@ export type DeviceSortBy =
     | 'inventory_number'
     | 'name'
     | 'category_name'
+    | 'subcategory_name'
     | 'audience_name'
     | 'responsible_name'
     | 'repair_status';

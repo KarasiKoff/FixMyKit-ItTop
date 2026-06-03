@@ -450,6 +450,62 @@
 }
 
 /* ╨Ш╨║╨╛╨╜╨║╨░ ╨▓ ╨║╨╛╨╗╨╛╨╜╨║╨╡ "╨Э╨░╨╖╨▓╨░╨╜╨╕╨╡" ╤В╨░╨▒╨╗╨╕╤Ж╤Л ╨║╨░╤В╨╡╨│╨╛╤А╨╕╨╣ */
+.subcategory-admin-cell {
+  display: grid;
+  gap: 8px;
+  min-width: 12rem;
+}
+
+.subcategory-admin-cell__empty {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+.subcategory-admin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.subcategory-admin-list__item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.subcategory-admin-list__input {
+  flex: 1 1 8rem;
+  min-width: 0;
+}
+
+.subcategory-admin-list__active-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.subcategory-admin-list__actions {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.subcategory-admin-add {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.subcategory-admin-add input {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
 .category-name-cell {
   display: inline-flex;
   align-items: center;

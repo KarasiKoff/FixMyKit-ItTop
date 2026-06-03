@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict
 from backend.app.models.enums import RepairStatus
 from backend.app.schemas.audience import Audience
 from backend.app.schemas.category import Category
+from backend.app.schemas.subcategory import Subcategory
 from backend.app.schemas.repair_history import RepairHistoryResponse
 from backend.app.schemas.user import UserResponse
 
@@ -16,6 +17,7 @@ class DeviceBase(BaseModel):
     serial_number: str | None = None
     audience_id: UUID | None = None
     category_id: UUID | None = None
+    subcategory_id: UUID | None = None
     responsible_id: UUID | None = None
     repair_status: RepairStatus = RepairStatus.NOT_IN_REPAIR
     note: str | None = None
@@ -31,6 +33,7 @@ class DeviceUpdate(BaseModel):
     serial_number: str | None = None
     audience_id: UUID | None = None
     category_id: UUID | None = None
+    subcategory_id: UUID | None = None
     responsible_id: UUID | None = None
     repair_status: RepairStatus | None = None
     note: str | None = None
@@ -43,6 +46,7 @@ class Device(DeviceBase):
     created_at: datetime
     updated_at: datetime
     category: Category | None = None
+    subcategory: Subcategory | None = None
     audience: Audience | None = None
     responsible: UserResponse | None = None
 

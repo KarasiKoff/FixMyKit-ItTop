@@ -55,6 +55,7 @@ export type PublicDeviceInfo = {
     inventoryNumber: string;
     name: string;
     category?: { id: string; name: string } | null;
+    subcategory?: { id: string; name: string } | null;
     audience?: { id: string; name: string } | null;
 };
 

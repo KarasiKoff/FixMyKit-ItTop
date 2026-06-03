@@ -3,8 +3,14 @@ import { Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import { useAppData } from '../../context/AppDataContext';
 import { createDevice, fetchDevices } from '../../api/devices';
-import { fetchCategories, type CategoryDto } from '../../api/categories';
+import {
+    categoryRequiresSubcategory,
+    subcategoriesForDeviceForm,
+    fetchCategories,
+    type CategoryDto,
+} from '../../api/categories';
 import { CategorySelectWithIcons } from '../../components/CategorySelectWithIcons';
+import { SubcategorySelect } from '../../components/SubcategorySelect';
 import { fetchAudiences, type AudienceDto } from '../../api/audiences';
 import { fetchUsers, type UserListItem } from '../../api/users';
 import { Device } from '../../types/device';
@@ -76,6 +82,7 @@ export function AdminAddDevice() {
     const [inventoryNumber, setInventoryNumber] = useState('');
     const [name, setName] = useState('');
     const [categoryId, setCategoryId] = useState('');
+    const [subcategoryId, setSubcategoryId] = useState('');
     const [serialNumber, setSerialNumber] = useState('');
     const [audienceId, setAudienceId] = useState<string>('');
     const [responsibleId, setResponsibleId] = useState('');
@@ -118,12 +125,27 @@ export function AdminAddDevice() {
         return Math.min(BULK_COUNT_MAX, Math.max(BULK_COUNT_MIN, value));
     }
 
+    const selectedCategory = categories.find((c) => c.id === categoryId);
+    const subcategoryOptions = subcategoriesForDeviceForm(selectedCategory, subcategoryId);
+    const subcategoryRequired = categoryRequiresSubcategory(selectedCategory);
+
+    function handleCategoryChange(nextCategoryId: string) {
+        setCategoryId(nextCategoryId);
+        setSubcategoryId('');
+    }
+
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
+
+        if (subcategoryRequired && !subcategoryId) {
+            showError('Выберите подкатегорию для этой категории');
+            return;
+        }
 
         const serialPrefix = serialNumber.trim();
         const sharedPayload = {
             category_id: categoryId || null,
+            subcategory_id: subcategoryId || null,
             audience_id: audienceId || null,
             responsible_id: responsibleId || null,
             repair_status: status,
@@ -261,8 +283,15 @@ export function AdminAddDevice() {
                     <CategorySelectWithIcons
                         categories={categories}
                         value={categoryId}
-                        onChange={setCategoryId}
+                        onChange={handleCategoryChange}
                         disabled={Boolean(loadError)}
+                    />
+                    <SubcategorySelect
+                        subcategories={subcategoryOptions}
+                        value={subcategoryId}
+                        onChange={setSubcategoryId}
+                        disabled={Boolean(loadError)}
+                        required={subcategoryRequired}
                     />
                     <label className="admin-device-field">
                         <span className="admin-inline-label">Серийный номер</span>

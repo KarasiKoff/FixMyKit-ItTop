@@ -84,6 +84,7 @@ def get_public_device_by_inventory(
         db.query(DeviceModel)
         .options(
             joinedload(DeviceModel.category).defer(CategoryModel.icon_data),
+            joinedload(DeviceModel.subcategory),
             joinedload(DeviceModel.audience),
         )
         .filter(func.lower(DeviceModel.inventory_number) == inv.lower())
@@ -100,6 +101,7 @@ def get_public_device(device_id: UUID, db: Session = Depends(get_db)) -> PublicD
         db.query(DeviceModel)
         .options(
             joinedload(DeviceModel.category).defer(CategoryModel.icon_data),
+            joinedload(DeviceModel.subcategory),
             joinedload(DeviceModel.audience),
         )
         .filter(DeviceModel.id == device_id)
@@ -149,6 +151,7 @@ def get_public_repair_summary(device_id: UUID, db: Session = Depends(get_db)) ->
         db.query(DeviceModel)
         .options(
             joinedload(DeviceModel.category).defer(CategoryModel.icon_data),
+            joinedload(DeviceModel.subcategory),
             joinedload(DeviceModel.audience),
         )
         .filter(DeviceModel.id == device_id)

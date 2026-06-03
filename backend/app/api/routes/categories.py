@@ -2,14 +2,23 @@ from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
-from sqlalchemy.orm import Session, defer
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session, defer, joinedload
 
 from backend.app.api.deps import get_current_user, get_db
 from backend.app.models.device import Device as DeviceModel
 from backend.app.models.category import Category as CategoryModel
 from backend.app.models.enums import UserRole
+from backend.app.models.subcategory import Subcategory as SubcategoryModel
 from backend.app.models.user import User
-from backend.app.schemas.category import Category, CategoryCreate, CategoryList, CategoryUpdate
+from backend.app.schemas.category import (
+    Category,
+    CategoryCreate,
+    CategoryList,
+    CategoryUpdate,
+    CategoryWithSubcategories,
+)
+from backend.app.schemas.subcategory import Subcategory, SubcategoryCreate, SubcategoryUpdate
 from backend.app.services.category_icon_service import validate_and_prepare_icon
 
 router = APIRouter(prefix="/api/categories", tags=["categories"])
@@ -30,11 +39,14 @@ def list_categories(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN, UserRole.SYSADMIN})),
 ) -> CategoryList:
-    query = db.query(CategoryModel).options(defer(CategoryModel.icon_data))
+    query = db.query(CategoryModel).options(
+        defer(CategoryModel.icon_data),
+        joinedload(CategoryModel.subcategories),
+    )
     if is_active is not None:
         query = query.filter(CategoryModel.is_active == is_active)
     items = query.order_by(CategoryModel.created_at.desc()).all()
-    return CategoryList(items=items)
+    return CategoryList(items=[CategoryWithSubcategories.model_validate(item) for item in items])
 
 
 @router.get("/{category_id}/icon")
@@ -151,8 +163,84 @@ def delete_category(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="category_not_found")
 
     db.query(DeviceModel).filter(DeviceModel.category_id == category_id).update(
-        {DeviceModel.category_id: None},
+        {DeviceModel.category_id: None, DeviceModel.subcategory_id: None},
         synchronize_session=False,
     )
     db.delete(category)
+    db.commit()
+
+
+@router.post(
+    "/{category_id}/subcategories",
+    response_model=Subcategory,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_subcategory(
+    category_id: UUID,
+    payload: SubcategoryCreate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles({UserRole.ADMIN})),
+) -> Subcategory:
+    category = db.query(CategoryModel).filter(CategoryModel.id == category_id).first()
+    if category is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="category_not_found")
+
+    name = payload.name.strip()
+    if not name:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="subcategory_name_empty")
+
+    sub = SubcategoryModel(category_id=category_id, name=name)
+    db.add(sub)
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="subcategory_exists") from exc
+    db.refresh(sub)
+    return Subcategory.model_validate(sub)
+
+
+@router.patch("/subcategories/{subcategory_id}", response_model=Subcategory)
+def update_subcategory(
+    subcategory_id: UUID,
+    payload: SubcategoryUpdate,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles({UserRole.ADMIN})),
+) -> Subcategory:
+    sub = db.query(SubcategoryModel).filter(SubcategoryModel.id == subcategory_id).first()
+    if sub is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="subcategory_not_found")
+
+    if payload.name is not None:
+        name = payload.name.strip()
+        if not name:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="subcategory_name_empty")
+        sub.name = name
+    if payload.is_active is not None:
+        sub.is_active = payload.is_active
+
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="subcategory_exists") from exc
+    db.refresh(sub)
+    return Subcategory.model_validate(sub)
+
+
+@router.delete("/subcategories/{subcategory_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_subcategory(
+    subcategory_id: UUID,
+    db: Session = Depends(get_db),
+    _: User = Depends(require_roles({UserRole.ADMIN})),
+) -> None:
+    sub = db.query(SubcategoryModel).filter(SubcategoryModel.id == subcategory_id).first()
+    if sub is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="subcategory_not_found")
+
+    db.query(DeviceModel).filter(DeviceModel.subcategory_id == subcategory_id).update(
+        {DeviceModel.subcategory_id: None},
+        synchronize_session=False,
+    )
+    db.delete(sub)
     db.commit()

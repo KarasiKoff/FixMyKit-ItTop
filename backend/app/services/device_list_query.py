@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from typing import Literal
 
-from sqlalchemy import case, func, or_
+from sqlalchemy import and_, case, func, or_
 from sqlalchemy.orm import Query, Session, defer, joinedload
 
 from backend.app.models.audience import Audience as AudienceModel
 from backend.app.models.category import Category as CategoryModel
 from backend.app.models.device import Device as DeviceModel
+from backend.app.models.subcategory import Subcategory as SubcategoryModel
 from backend.app.models.enums import RepairStatus
 from backend.app.models.user import User as UserModel
 
@@ -15,6 +16,7 @@ DeviceSortBy = Literal[
     "inventory_number",
     "name",
     "category_name",
+    "subcategory_name",
     "audience_name",
     "responsible_name",
     "repair_status",
@@ -34,6 +36,7 @@ def _device_list_query(db: Session) -> Query:
     return (
         db.query(DeviceModel)
         .outerjoin(CategoryModel, DeviceModel.category_id == CategoryModel.id)
+        .outerjoin(SubcategoryModel, DeviceModel.subcategory_id == SubcategoryModel.id)
         .outerjoin(AudienceModel, DeviceModel.audience_id == AudienceModel.id)
         .outerjoin(UserModel, DeviceModel.responsible_id == UserModel.id)
     )
@@ -41,6 +44,38 @@ def _device_list_query(db: Session) -> Query:
 
 def _contains_pattern(value: str) -> str:
     return f"%{value.strip()}%"
+
+
+def _category_taxonomy_label(category_name: str | None, subcategory_name: str | None) -> str | None:
+    cat = (category_name or "").strip()
+    sub = (subcategory_name or "").strip()
+    if cat and sub:
+        return f"{cat} ({sub})"
+    if cat:
+        return cat
+    if sub:
+        return sub
+    return None
+
+
+def _category_filter_clauses(category: str) -> list:
+    pattern = _contains_pattern(category)
+    clauses = [
+        CategoryModel.name.ilike(pattern),
+        SubcategoryModel.name.ilike(pattern),
+    ]
+    needle = category.strip()
+    if "(" in needle and needle.endswith(")"):
+        cat_part = needle[: needle.rfind("(")].strip()
+        sub_part = needle[needle.rfind("(") + 1 : -1].strip()
+        if cat_part and sub_part:
+            clauses.append(
+                and_(
+                    CategoryModel.name.ilike(f"%{cat_part}%"),
+                    SubcategoryModel.name.ilike(f"%{sub_part}%"),
+                )
+            )
+    return clauses
 
 
 def _responsible_filter_clauses(responsible: str) -> list:
@@ -81,7 +116,7 @@ def _apply_device_filters(
     if name:
         query = query.filter(DeviceModel.name.ilike(_contains_pattern(name)))
     if category:
-        query = query.filter(CategoryModel.name.ilike(_contains_pattern(category)))
+        query = query.filter(or_(*_category_filter_clauses(category)))
     if room:
         query = query.filter(AudienceModel.name.ilike(_contains_pattern(room)))
     if responsible:
@@ -99,6 +134,8 @@ def _apply_device_sort(query: Query, sort_by: DeviceSortBy, sort_dir: SortDir) -
         col = DeviceModel.name
     elif sort_by == "category_name":
         col = CategoryModel.name
+    elif sort_by == "subcategory_name":
+        col = SubcategoryModel.name
     elif sort_by == "audience_name":
         col = AudienceModel.name
     elif sort_by == "responsible_name":
@@ -143,6 +180,7 @@ def fetch_devices_page(
         _apply_device_sort(base, sort_by, sort_dir)
         .options(
             joinedload(DeviceModel.category).defer(CategoryModel.icon_data),
+            joinedload(DeviceModel.subcategory),
             joinedload(DeviceModel.audience),
             joinedload(DeviceModel.responsible),
         )
@@ -191,13 +229,31 @@ def suggest_devices(db: Session, field: str, q: str) -> list[str]:
 
     if field == "category":
         rows = (
-            db.query(CategoryModel.name)
-            .filter(CategoryModel.name.ilike(pattern))
-            .order_by(CategoryModel.name)
-            .limit(limit)
+            db.query(CategoryModel.name, SubcategoryModel.name)
+            .select_from(DeviceModel)
+            .outerjoin(CategoryModel, DeviceModel.category_id == CategoryModel.id)
+            .outerjoin(SubcategoryModel, DeviceModel.subcategory_id == SubcategoryModel.id)
+            .filter(
+                or_(
+                    CategoryModel.name.ilike(pattern),
+                    SubcategoryModel.name.ilike(pattern),
+                )
+            )
+            .distinct()
+            .order_by(CategoryModel.name, SubcategoryModel.name)
+            .limit(limit * 3)
             .all()
         )
-        return [r[0] for r in rows]
+        seen: set[str] = set()
+        out: list[str] = []
+        for cat_name, sub_name in rows:
+            label = _category_taxonomy_label(cat_name, sub_name)
+            if label and label not in seen:
+                seen.add(label)
+                out.append(label)
+            if len(out) >= limit:
+                break
+        return out
 
     if field == "room":
         rows = (

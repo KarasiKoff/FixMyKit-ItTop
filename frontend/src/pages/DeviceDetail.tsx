@@ -7,7 +7,8 @@ import { ConfirmDialog } from '../components/ConfirmDialog';
 import { DeviceNote } from '../components/DeviceNote';
 import { useAppData } from '../context/AppDataContext';
 import { useToast } from '../context/ToastContext';
-import { deviceHistoryStatusLabel, deviceRepairStatusLabel, deviceRepairStatusPillClass } from '../utils/statusDisplay';
+import { DeviceTitlePills } from '../components/DeviceTitlePills';
+import { deviceHistoryStatusLabel } from '../utils/statusDisplay';
 import { formatApiError } from '../utils/formatApiError';
 import { IconSync } from '../components/admin/AdminDashboardIcons';
 import { yandexTrackerIssueWebHref } from '../utils/yandexTracker';
@@ -244,7 +245,7 @@ export function DeviceDetail() {
                     <section className="card device-detail-card">
                         <div className="device-title-row">
                             <h3 className="device-detail-card__name">{device.name}</h3>
-                            <span className={deviceRepairStatusPillClass(device.status)}>{deviceRepairStatusLabel(device.status)}</span>
+                            <DeviceTitlePills subcategory={device.subcategory} status={device.status} />
                         </div>
 
                         <div className="device-meta-grid grid grid-5">

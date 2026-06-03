@@ -2,6 +2,7 @@ from uuid import uuid4
 
 from sqlalchemy import Boolean, Column, LargeBinary, String, Uuid, func
 from sqlalchemy.dialects.postgresql import TIMESTAMP
+from sqlalchemy.orm import relationship
 
 from backend.app.models.base import Base
 
@@ -18,6 +19,13 @@ class Category(Base):
         TIMESTAMP(timezone=True),
         nullable=False,
         server_default=func.now(),
+    )
+
+    subcategories = relationship(
+        "Subcategory",
+        back_populates="category",
+        cascade="all, delete-orphan",
+        order_by="Subcategory.name",
     )
 
     @property

@@ -3,8 +3,14 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
 import { useAppData } from '../../context/AppDataContext';
 import { fetchDeviceById, updateDevice } from '../../api/devices';
-import { fetchCategories, type CategoryDto } from '../../api/categories';
+import {
+    categoryRequiresSubcategory,
+    subcategoriesForDeviceForm,
+    fetchCategories,
+    type CategoryDto,
+} from '../../api/categories';
 import { CategorySelectWithIcons } from '../../components/CategorySelectWithIcons';
+import { SubcategorySelect } from '../../components/SubcategorySelect';
 import { fetchAudiences, type AudienceDto } from '../../api/audiences';
 import { fetchUsers, type UserListItem } from '../../api/users';
 import { Device } from '../../types/device';
@@ -27,6 +33,7 @@ export function AdminEditDevice() {
     const [inventoryNumber, setInventoryNumber] = useState('');
     const [name, setName] = useState('');
     const [categoryId, setCategoryId] = useState('');
+    const [subcategoryId, setSubcategoryId] = useState('');
     const [serialNumber, setSerialNumber] = useState('');
     const [audienceId, setAudienceId] = useState<string>('');
     const [responsibleId, setResponsibleId] = useState('');
@@ -48,6 +55,7 @@ export function AdminEditDevice() {
                 setInventoryNumber(device.inventoryNumber);
                 setName(device.name);
                 setCategoryId(device.categoryId ?? '');
+                setSubcategoryId(device.subcategoryId ?? '');
                 setSerialNumber(device.serialNumber ?? '');
                 setAudienceId(device.audienceId != null ? String(device.audienceId) : '');
                 setResponsibleId(device.responsibleId ?? '');
@@ -70,10 +78,23 @@ export function AdminEditDevice() {
         };
     }, [id]);
 
+    const selectedCategory = categories.find((c) => c.id === categoryId);
+    const subcategoryOptions = subcategoriesForDeviceForm(selectedCategory, subcategoryId);
+    const subcategoryRequired = categoryRequiresSubcategory(selectedCategory);
+
+    function handleCategoryChange(nextCategoryId: string) {
+        setCategoryId(nextCategoryId);
+        setSubcategoryId('');
+    }
+
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();
         if (!id) return;
         if (!inventoryNumber.trim() || !name.trim()) return;
+        if (subcategoryRequired && !subcategoryId) {
+            showError('Выберите подкатегорию для этой категории');
+            return;
+        }
 
         setSaving(true);
         try {
@@ -82,6 +103,7 @@ export function AdminEditDevice() {
                 name: name.trim(),
                 serial_number: serialNumber.trim() || null,
                 category_id: categoryId || null,
+                subcategory_id: subcategoryId || null,
                 audience_id: audienceId || null,
                 responsible_id: responsibleId || null,
                 repair_status: status,
@@ -139,8 +161,15 @@ export function AdminEditDevice() {
                     <CategorySelectWithIcons
                         categories={categories}
                         value={categoryId}
-                        onChange={setCategoryId}
+                        onChange={handleCategoryChange}
                         disabled={saving || Boolean(loadError)}
+                    />
+                    <SubcategorySelect
+                        subcategories={subcategoryOptions}
+                        value={subcategoryId}
+                        onChange={setSubcategoryId}
+                        disabled={saving || Boolean(loadError)}
+                        required={subcategoryRequired}
                     />
                     <label className="admin-device-field">
                         <span className="admin-inline-label">Серийный номер</span>
