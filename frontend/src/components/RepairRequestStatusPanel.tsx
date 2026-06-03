@@ -11,10 +11,13 @@ import { formatApiError } from '../utils/formatApiError';
 import { type RepairWorkflowState, workflowFromRequest } from '../utils/repairWorkflow';
 import { RepairWorkflowModal, type RepairWorkflowModalMode } from './RepairWorkflowModal';
 import type { RepairCloseResolution } from '../utils/repairWorkflow';
-import iconInWork from '../icon/in-work.svg';
-import iconNew from '../icon/new.svg';
-import iconTakenBySysadmin from '../icon/take-by-sysadmin.svg';
-import iconNeedInfo from '../icon/need-info.svg';
+/** URL через import.meta.url — стабильно попадает в prod-сборку (в отличие от части default-import .svg). */
+const STATUS_ICON_URLS = {
+    new: new URL('../icon/new.svg', import.meta.url).href,
+    inWork: new URL('../icon/in-work.svg', import.meta.url).href,
+    needInfo: new URL('../icon/need-info.svg', import.meta.url).href,
+    taken: new URL('../icon/take-by-sysadmin.svg', import.meta.url).href,
+} as const;
 
 
 type Props = {
@@ -48,16 +51,30 @@ function statusPillClass(workflow: RepairWorkflowState, current: RepairWorkflowS
     return `${base} repair-pill-btn--active`;
 }
 
+function StatusIconAsset({ src }: { src: string }) {
+    const mask = `url("${src}")`;
+    return (
+        <span
+            className="repair-status-icon-asset"
+            style={{
+                maskImage: mask,
+                WebkitMaskImage: mask,
+            }}
+            aria-hidden="true"
+        />
+    );
+}
+
 function IconOpen() {
-    return <span className="repair-status-icon-asset" style={{ '--icon-url': `url(${iconNew})` } as React.CSSProperties} aria-hidden="true" />;
+    return <StatusIconAsset src={STATUS_ICON_URLS.new} />;
 }
 
 function IconInProgress() {
-    return <span className="repair-status-icon-asset" style={{ '--icon-url': `url(${iconInWork})` } as React.CSSProperties} aria-hidden="true" />;
+    return <StatusIconAsset src={STATUS_ICON_URLS.inWork} />;
 }
 
 function IconNeedsInfo() {
-    return <span className="repair-status-icon-asset" style={{ '--icon-url': `url(${iconNeedInfo})` } as React.CSSProperties} aria-hidden="true" />;
+    return <StatusIconAsset src={STATUS_ICON_URLS.needInfo} />;
 }
 
 function IconClosed() {
@@ -70,7 +87,7 @@ function IconClosed() {
 }
 
 function IconTaken() {
-    return <span className="repair-status-icon-asset" style={{ '--icon-url': `url(${iconTakenBySysadmin})` } as React.CSSProperties} aria-hidden="true" />;
+    return <StatusIconAsset src={STATUS_ICON_URLS.taken} />;
 }
 
 function IconSync() {
