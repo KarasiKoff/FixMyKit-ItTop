@@ -59,15 +59,7 @@ def _row_to_admin_slot(row: SiteAnnouncement, now: datetime) -> SiteAnnouncement
 
 
 def ensure_announcement_slots(db: Session) -> None:
-    repo = SiteAnnouncementRepository(db)
-    existing = {row.slot for row in repo.all_slots()}
-    added = False
-    for slot in range(SLOT_MIN, SLOT_MAX + 1):
-        if slot not in existing:
-            db.add(SiteAnnouncement(slot=slot))
-            added = True
-    if added:
-        db.commit()
+    SiteAnnouncementRepository(db).ensure_slots_in_range(SLOT_MIN, SLOT_MAX)
 
 
 def list_admin_slots(db: Session) -> AdminAnnouncementsResponse:

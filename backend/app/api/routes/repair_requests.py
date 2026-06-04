@@ -51,7 +51,11 @@ from backend.app.services.repair_request_create_service import (
     parse_staff_create_request,
     public_create_response,
 )
-from backend.app.queries.repair_request_list_query import fetch_repair_requests_page, suggest_repair_requests
+from backend.app.queries.repair_request_list_query import (
+    RepairRequestSortBy,
+    fetch_repair_requests_page,
+    suggest_repair_requests,
+)
 from backend.app.services.repair_request_presenters import repair_request_to_list_response
 from backend.app.repositories.repair_request_repository import (
     get_repair_request_or_404,
@@ -92,7 +96,7 @@ def list_repair_requests(
     author_user_id: UUID | None = None,
     date_from: datetime | None = None,
     date_to: datetime | None = None,
-    sort_by: str = Query(default="created_at"),
+    sort_by: RepairRequestSortBy = Query(default="created_at"),
     sort_dir: Literal["asc", "desc"] = Query(default="desc"),
     limit: int = Query(default=20, ge=1, le=50),
     offset: int = Query(default=0, ge=0),
@@ -111,7 +115,7 @@ def list_repair_requests(
         author_user_id=author_user_id,
         date_from=date_from,
         date_to=date_to,
-        sort_by=sort_by,  # type: ignore[arg-type]
+        sort_by=sort_by,
         sort_dir=sort_dir,
         limit=limit,
         offset=offset,

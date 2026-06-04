@@ -34,6 +34,22 @@ class SiteAnnouncementRepository:
             .all()
         )
 
+    def add_slot(self, slot: int) -> SiteAnnouncement:
+        row = SiteAnnouncement(slot=slot)
+        self._db.add(row)
+        return row
+
+    def ensure_slots_in_range(self, slot_min: int, slot_max: int) -> bool:
+        existing = {row.slot for row in self.all_slots()}
+        added = False
+        for slot in range(slot_min, slot_max + 1):
+            if slot not in existing:
+                self.add_slot(slot)
+                added = True
+        if added:
+            self._db.commit()
+        return added
+
     def list_active_candidates(self, now: datetime) -> list[SiteAnnouncement]:
         return (
             self._db.query(SiteAnnouncement)

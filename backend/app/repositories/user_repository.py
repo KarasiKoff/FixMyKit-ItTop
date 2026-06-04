@@ -68,6 +68,10 @@ class UserRepository:
     def exists_by_login(self, login: str) -> bool:
         return self.get_by_login(login) is not None
 
+    def add(self, user: User) -> User:
+        self._db.add(user)
+        return user
+
     def resolve_tracker_actor(self, tracker_user_raw: str | None, fallback: User) -> User:
         raw = (tracker_user_raw or "").strip()
         if not raw:
@@ -95,7 +99,7 @@ class UserRepository:
         return fallback
 
     def get_webhook_fallback_user(self) -> User:
-        login = (settings.tracker_webhook_actor_login or "tracker_webhook").strip() or "tracker_webhook"
+        login = (settings.server.tracker_webhook_actor_login or "tracker_webhook").strip() or "tracker_webhook"
         fallback = self.get_by_login(login)
         if fallback is None:
             raise HTTPException(

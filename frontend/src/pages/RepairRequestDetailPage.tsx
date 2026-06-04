@@ -1,8 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { fetchDeviceById } from '../api/devices';
 import {
-    fetchRepairRequest,
     isRepairRequestSynced,
     publishRepairRequest,
     syncRepairRequestTracker,
@@ -13,8 +11,6 @@ import { RepairRequestStatusPanel } from '../components/RepairRequestStatusPanel
 import { RepairTrackerSyncBanner } from '../components/RepairTrackerSyncBanner';
 import { FormSubmitOverlay } from '../components/ui/FormSubmitOverlay';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
-import { Device } from '../types/device';
-import { RepairRequestDetail } from '../types/repairRequest';
 import { useToast } from '../hooks/useToast';
 import {
     repairRequestStatusLabel,
@@ -24,115 +20,28 @@ import {
 import { yandexTrackerIssueWebHref } from '../utils/yandexTracker';
 import { formatApiError } from '../utils/formatApiError';
 import { needsAttachmentTrackerSync } from '../utils/attachmentSyncDisplay';
-import { splitResolutionNoteFromApi } from '../utils/resolutionNoteTracker';
-import { fetchUserListItemById } from '../api/users';
 import { RoomMapModal } from '../components/RoomMapModal';
 import { IconSync } from '../components/admin/AdminDashboardIcons';
-import { useRepairRequestSse } from '../hooks/useRepairRequestSse';
+import { useRepairRequestDetail } from '../hooks/useRepairRequestDetail';
 
 export function RepairRequestDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
     const { showSuccess, showError } = useToast();
-    const [request, setRequest] = useState<RepairRequestDetail | null>(null);
-    const [device, setDevice] = useState<Device | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [closedByDbLabel, setClosedByDbLabel] = useState<string | null>(null);
-    const [commentsRefreshKey, setCommentsRefreshKey] = useState(0);
+    const {
+        request,
+        device,
+        loading,
+        closedByDbLabel,
+        commentsRefreshKey,
+        noteParts,
+        reload,
+        applyRequestUpdate,
+        bumpComments,
+    } = useRepairRequestDetail(id);
     const [showMapModal, setShowMapModal] = useState(false);
     const [attachmentsOpen, setAttachmentsOpen] = useState(false);
     const [syncing, setSyncing] = useState(false);
-
-    const reload = useCallback(
-        async (opts?: { silent?: boolean }) => {
-            if (!id) {
-                return;
-            }
-            if (!opts?.silent) {
-                setLoading(true);
-            }
-            try {
-                const req = await fetchRepairRequest(id);
-                setRequest(req);
-                if (req.deviceId) {
-                    const dev = await fetchDeviceById(req.deviceId);
-                    setDevice(dev);
-                } else {
-                    setDevice(null);
-                }
-            } catch (err) {
-                if (!opts?.silent) {
-                    setRequest(null);
-                    setDevice(null);
-                    showError(formatApiError(err));
-                }
-            } finally {
-                if (!opts?.silent) {
-                    setLoading(false);
-                }
-            }
-        },
-        [id, showError],
-    );
-
-    useEffect(() => {
-        void reload();
-    }, [reload]);
-
-    useRepairRequestSse({
-        repairRequestId: id,
-        enabled: Boolean(id),
-        onEvent: (payload) => {
-            if (payload.repair_request_id === id) {
-                setCommentsRefreshKey((k) => k + 1);
-                void reload({ silent: true });
-            }
-        },
-    });
-
-    const noteParts = useMemo(() => {
-        if (!request) {
-            return { resolutionTrimmed: '', closedFromMeta: '' };
-        }
-        const { resolutionBody, trackerClosedBy } = splitResolutionNoteFromApi(request.resolutionNote);
-        const resolutionTrimmed = resolutionBody.trim();
-        const closedFromMeta =
-            request.status === 'closed' ? request.closedByTrackerDisplay?.trim() || trackerClosedBy || '' : '';
-        return { resolutionTrimmed, closedFromMeta };
-    }, [request]);
-
-    useEffect(() => {
-        let cancelled = false;
-        async function resolveClosedByName() {
-            if (!request || request.status !== 'closed') {
-                setClosedByDbLabel(null);
-                return;
-            }
-            if (noteParts.closedFromMeta) {
-                setClosedByDbLabel(null);
-                return;
-            }
-            const uid = request.closedByUserId?.trim();
-            if (!uid) {
-                setClosedByDbLabel(null);
-                return;
-            }
-            try {
-                const u = await fetchUserListItemById(uid);
-                if (!cancelled) {
-                    setClosedByDbLabel(u ? u.name || u.login : null);
-                }
-            } catch {
-                if (!cancelled) {
-                    setClosedByDbLabel(null);
-                }
-            }
-        }
-        void resolveClosedByName();
-        return () => {
-            cancelled = true;
-        };
-    }, [request, noteParts.closedFromMeta]);
 
     async function trySync() {
         if (!id || syncing) {
@@ -156,7 +65,7 @@ export function RepairRequestDetailPage() {
         }
         try {
             const updated = await publishRepairRequest(id, !request.isPublished);
-            setRequest(updated);
+            await applyRequestUpdate(updated);
             showSuccess(updated.isPublished ? 'Заявка опубликована для гостей' : 'Публикация снята');
         } catch (err) {
             showError(formatApiError(err));
@@ -262,14 +171,7 @@ export function RepairRequestDetailPage() {
                 <RepairTrackerSyncBanner
                     requestId={id}
                     request={request}
-                    onUpdated={async (updated) => {
-                        setRequest(updated);
-                        if (updated.deviceId) {
-                            setDevice(await fetchDeviceById(updated.deviceId));
-                        } else {
-                            setDevice(null);
-                        }
-                    }}
+                    onUpdated={applyRequestUpdate}
                 />
             ) : null}
 
@@ -281,15 +183,8 @@ export function RepairRequestDetailPage() {
                                 requestId={id}
                                 request={request}
                                 hasTrackerTicket={hasTrackerTicket}
-                                onUpdated={async (updated) => {
-                                    setRequest(updated);
-                                    if (updated.deviceId) {
-                                        setDevice(await fetchDeviceById(updated.deviceId));
-                                    } else {
-                                        setDevice(null);
-                                    }
-                                }}
-                                onCommentsChanged={() => setCommentsRefreshKey((k) => k + 1)}
+                                onUpdated={applyRequestUpdate}
+                                onCommentsChanged={bumpComments}
                             />
                         </aside>
                     ) : null}

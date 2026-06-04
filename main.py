@@ -17,7 +17,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 setup_logging(
-    log_level=settings.log_level,
+    log_level=settings.server.log_level,
     log_dir=settings.server.log_dir,
     log_max_bytes=settings.server.log_max_bytes,
     log_backup_count=settings.server.log_backup_count,
@@ -73,7 +73,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 
 _docs = settings.server.api_docs_enabled
 app = FastAPI(
-    title=settings.app_name,
+    title=settings.server.app_name,
     lifespan=lifespan,
     docs_url="/docs" if _docs else None,
     redoc_url="/redoc" if _docs else None,

@@ -53,7 +53,7 @@ TRACKER_STATUS_ALIASES: dict[str, RequestStatus] = {
 
 
 def verify_webhook_secret(header_value: str | None) -> None:
-    expected = (settings.tracker_webhook_secret or "").strip()
+    expected = (settings.server.tracker_webhook_secret or "").strip()
     if not expected:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

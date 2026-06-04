@@ -13,7 +13,7 @@ from backend.app.schemas.device import Device, DeviceCreate, DeviceHistoryRespon
 from backend.app.schemas.repair_history import RepairHistoryResponse
 from backend.app.schemas.suggest import SuggestResponse
 from backend.app.repositories.device_repository import DeviceRepository, device_base_query
-from backend.app.queries.device_list_query import fetch_devices_page, suggest_devices
+from backend.app.queries.device_list_query import DeviceSortBy, fetch_devices_page, suggest_devices
 from backend.app.repositories.repair_history_repository import RepairHistoryRepository
 from backend.app.services.device_subcategory_validation import validate_device_subcategory
 from backend.app.services.repair_history_service import add_repair_history
@@ -82,7 +82,7 @@ def list_devices(
     room: str | None = Query(default=None),
     responsible: str | None = Query(default=None),
     repair_status: RepairStatus | None = Query(default=None),
-    sort_by: str = Query(default="inventory_number"),
+    sort_by: DeviceSortBy = Query(default="inventory_number"),
     sort_dir: Literal["asc", "desc"] = Query(default="asc"),
     limit: int = Query(default=20, ge=1, le=50),
     offset: int = Query(default=0, ge=0),
@@ -99,7 +99,7 @@ def list_devices(
         room=room,
         responsible=responsible,
         repair_status=repair_status,
-        sort_by=sort_by,  # type: ignore[arg-type]
+        sort_by=sort_by,
         sort_dir=sort_dir,
         limit=limit,
         offset=offset,
@@ -212,7 +212,7 @@ def delete_device(device_id: UUID, db: Session = Depends(get_db)) -> None:
 )
 def get_device_qr(device_id: UUID, db: Session = Depends(get_db)) -> DeviceQrResponse:
     DeviceRepository(db).get_or_404(device_id)
-    base = settings.public_frontend_base_url.rstrip("/")
+    base = settings.server.public_frontend_base_url.rstrip("/")
     return DeviceQrResponse(device_id=device_id, url=f"{base}/device/{device_id}/public")
 
 

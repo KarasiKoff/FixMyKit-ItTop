@@ -65,6 +65,28 @@ def test_workflow_closed_requires_resolution(client, admin_headers, audience) ->
     assert response.json()["detail"] == "resolution_required_for_close"
 
 
+def test_status_patch_closed_to_open_rejected(client, admin_headers, audience) -> None:
+    request_id = _create_request(client, admin_headers, str(audience.id))
+    closed = client.patch(
+        f"/api/repair-requests/{request_id}/workflow",
+        headers=admin_headers,
+        json={
+            "workflow": "closed",
+            "resolution": "resolved",
+            "comment": "Починили",
+        },
+    )
+    assert closed.status_code == 200, closed.text
+
+    reopen = client.patch(
+        f"/api/repair-requests/{request_id}/status",
+        headers=admin_headers,
+        json={"status": RequestStatus.OPEN.value},
+    )
+    assert reopen.status_code == 409
+    assert reopen.json()["detail"] == "invalid_status_transition"
+
+
 def test_workflow_closed_resolved(client, admin_headers, audience) -> None:
     request_id = _create_request(client, admin_headers, str(audience.id))
     response = client.patch(

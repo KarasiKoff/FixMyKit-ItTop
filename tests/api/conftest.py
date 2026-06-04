@@ -26,7 +26,7 @@ pytestmark = pytest.mark.integration
 def _database_url() -> str:
     from backend.app.core.config import settings
 
-    return settings.database_url
+    return settings.database.database_url
 
 
 @pytest.fixture(scope="session")
@@ -85,9 +85,17 @@ def db(session_factory) -> Generator[Session, None, None]:
         session.rollback()
 
 
+@pytest.fixture()
+def fake_tracker_issue_service(monkeypatch: pytest.MonkeyPatch):
+    """Подмена HTTP Tracker: tests.support.fake_tracker_client.patch_tracker_issue_service."""
+    from tests.support.fake_tracker_client import patch_tracker_issue_service, tracker_create_issue_client
+
+    return patch_tracker_issue_service(monkeypatch, tracker_create_issue_client())
+
+
 @pytest.fixture(autouse=True)
 def _mock_tracker_outbound(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Не ходим в Yandex Tracker из API-тестов."""
+    """Не ходим в Yandex Tracker из API-тестов (кроме тестов с fake_tracker_issue_service)."""
 
     def _allow_workflow_without_ticket(repair_request: RepairRequest) -> str:
         return (

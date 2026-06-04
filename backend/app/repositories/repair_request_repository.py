@@ -18,13 +18,38 @@ ACTIVE_REQUEST_STATUSES = (
     RequestStatus.NEEDS_INFO,
 )
 from backend.app.schemas.repair_request import RepairRequestDetail
-from backend.app.services.repair_request_attachment_service import refresh_attachment_fields_from_disk
 from backend.app.services.repair_request_presenters import repair_request_to_list_response
 
 
 class RepairRequestRepository:
     def __init__(self, db: Session) -> None:
         self._db = db
+
+    def all_ids(self) -> set[UUID]:
+        return {row[0] for row in self._db.query(RepairRequest.id).all()}
+
+    def get_optional(self, request_id: UUID) -> RepairRequest | None:
+        return self._db.query(RepairRequest).filter(RepairRequest.id == request_id).first()
+
+    def add_new(
+        self,
+        *,
+        device_id: UUID | None,
+        audience_id: UUID | None,
+        description: str,
+        applicant_name: str | None,
+        author_user_id: UUID | None = None,
+    ) -> RepairRequest:
+        repair_request = RepairRequest(
+            device_id=device_id,
+            audience_id=audience_id,
+            description=description,
+            applicant_name=applicant_name,
+            author_user_id=author_user_id,
+        )
+        self._db.add(repair_request)
+        self._db.flush()
+        return repair_request
 
     def get_or_404(
         self,
@@ -118,6 +143,10 @@ class RepairRequestRepository:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="repair_request_not_found",
             )
+        from backend.app.services.repair_request_attachment_service import (
+            refresh_attachment_fields_from_disk,
+        )
+
         refresh_attachment_fields_from_disk(repair_request)
         self._db.commit()
         return repair_request_to_list_response(repair_request)

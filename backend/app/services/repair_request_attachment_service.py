@@ -10,11 +10,11 @@ from uuid import UUID
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy.orm import Session
 
-logger = logging.getLogger(__name__)
 
 from backend.app.core.config import settings
 from backend.app.models.enums import AttachmentsSyncStatus
 from backend.app.models.repair_request import RepairRequest
+from backend.app.repositories.repair_request_repository import RepairRequestRepository
 from backend.app.services.attachment_storage import (
     PendingAttachment,
     cleanup_directory,
@@ -38,6 +38,8 @@ from backend.app.services.tracker_service import (
     sync_repair_request_to_tracker,
     upload_issue_attachment,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class AttachmentLimitError(Exception):
@@ -65,7 +67,7 @@ class PendingSyncResult:
 
 
 def max_per_request() -> int:
-    return settings.attachment_max_per_request
+    return settings.server.attachment_max_per_request
 
 
 def max_bytes() -> int:
@@ -136,7 +138,9 @@ async def validate_and_store_uploads(
     return stored
 
 
-def finalize_pending_deletions(uploaded: list[PendingAttachment], request_id: UUID) -> None:
+def finalize_pending_deletions(
+    uploaded: list[PendingAttachment], request_id: UUID
+) -> None:
     """Удаляет с диска только после успешного commit в БД."""
     for item in uploaded:
         delete_pending_file(item.path)
@@ -160,7 +164,9 @@ def sync_pending_attachments_to_tracker(
     uploaded: list[PendingAttachment] = []
     for item in list_pending(repair_request.id):
         try:
-            upload_issue_attachment(ref, file_path=item.path, filename=item.original_name)
+            upload_issue_attachment(
+                ref, file_path=item.path, filename=item.original_name
+            )
         except TrackerUnavailableError as exc:
             failed += 1
             logger.warning(
@@ -170,7 +176,9 @@ def sync_pending_attachments_to_tracker(
                 exc,
             )
             continue
-        repair_request.attachments_synced_count = int(repair_request.attachments_synced_count or 0) + 1
+        repair_request.attachments_synced_count = (
+            int(repair_request.attachments_synced_count or 0) + 1
+        )
         uploaded.append(item)
         ok += 1
 
@@ -194,7 +202,9 @@ def refresh_attachment_fields_from_disk(repair_request: RepairRequest) -> None:
     recompute_attachment_fields(repair_request)
 
 
-def sync_tracker_issue_and_attachments(db: Session, repair_request: RepairRequest) -> bool:
+def sync_tracker_issue_and_attachments(
+    db: Session, repair_request: RepairRequest
+) -> bool:
     """Создаёт/подтверждает задачу и догружает pending-вложения."""
     try:
         result = sync_repair_request_to_tracker(repair_request)
@@ -211,7 +221,9 @@ def sync_tracker_issue_and_attachments(db: Session, repair_request: RepairReques
     pending_before = count_pending(repair_request.id)
     attachments_ok = True
     if pending_before > 0:
-        sync_result = sync_pending_attachments_to_tracker(repair_request, remove_from_disk=False)
+        sync_result = sync_pending_attachments_to_tracker(
+            repair_request, remove_from_disk=False
+        )
         apply_attachment_state_after_sync(repair_request, sync_result.uploaded)
         attachments_ok = sync_result.ok > 0 and sync_result.failed == 0
     else:
@@ -224,8 +236,8 @@ def sync_tracker_issue_and_attachments(db: Session, repair_request: RepairReques
 
 
 def run_attachment_cleanup(db: Session) -> AttachmentCleanupResult:
-    max_age = timedelta(days=settings.attachment_orphan_max_age_days)
-    valid_ids = {row[0] for row in db.query(RepairRequest.id).all()}
+    max_age = timedelta(days=settings.server.attachment_orphan_max_age_days)
+    valid_ids = RepairRequestRepository(db).all_ids()
 
     orphan_dirs = 0
     stale_files = 0
@@ -244,7 +256,7 @@ def run_attachment_cleanup(db: Session) -> AttachmentCleanupResult:
         if count_pending(rid) == 0:
             remove_pending_dir(rid)
             empty_dirs += 1
-            rr = db.query(RepairRequest).filter(RepairRequest.id == rid).first()
+            rr = RepairRequestRepository(db).get_optional(rid)
             if rr is not None:
                 recompute_attachment_fields(rr)
 
@@ -269,5 +281,7 @@ def http_error_from_attachment_exc(exc: Exception) -> HTTPException:
     if isinstance(exc, AttachmentValidationError):
         return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=exc.code)
     if isinstance(exc, TrackerUnavailableError):
-        return HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail="tracker_unavailable")
+        return HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY, detail="tracker_unavailable"
+        )
     raise exc

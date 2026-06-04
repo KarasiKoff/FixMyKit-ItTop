@@ -24,7 +24,7 @@ def _is_app_frontend_path(path: str) -> bool:
 
 def shorten_via_clck(url: str) -> str:
     """Возвращает короткую ссылку clck.ru или исходную при ошибке."""
-    if not settings.clck_shortener_enabled:
+    if not settings.server.clck_shortener_enabled:
         return url
     try:
         api_url = f"{CLCK_API}?{urlencode({'url': url})}"
@@ -52,7 +52,7 @@ def shorten_via_clck(url: str) -> str:
 
 def assert_allowed_shorten_url(url: str) -> str:
     """Разрешаем сокращать только ссылки на наш фронт; возвращает абсолютный URL."""
-    base = settings.public_frontend_base_url.rstrip("/")
+    base = settings.server.public_frontend_base_url.rstrip("/")
     normalized = url.strip()
     if normalized.startswith("/"):
         return f"{base}{normalized}"

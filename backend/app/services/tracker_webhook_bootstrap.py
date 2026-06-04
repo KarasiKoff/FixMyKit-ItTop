@@ -14,11 +14,11 @@ from backend.app.repositories.user_repository import UserRepository
 
 
 def ensure_tracker_webhook_actor() -> None:
-    secret = (settings.tracker_webhook_secret or "").strip()
+    secret = (settings.server.tracker_webhook_secret or "").strip()
     if not secret:
         return
 
-    login = (settings.tracker_webhook_actor_login or "tracker_webhook").strip() or "tracker_webhook"
+    login = (settings.server.tracker_webhook_actor_login or "tracker_webhook").strip() or "tracker_webhook"
     db: Session = SessionLocal()
     try:
         if UserRepository(db).exists_by_login(login):
@@ -30,7 +30,7 @@ def ensure_tracker_webhook_actor() -> None:
             full_name="Yandex.Tracker",
             is_active=True,
         )
-        db.add(user)
+        UserRepository(db).add(user)
         try:
             db.commit()
         except IntegrityError:

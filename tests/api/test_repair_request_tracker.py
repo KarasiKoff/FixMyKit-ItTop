@@ -85,20 +85,26 @@ def test_push_status_tracker_unavailable(
     assert repair_request.tracker_status_sync_pending is True
 
 
-def test_tracker_sync_success(client, admin_headers, audience, monkeypatch) -> None:
+def test_tracker_sync_success(client, admin_headers, audience, db, monkeypatch) -> None:
+    from tests.support.fake_tracker_client import patch_tracker_issue_service, tracker_create_issue_client
+
+    fake = tracker_create_issue_client(key="FIX-SYNC-1", ticket_id="99001")
+    patch_tracker_issue_service(monkeypatch, fake)
+
     request_id = _create_request_id(client, admin_headers, str(audience.id))
-    monkeypatch.setattr(
-        "backend.app.services.repair_request_tracker_route_service.sync_tracker_issue_and_attachments",
-        lambda db, rr: True,
-    )
     response = client.post(
         f"/api/repair-requests/{request_id}/tracker/sync",
         headers=admin_headers,
     )
     assert response.status_code == 200, response.text
     body = response.json()
-    assert "tracker_ticket_id" in body
+    assert body["tracker_ticket_key"] == "FIX-SYNC-1"
+    assert body["tracker_ticket_id"] == "99001"
     assert "last_sync_at" in body
+    assert any(call[0] == "POST" for call in fake.calls)
+
+    repair_request = db.get(RepairRequest, request_id)
+    assert repair_request.tracker_ticket_key == "FIX-SYNC-1"
 
 
 def test_tracker_sync_unavailable(client, admin_headers, audience, monkeypatch) -> None:

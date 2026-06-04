@@ -88,7 +88,7 @@ class TrackerIssueService:
         payload, boundary = self._build_upload_body(file_path, filename)
         file_size = file_path.stat().st_size
         timeout = max(
-            settings.tracker_attachment_timeout_seconds,
+            settings.server.tracker_attachment_timeout_seconds,
             60 + file_size // (1024 * 1024),
         )
         raw, _ = self._client.request_bytes(

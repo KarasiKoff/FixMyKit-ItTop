@@ -72,13 +72,11 @@ def create_comment_from_tracker(
     else:
         stored_body = normalize_comment_body(body)
 
-    row = RepairRequestComment(
+    RepairRequestCommentRepository(db).create(
         repair_request_id=repair_request.id,
         author_user_id=author.id,
         body=stored_body,
         tracker_comment_id=tid,
         tracker_synced=True,
     )
-    db.add(row)
-    db.commit()
     return "created"

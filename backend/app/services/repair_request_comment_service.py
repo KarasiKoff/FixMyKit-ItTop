@@ -29,15 +29,12 @@ def create_comment(
 ) -> RepairRequestCommentResponse:
     text = normalize_comment_body(body)
     sync_user_comment_to_tracker(repair_request, author, text)
-    row = RepairRequestComment(
+    row = RepairRequestCommentRepository(db).create(
         repair_request_id=repair_request.id,
         author_user_id=author.id,
         body=text,
         tracker_synced=True,
     )
-    db.add(row)
-    db.commit()
-    db.refresh(row)
     loaded = RepairRequestCommentRepository(db).get_with_author(row.id)
     assert loaded is not None
     return _comment_response(loaded)

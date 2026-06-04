@@ -55,7 +55,7 @@ def is_allowed_attachment(filename: str, content_type: str | None) -> bool:
 
 
 def effective_max_attachment_bytes() -> int:
-    return min(settings.attachment_max_bytes, TRACKER_ATTACHMENT_MAX_BYTES)
+    return min(settings.server.attachment_max_bytes, TRACKER_ATTACHMENT_MAX_BYTES)
 
 
 def attachment_kind(filename: str, content_type: str | None) -> str:

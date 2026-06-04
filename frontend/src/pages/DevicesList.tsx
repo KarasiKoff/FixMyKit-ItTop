@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { fetchDevices, suggestDevices } from '../api/devices';
 import { ConfirmDialog } from '../components/ConfirmDialog';
@@ -15,7 +15,7 @@ import type { DeviceSortBy, DeviceSuggestField, PageSize, SortDir } from '../typ
 import { deviceRepairStatusLabel, deviceRepairStatusPillClass } from '../utils/statusDisplay';
 import { formatApiError } from '../utils/formatApiError';
 import { IconTrash } from '../components/admin/AdminDashboardIcons';
-import { filtersEqual } from '../utils/filtersMatch';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 
 type DeviceFilters = {
     inventoryNumber: string;
@@ -43,71 +43,50 @@ export function DevicesList() {
     const { removeDevice } = useAppData();
     const { showError, showSuccess } = useToast();
 
-    const [items, setItems] = useState<Device[]>([]);
-    const [total, setTotal] = useState(0);
-    const [fetching, setFetching] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState<PageSize>(20);
-    const [sortBy, setSortBy] = useState<DeviceSortBy>(DEFAULT_SORT);
-    const [sortDir, setSortDir] = useState<SortDir>(DEFAULT_DIR);
-    const [draftFilters, setDraftFilters] = useState<DeviceFilters>(EMPTY_FILTERS);
-    const [appliedFilters, setAppliedFilters] = useState<DeviceFilters>(EMPTY_FILTERS);
+    const {
+        items,
+        total,
+        fetching,
+        error,
+        page,
+        pageSize,
+        sortBy,
+        sortDir,
+        draftFilters,
+        setDraftFilters,
+        applyFilters,
+        filtersPending,
+        setPage,
+        setPageSize,
+        handleSort,
+        reload,
+    } = usePaginatedList<Device, DeviceFilters, DeviceSortBy>({
+        emptyFilters: EMPTY_FILTERS,
+        defaultSort: DEFAULT_SORT,
+        defaultDir: DEFAULT_DIR,
+        load: async ({ filters, page: p, pageSize: ps, sortBy: sb, sortDir: sd }) =>
+            fetchDevices({
+                inventory_number: filters.inventoryNumber || undefined,
+                name: filters.name || undefined,
+                category: filters.category || undefined,
+                room: filters.room || undefined,
+                responsible: filters.responsible || undefined,
+                repair_status: filters.status || undefined,
+                sort_by: sb,
+                sort_dir: sd,
+                limit: ps,
+                offset: (p - 1) * ps,
+            }),
+    });
+
     const [selectedDevices, setSelectedDevices] = useState<Set<string>>(new Set());
     const [sheetModalOpen, setSheetModalOpen] = useState(false);
     const [deleting, setDeleting] = useState(false);
     const [deleteTargets, setDeleteTargets] = useState<Device[] | null>(null);
 
-    const applyFilters = useCallback(() => {
-        setAppliedFilters({ ...draftFilters });
-        setPage(1);
-    }, [draftFilters]);
-
-    const load = useCallback(async () => {
-        setFetching(true);
-        setError(null);
-        try {
-            const result = await fetchDevices({
-                inventory_number: appliedFilters.inventoryNumber || undefined,
-                name: appliedFilters.name || undefined,
-                category: appliedFilters.category || undefined,
-                room: appliedFilters.room || undefined,
-                responsible: appliedFilters.responsible || undefined,
-                repair_status: appliedFilters.status || undefined,
-                sort_by: sortBy,
-                sort_dir: sortDir,
-                limit: pageSize,
-                offset: (page - 1) * pageSize,
-            });
-            setItems(result.items);
-            setTotal(result.total);
-        } catch (err) {
-            setError(formatApiError(err));
-        } finally {
-            setFetching(false);
-        }
-    }, [appliedFilters, page, pageSize, sortBy, sortDir]);
-
-    useEffect(() => {
-        void load();
-    }, [load]);
-
     const suggest = useCallback((field: DeviceSuggestField) => {
         return (query: string) => suggestDevices(field, query);
     }, []);
-
-    function handleSort(key: string) {
-        const col = key as DeviceSortBy;
-        setPage(1);
-        if (sortBy === col) {
-            setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-        } else {
-            setSortBy(col);
-            setSortDir('asc');
-        }
-    }
-
-    const filtersPending = !filtersEqual(draftFilters, appliedFilters);
 
     const selectedDevicesList = useMemo(() => items.filter((d) => selectedDevices.has(d.id)), [items, selectedDevices]);
 
@@ -162,7 +141,7 @@ export function DevicesList() {
             });
             showSuccess(count === 1 ? 'Устройство удалено' : `Удалено устройств: ${count}`);
             setDeleteTargets(null);
-            await load();
+            await reload();
         } catch (err) {
             showError(formatApiError(err));
         } finally {
