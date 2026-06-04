@@ -10,6 +10,7 @@ import {
 import { RepairAttachmentsModal } from '../components/RepairAttachmentsModal';
 import { RepairRequestComments } from '../components/RepairRequestComments';
 import { RepairRequestStatusPanel } from '../components/RepairRequestStatusPanel';
+import { RepairTrackerSyncBanner } from '../components/RepairTrackerSyncBanner';
 import { FormSubmitOverlay } from '../components/ui/FormSubmitOverlay';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { Device } from '../types/device';
@@ -256,6 +257,21 @@ export function RepairRequestDetailPage() {
                     </button>
                 </div>
             </div>
+
+            {id && hasTrackerTicket ? (
+                <RepairTrackerSyncBanner
+                    requestId={id}
+                    request={request}
+                    onUpdated={async (updated) => {
+                        setRequest(updated);
+                        if (updated.deviceId) {
+                            setDevice(await fetchDeviceById(updated.deviceId));
+                        } else {
+                            setDevice(null);
+                        }
+                    }}
+                />
+            ) : null}
 
             <div className="repair-detail-page">
                 <div className="repair-detail-main-with-side">

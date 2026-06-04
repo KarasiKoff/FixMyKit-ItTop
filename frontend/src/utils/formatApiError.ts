@@ -116,6 +116,27 @@ function formatDetail(detail: unknown, status: number): string {
     return 'Не удалось выполнить запрос';
 }
 
+export function isTrackerUnavailableError(err: unknown): boolean {
+    if (!(err instanceof ApiError)) {
+        return false;
+    }
+    if (err.status === 502) {
+        return true;
+    }
+    const detail = err.detail;
+    if (detail === 'tracker_unavailable') {
+        return true;
+    }
+    if (typeof detail === 'string' && detail.includes('tracker_unavailable')) {
+        return true;
+    }
+    return false;
+}
+
+/** Сообщение, когда статус в FixMyKit уже сохранён, а Трекер не ответил. */
+export const TRACKER_SYNC_PENDING_TOAST =
+    'Статус на сайте обновлён. Яндекс Трекер недоступен — нажмите «Синхронизировать с Трекером».';
+
 export function formatApiError(err: unknown): string {
     if (err instanceof ApiError) {
         return formatDetail(err.detail, err.status);
