@@ -51,8 +51,8 @@ class RepairRequest(Base):
         default=AttachmentsSyncStatus.NONE,
         server_default="none",
     )
-    attachments_count = Column(nullable=False, default=0, server_default="0")
-    attachments_synced_count = Column(nullable=False, default=0, server_default="0")
+    attachments_count = Column(Integer, nullable=False, default=0, server_default="0")
+    attachments_synced_count = Column(Integer, nullable=False, default=0, server_default="0")
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(
         TIMESTAMP(timezone=True),

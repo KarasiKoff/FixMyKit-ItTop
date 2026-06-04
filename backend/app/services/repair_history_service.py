@@ -9,12 +9,14 @@ from backend.app.models.repair_history import RepairHistory
 def add_repair_history(
     db: Session,
     *,
-    device_id: UUID,
+    device_id: UUID | None,
     repair_request_id: UUID | None = None,
     old_status: RepairStatus | None = None,
     new_status: RepairStatus | None = None,
     note: str | None = None,
 ) -> None:
+    if device_id is None:
+        return
     db.add(
         RepairHistory(
             device_id=device_id,
