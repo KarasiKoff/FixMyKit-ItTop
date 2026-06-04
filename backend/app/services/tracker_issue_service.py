@@ -349,13 +349,8 @@ class TrackerIssueService:
 
     @staticmethod
     def _labels_match(current: str, target: str) -> bool:
-        c = current.strip().casefold()
-        t = target.strip().casefold()
-        if c == t:
-            return True
-        if t == "в работе" and c in ("в работе", "требуется информация"):
-            return True
-        return False
+        """Сравнение отображаемых названий статусов Трекера"""
+        return current.strip().casefold() == target.strip().casefold()
 
     def _list_transitions(self, creds: TrackerCredentials, issue_ref: str) -> list[dict]:
         url = f"{creds.base_url}/issues/{quote(issue_ref, safe='')}/transitions"
