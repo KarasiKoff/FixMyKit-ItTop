@@ -290,6 +290,7 @@ export function AdminAddDevice() {
                         subcategories={subcategoryOptions}
                         value={subcategoryId}
                         onChange={setSubcategoryId}
+                        categorySelected={Boolean(categoryId)}
                         disabled={Boolean(loadError)}
                         required={subcategoryRequired}
                     />

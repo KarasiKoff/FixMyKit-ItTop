@@ -10,6 +10,8 @@ import { UsersManagement } from '../pages/UsersManagement';
 import { QRScan } from '../pages/QRScan';
 import { AdminHub } from '../pages/admin/AdminHub';
 import { AdminLogsPage } from '../pages/admin/AdminLogsPage';
+import { AdminAnnouncementsPage } from '../pages/admin/AdminAnnouncementsPage';
+import { SiteAnnouncementBanners } from '../components/SiteAnnouncementBanners';
 import { AdminUsersPage } from '../pages/admin/AdminUsersPage';
 import { AdminAddCategory } from '../pages/admin/AdminAddCategory';
 import { AdminAddRoom } from '../pages/admin/AdminAddRoom';
@@ -97,6 +99,7 @@ function AppShell() {
                     {isAuthenticated ? <TopbarMobileMenu /> : null}
                 </div>
             </header>
+            <SiteAnnouncementBanners />
             <div className="app-shell-main">
             <Routes>
                 <Route
@@ -113,6 +116,7 @@ function AppShell() {
                 <Route path="/users" element={<RequireAuth><UsersManagement /></RequireAuth>} />
                 <Route path="/admin" element={<RequireAuth><AdminHub /></RequireAuth>} />
                 <Route path="/admin/logs" element={<RequireAuth><AdminLogsPage /></RequireAuth>} />
+                <Route path="/admin/announcements" element={<RequireAuth><AdminAnnouncementsPage /></RequireAuth>} />
                 <Route path="/admin/users" element={<RequireAuth><AdminUsersPage /></RequireAuth>} />
                 <Route path="/admin/add/category" element={<RequireAuth><AdminAddCategory /></RequireAuth>} />
                 <Route path="/admin/add/room" element={<RequireAuth><AdminAddRoom /></RequireAuth>} />

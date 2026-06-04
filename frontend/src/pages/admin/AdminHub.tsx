@@ -5,8 +5,10 @@ import { runAttachmentCleanup } from '../../api/repairRequestAttachments';
 import { useToast } from '../../context/ToastContext';
 import { formatApiError } from '../../utils/formatApiError';
 import {
+    IconHubAnnouncements,
     IconHubCategories,
     IconHubDevice,
+    IconHubLogs,
     IconHubRooms,
     IconHubUsers,
 } from '../../components/admin/AdminDashboardIcons';
@@ -24,13 +26,13 @@ const hubItems = [
         Icon: IconHubUsers,
     },
     {
-        to: '/admin/add/category',
-        title: 'Категории',
-        description: 'Справочник типов оборудования',
-        adminOnly: true,
+        to: '/admin/add/device',
+        title: 'Устройство',
+        description: 'Добавить новое устройство',
+        adminOnly: false,
         titleOnly: false,
-        iconClass: 'admin-hub-card-icon--categories',
-        Icon: IconHubCategories,
+        iconClass: 'admin-hub-card-icon--device',
+        Icon: IconHubDevice,
     },
     {
         to: '/admin/add/room',
@@ -42,13 +44,13 @@ const hubItems = [
         Icon: IconHubRooms,
     },
     {
-        to: '/admin/add/device',
-        title: 'Устройство',
-        description: 'Добавить новое устройство',
-        adminOnly: false,
+        to: '/admin/add/category',
+        title: 'Категории',
+        description: 'Справочник типов оборудования',
+        adminOnly: true,
         titleOnly: false,
-        iconClass: 'admin-hub-card-icon--device',
-        Icon: IconHubDevice,
+        iconClass: 'admin-hub-card-icon--categories',
+        Icon: IconHubCategories,
     },
     {
         to: '/admin/logs',
@@ -56,8 +58,17 @@ const hubItems = [
         description: 'Журнал событий и ошибок сервера',
         adminOnly: true,
         titleOnly: false,
-        iconClass: 'admin-hub-card-icon--users',
-        Icon: IconHubUsers,
+        iconClass: 'admin-hub-card-icon--logs',
+        Icon: IconHubLogs,
+    },
+    {
+        to: '/admin/announcements',
+        title: 'Объявления',
+        description: 'Плашки для всех или только для админов',
+        adminOnly: true,
+        titleOnly: false,
+        iconClass: 'admin-hub-card-icon--announcements',
+        Icon: IconHubAnnouncements,
     },
 ] as const;
 

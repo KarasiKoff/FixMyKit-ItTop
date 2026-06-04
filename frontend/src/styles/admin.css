@@ -495,6 +495,33 @@ td.table-col-start {
   width: 100%;
 }
 
+.admin-device-actions--dual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.admin-device-actions--dual .admin-device-actions__btn {
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
+  border-radius: 11px;
+  font-weight: 600;
+  font-size: 1.05rem;
+  box-sizing: border-box;
+}
+
+.admin-device-actions--dual a.admin-device-actions__btn[aria-disabled='true'] {
+  opacity: 0.45;
+  pointer-events: none;
+}
+
 .admin-device-bulk-block {
   display: flex;
   flex-direction: column;

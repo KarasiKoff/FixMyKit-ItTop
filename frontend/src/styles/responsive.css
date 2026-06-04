@@ -102,11 +102,7 @@
     font-size: 15px;
   }
 
-  .admin-hub-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .admin-hub-grid--row {
+  .admin-hub-grid.admin-hub-grid--row {
     grid-template-columns: 1fr;
   }
 

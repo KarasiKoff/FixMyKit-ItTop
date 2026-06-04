@@ -50,6 +50,24 @@ export function IconHubDevice(props: IconProps) {
     );
 }
 
+export function IconHubLogs(props: IconProps) {
+    return (
+        <svg {...defaults} {...props}>
+            <polyline points="4 17 10 11 4 5" />
+            <line x1="12" y1="19" x2="20" y2="19" />
+        </svg>
+    );
+}
+
+export function IconHubAnnouncements(props: IconProps) {
+    return (
+        <svg {...defaults} {...props}>
+            <path d="M3 11h3l8-8v18l-8-8H3z" />
+            <path d="M15.5 8.5a4.5 4.5 0 0 1 0 7" />
+        </svg>
+    );
+}
+
 export function IconKpiTotal(props: IconProps) {
     return (
         <svg {...defaults} {...props}>
