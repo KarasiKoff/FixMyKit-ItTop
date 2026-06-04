@@ -39,10 +39,7 @@ function formatTs(ts: string | null | undefined): string {
 }
 
 function LogLine({ entry }: { entry: LogEntry }) {
-    const extra =
-        entry.extra && Object.keys(entry.extra).length > 0
-            ? JSON.stringify(entry.extra, null, 0)
-            : null;
+    const extra = entry.extra && Object.keys(entry.extra).length > 0 ? JSON.stringify(entry.extra, null, 0) : null;
     const loggerRef = findLoggerRef(entry.logger);
     const messageHint = findMessageHint(entry.message, entry.logger);
     return (
@@ -134,9 +131,7 @@ export function AdminLogsPage() {
             </div>
             <div className="page-intro page-intro--wide">
                 <h2 className="page-title">Логи приложения</h2>
-                <p className="muted-text">
-                    Структурированные записи с сервера: HTTP, БД, авторизация, Yandex Tracker
-                </p>
+                <p className="muted-text">Структурированные записи с сервера: HTTP, БД, авторизация, Yandex Tracker</p>
             </div>
 
             <section className="card card--hub">
@@ -192,7 +187,9 @@ export function AdminLogsPage() {
                 {loading && !data ? (
                     <p className="muted-text">Загрузка логов…</p>
                 ) : data && data.items.length === 0 ? (
-                    <p className="muted-text">Записей не найдено. Проверьте фильтры или выполните действие в системе.</p>
+                    <p className="muted-text">
+                        Записей не найдено. Проверьте фильтры или выполните действие в системе.
+                    </p>
                 ) : (
                     <div className="admin-logs-list">
                         {data?.items.map((entry, idx) => (

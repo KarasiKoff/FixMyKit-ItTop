@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Literal
+from uuid import UUID
 
 from sqlalchemy import case, func, or_
 from sqlalchemy.orm import Query, Session, joinedload
@@ -38,7 +40,13 @@ def _apply_repair_request_filters(
     device: str | None,
     applicant: str | None,
     status: RequestStatus | None,
+    device_id: UUID | None = None,
+    author_user_id: UUID | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
 ) -> Query:
+    if device_id is not None:
+        query = query.filter(RepairRequestModel.device_id == device_id)
     if device:
         pattern = f"%{device.strip()}%"
         query = query.filter(
@@ -50,8 +58,14 @@ def _apply_repair_request_filters(
         )
     if applicant:
         query = query.filter(RepairRequestModel.applicant_name.ilike(f"%{applicant.strip()}%"))
+    if author_user_id is not None:
+        query = query.filter(RepairRequestModel.author_user_id == author_user_id)
     if status is not None:
         query = query.filter(RepairRequestModel.status == status)
+    if date_from is not None:
+        query = query.filter(RepairRequestModel.created_at >= date_from)
+    if date_to is not None:
+        query = query.filter(RepairRequestModel.created_at <= date_to)
     return query
 
 
@@ -82,6 +96,10 @@ def fetch_repair_requests_page(
     device: str | None = None,
     applicant: str | None = None,
     status: RequestStatus | None = None,
+    device_id: UUID | None = None,
+    author_user_id: UUID | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
     sort_by: RepairRequestSortBy = "created_at",
     sort_dir: SortDir = "desc",
     limit: int = 20,
@@ -92,6 +110,10 @@ def fetch_repair_requests_page(
         device=device,
         applicant=applicant,
         status=status,
+        device_id=device_id,
+        author_user_id=author_user_id,
+        date_from=date_from,
+        date_to=date_to,
     )
     total = base.with_entities(func.count(func.distinct(RepairRequestModel.id))).scalar() or 0
     items = (

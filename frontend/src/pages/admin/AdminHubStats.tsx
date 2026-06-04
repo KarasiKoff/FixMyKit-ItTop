@@ -123,8 +123,7 @@ export function AdminHubStats() {
         }
     }
 
-    const maxCategoryCount =
-        stats?.devicesByCategory.reduce((max, row) => Math.max(max, row.deviceCount), 0) ?? 0;
+    const maxCategoryCount = stats?.devicesByCategory.reduce((max, row) => Math.max(max, row.deviceCount), 0) ?? 0;
 
     return (
         <section className="card card--admin-stats">
@@ -270,7 +269,6 @@ export function AdminHubStats() {
                     )}
                 </article>
             </div>
-
         </section>
     );
 }

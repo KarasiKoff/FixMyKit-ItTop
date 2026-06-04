@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
-import { useAppData } from '../../context/AppDataContext';
 import { createDevice, fetchDevices } from '../../api/devices';
 import {
     categoryRequiresSubcategory,
@@ -59,11 +58,7 @@ async function nextBulkIndex(
 }
 
 function nextBulkDeviceIndex(roomName: string): Promise<number> {
-    return nextBulkIndex(
-        roomName,
-        (device) => [device.name, device.inventoryNumber],
-        { room: roomName },
-    );
+    return nextBulkIndex(roomName, (device) => [device.name, device.inventoryNumber], { room: roomName });
 }
 
 function nextBulkSerialIndex(serialPrefix: string): Promise<number> {
@@ -72,7 +67,6 @@ function nextBulkSerialIndex(serialPrefix: string): Promise<number> {
 
 export function AdminAddDevice() {
     const { showSuccess, showError } = useToast();
-    const { refresh } = useAppData();
 
     const [categories, setCategories] = useState<CategoryDto[]>([]);
     const [audiences, setAudiences] = useState<AudienceDto[]>([]);
@@ -169,8 +163,7 @@ export function AdminAddDevice() {
                     await createDevice({
                         inventory_number: label,
                         name: label,
-                        serial_number:
-                            serialStartIndex !== null ? `${serialPrefix}-${serialStartIndex + i}` : null,
+                        serial_number: serialStartIndex !== null ? `${serialPrefix}-${serialStartIndex + i}` : null,
                         ...sharedPayload,
                     });
                     created += 1;
@@ -198,8 +191,6 @@ export function AdminAddDevice() {
                 setNote('');
                 setStatus('not_in_repair');
             }
-
-            await refresh();
         } catch (err) {
             showError(formatApiError(err));
         }
@@ -219,11 +210,7 @@ export function AdminAddDevice() {
                 <form className="admin-device-form" onSubmit={handleSubmit}>
                     <div className="admin-device-bulk-block">
                         <label className="checkbox-field admin-device-bulk-toggle">
-                            <input
-                                type="checkbox"
-                                checked={bulkMode}
-                                onChange={(e) => setBulkMode(e.target.checked)}
-                            />
+                            <input type="checkbox" checked={bulkMode} onChange={(e) => setBulkMode(e.target.checked)} />
                             <span>Несколько ПК в этом кабинете</span>
                         </label>
 
@@ -309,11 +296,7 @@ export function AdminAddDevice() {
                     </label>
                     <label className="admin-device-field">
                         <span className="admin-inline-label">Кабинет</span>
-                        <select
-                            value={audienceId}
-                            onChange={(e) => setAudienceId(e.target.value)}
-                            required={bulkMode}
-                        >
+                        <select value={audienceId} onChange={(e) => setAudienceId(e.target.value)} required={bulkMode}>
                             <option value="">—</option>
                             {audiences.map((a) => (
                                 <option key={a.id} value={String(a.id)}>

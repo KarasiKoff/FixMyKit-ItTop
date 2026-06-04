@@ -1,14 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
+import { adminResetUserPassword, createUser, fetchUsers, updateUser, type UserListItem } from '../../api/users';
 import {
-    adminResetUserPassword,
-    createUser,
-    fetchUsers,
-    updateUser,
-    type UserListItem,
-} from '../../api/users';
-import { IconCheck, IconClose, IconEdit, IconLock, IconPower, IconSync } from '../../components/admin/AdminDashboardIcons';
+    IconCheck,
+    IconClose,
+    IconEdit,
+    IconLock,
+    IconPower,
+    IconSync,
+} from '../../components/admin/AdminDashboardIcons';
 import { formatApiError } from '../../utils/formatApiError';
 
 export function AdminUsersPanel() {
@@ -49,9 +50,7 @@ export function AdminUsersPanel() {
         if (!q) {
             return users;
         }
-        return users.filter(
-            (u) => u.login.toLowerCase().includes(q) || u.name.toLowerCase().includes(q),
-        );
+        return users.filter((u) => u.login.toLowerCase().includes(q) || u.name.toLowerCase().includes(q));
     }, [users, search]);
 
     async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
@@ -173,17 +172,31 @@ export function AdminUsersPanel() {
                     </label>
                     <label className="admin-inline-field">
                         <span className="admin-inline-label">ФИО</span>
-                        <input value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Имя" disabled={!isAdmin} />
+                        <input
+                            value={fullName}
+                            onChange={(e) => setFullName(e.target.value)}
+                            placeholder="Имя"
+                            disabled={!isAdmin}
+                        />
                     </label>
                     <label className="admin-inline-field admin-inline-field--narrow">
                         <span className="admin-inline-label">Роль</span>
-                        <select value={role} onChange={(e) => setRole(e.target.value as typeof role)} disabled={!isAdmin}>
+                        <select
+                            value={role}
+                            onChange={(e) => setRole(e.target.value as typeof role)}
+                            disabled={!isAdmin}
+                        >
                             <option value="admin">Администратор</option>
                             <option value="sysadmin">Сисадмин</option>
                         </select>
                     </label>
                     <div className="admin-inline-actions">
-                        <button type="submit" className="btn-primary" disabled={!isAdmin} title={!isAdmin ? 'Только администратор' : undefined}>
+                        <button
+                            type="submit"
+                            className="btn-primary"
+                            disabled={!isAdmin}
+                            title={!isAdmin ? 'Только администратор' : undefined}
+                        >
                             Создать
                         </button>
                     </div>
@@ -220,10 +233,19 @@ export function AdminUsersPanel() {
                         <p>Новый пароль для пользователя</p>
                         <label>
                             <span className="admin-inline-label">Новый пароль</span>
-                            <input type="password" value={resetPassword} onChange={(e) => setResetPassword(e.target.value)} />
+                            <input
+                                type="password"
+                                value={resetPassword}
+                                onChange={(e) => setResetPassword(e.target.value)}
+                            />
                         </label>
                         <div className="admin-password-reset-actions">
-                            <button type="button" className="btn-primary" disabled={!isAdmin} onClick={() => void applyPasswordReset()}>
+                            <button
+                                type="button"
+                                className="btn-primary"
+                                disabled={!isAdmin}
+                                onClick={() => void applyPasswordReset()}
+                            >
                                 Сохранить пароль
                             </button>
                             <button type="button" className="btn-ghost" onClick={() => setResetUserId(null)}>
@@ -242,7 +264,9 @@ export function AdminUsersPanel() {
                                 <th className="table-col-center">Роль</th>
                                 <th className="table-col-center">Статус</th>
                                 <th className="table-col-center">Создан</th>
-                                <th className="table-col-center table-col-actions table-col-actions--compact">Действия</th>
+                                <th className="table-col-center table-col-actions table-col-actions--compact">
+                                    Действия
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -262,19 +286,23 @@ export function AdminUsersPanel() {
                                 filtered.map((u) => (
                                     <tr
                                         key={u.id}
-                                        className={[
-                                            !u.isActive ? 'row-disabled' : '',
-                                            editingId === u.id ? 'admin-table-row--editing' : '',
-                                        ]
-                                            .filter(Boolean)
-                                            .join(' ') || undefined}
+                                        className={
+                                            [
+                                                !u.isActive ? 'row-disabled' : '',
+                                                editingId === u.id ? 'admin-table-row--editing' : '',
+                                            ]
+                                                .filter(Boolean)
+                                                .join(' ') || undefined
+                                        }
                                     >
                                         <td className="table-col-center">{u.login}</td>
                                         <td className="table-col-center admin-table-cell--input">
                                             {editingId === u.id ? (
                                                 <input
                                                     value={editDraft.fullName}
-                                                    onChange={(e) => setEditDraft((d) => ({ ...d, fullName: e.target.value }))}
+                                                    onChange={(e) =>
+                                                        setEditDraft((d) => ({ ...d, fullName: e.target.value }))
+                                                    }
                                                     disabled={!isAdmin}
                                                 />
                                             ) : (
@@ -293,7 +321,10 @@ export function AdminUsersPanel() {
                                                     <select
                                                         value={editDraft.role}
                                                         onChange={(e) =>
-                                                            setEditDraft((d) => ({ ...d, role: e.target.value as typeof d.role }))
+                                                            setEditDraft((d) => ({
+                                                                ...d,
+                                                                role: e.target.value as typeof d.role,
+                                                            }))
                                                         }
                                                         disabled={!isAdmin}
                                                     >
@@ -308,7 +339,9 @@ export function AdminUsersPanel() {
                                             )}
                                         </td>
                                         <td className="table-col-center">
-                                            <span className={`status-badge ${u.isActive ? 'status-badge--on' : 'status-badge--off'}`}>
+                                            <span
+                                                className={`status-badge ${u.isActive ? 'status-badge--on' : 'status-badge--off'}`}
+                                            >
                                                 {u.isActive ? 'активен' : 'отключён'}
                                             </span>
                                         </td>

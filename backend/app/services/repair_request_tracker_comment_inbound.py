@@ -9,6 +9,9 @@ from sqlalchemy.orm import Session
 from backend.app.models.repair_request import RepairRequest
 from backend.app.models.repair_request_comment import RepairRequestComment
 from backend.app.models.user import User
+from backend.app.repositories.repair_request_comment_repository import (
+    RepairRequestCommentRepository,
+)
 from backend.app.services.comment_body_normalize import (
     normalize_comment_body,
     plain_author_prefix_body,
@@ -35,13 +38,9 @@ def find_existing_tracker_comment(
     repair_request_id: UUID,
     tracker_comment_id: str,
 ) -> RepairRequestComment | None:
-    return (
-        db.query(RepairRequestComment)
-        .filter(
-            RepairRequestComment.repair_request_id == repair_request_id,
-            RepairRequestComment.tracker_comment_id == tracker_comment_id,
-        )
-        .first()
+    return RepairRequestCommentRepository(db).find_by_tracker_comment_id(
+        repair_request_id,
+        tracker_comment_id,
     )
 
 

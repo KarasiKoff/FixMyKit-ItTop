@@ -14,7 +14,9 @@ export function outerCellWidthMm(qrSizeMm: number, cellPaddingMm: number): numbe
 }
 
 /** Внешняя высота ячейки (QR + зазор до текста + строка текста + паддинг сверху/снизу). */
-export function outerCellHeightMm(s: Pick<QrSheetSettings, 'qrSizeMm' | 'labelGapMm' | 'labelFontPt' | 'cellPaddingMm'>): number {
+export function outerCellHeightMm(
+    s: Pick<QrSheetSettings, 'qrSizeMm' | 'labelGapMm' | 'labelFontPt' | 'cellPaddingMm'>,
+): number {
     return s.qrSizeMm + s.labelGapMm + labelTextHeightMm(s.labelFontPt) + 2 * s.cellPaddingMm;
 }
 
@@ -28,7 +30,9 @@ export function computeColsPerRow(qrSizeMm: number, cellPaddingMm: number): numb
 }
 
 /** Сколько рядов помещается на одной странице. */
-export function computeRowsPerPage(s: Pick<QrSheetSettings, 'qrSizeMm' | 'labelGapMm' | 'labelFontPt' | 'cellPaddingMm'>): number {
+export function computeRowsPerPage(
+    s: Pick<QrSheetSettings, 'qrSizeMm' | 'labelGapMm' | 'labelFontPt' | 'cellPaddingMm'>,
+): number {
     const h = outerCellHeightMm(s);
     if (h <= 0) {
         return 0;

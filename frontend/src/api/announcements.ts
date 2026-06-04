@@ -55,9 +55,7 @@ export async function fetchAdminAnnouncements(): Promise<AdminAnnouncementsRespo
     return apiRequest<AdminAnnouncementsResponse>('/api/admin/announcements');
 }
 
-export async function saveAdminAnnouncements(
-    slots: SiteAnnouncementSlotInput[],
-): Promise<AdminAnnouncementsResponse> {
+export async function saveAdminAnnouncements(slots: SiteAnnouncementSlotInput[]): Promise<AdminAnnouncementsResponse> {
     return apiRequest<AdminAnnouncementsResponse>('/api/admin/announcements', {
         method: 'PUT',
         body: JSON.stringify({ slots }),

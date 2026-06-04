@@ -6,6 +6,7 @@ from backend.app.core.database import SessionLocal
 from backend.app.core.security import hash_password
 from backend.app.models.enums import UserRole
 from backend.app.models.user import User
+from backend.app.repositories.user_repository import UserRepository
 
 
 def ensure_admin_user() -> None:
@@ -18,7 +19,7 @@ def ensure_admin_user() -> None:
 
     db: Session = SessionLocal()
     try:
-        existing_user = db.query(User).filter(User.login == admin_login).first()
+        existing_user = UserRepository(db).get_by_login(admin_login)
         if existing_user is not None:
             return
 

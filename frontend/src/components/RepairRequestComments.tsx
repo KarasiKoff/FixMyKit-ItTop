@@ -162,9 +162,5 @@ export function RepairRequestComments({ requestId, hasTrackerTicket, refreshKey,
         return <div className="repair-comments-embedded">{body}</div>;
     }
 
-    return (
-        <section className="card card-form card--narrow-device repair-comments-panel">
-            {body}
-        </section>
-    );
+    return <section className="card card-form card--narrow-device repair-comments-panel">{body}</section>;
 }

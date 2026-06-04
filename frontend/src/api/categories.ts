@@ -73,10 +73,7 @@ export async function createSubcategory(categoryId: string, name: string) {
     });
 }
 
-export async function updateSubcategory(
-    id: string,
-    payload: { name?: string; is_active?: boolean },
-) {
+export async function updateSubcategory(id: string, payload: { name?: string; is_active?: boolean }) {
     return apiRequest<SubcategoryDto>(`/api/categories/subcategories/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(payload),

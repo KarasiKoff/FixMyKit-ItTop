@@ -3,10 +3,7 @@ import { mapCanvasGridPx } from '../utils/mapChipConstants';
 
 /** Фиксированные width/height холста под сетку (без масштабирования и без probe). */
 export function useFixedMapCanvas(gridCols: number, gridRows: number) {
-    const { width, height } = useMemo(
-        () => mapCanvasGridPx(gridCols, gridRows),
-        [gridCols, gridRows],
-    );
+    const { width, height } = useMemo(() => mapCanvasGridPx(gridCols, gridRows), [gridCols, gridRows]);
 
     const canvasStyle: CSSProperties = {
         width: `${width}px`,

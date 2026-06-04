@@ -54,9 +54,7 @@ export function CabinetRepairForm({
     const parsedId = audienceId;
     const selectedAudience = audiences.find((a) => String(a.id) === audienceId);
     const lockedTargetDisplay =
-        audienceSelectDisabled && audiences.length > 0
-            ? selectedAudience?.name?.trim() || '—'
-            : null;
+        audienceSelectDisabled && audiences.length > 0 ? selectedAudience?.name?.trim() || '—' : null;
 
     const formClass = ['repair-request-form', isBusy ? 'repair-request-form--busy' : ''].filter(Boolean).join(' ');
 
@@ -77,9 +75,7 @@ export function CabinetRepairForm({
                     setInternalBusy(true);
                 }
                 try {
-                    await Promise.resolve(
-                        onSubmit({ audienceId: parsedId.trim(), name, description }),
-                    );
+                    await Promise.resolve(onSubmit({ audienceId: parsedId.trim(), name, description }));
                     setDescription('');
                     if (nameRequired) {
                         setName('');
@@ -126,12 +122,7 @@ export function CabinetRepairForm({
                 ) : null}
                 <label>
                     Описание проблемы
-                    <textarea
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        required
-                        rows={5}
-                    />
+                    <textarea value={description} onChange={(e) => setDescription(e.target.value)} required rows={5} />
                 </label>
                 {childrenAfterDescription}
             </fieldset>

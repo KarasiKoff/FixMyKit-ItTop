@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_current_user, get_db
 from backend.app.core.security import create_access_token, hash_password, verify_password
-from backend.app.models.user import User
+from backend.app.repositories.user_repository import UserRepository
 from backend.app.schemas.auth import LoginRequest, SelfPasswordUpdate, Token
 from backend.app.schemas.user import UserResponse
 
@@ -15,7 +15,7 @@ logger = logging.getLogger("fixmykit.auth")
 
 
 def authenticate_user(login: str, password: str, db: Session) -> Token:
-    user = db.query(User).filter(User.login == login, User.is_active.is_(True)).first()
+    user = UserRepository(db).get_active_by_login(login)
     if user is None or not verify_password(password, user.password_hash):
         logger.warning("auth_login_failed", extra={"login": login.strip()[:64]})
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect login or password")

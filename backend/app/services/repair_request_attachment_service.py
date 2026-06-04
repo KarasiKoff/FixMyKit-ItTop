@@ -8,9 +8,9 @@ from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from fastapi import HTTPException, UploadFile, status
+from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
-from sqlalchemy.orm import Session
 
 from backend.app.core.config import settings
 from backend.app.models.enums import AttachmentsSyncStatus
@@ -65,7 +65,7 @@ class PendingSyncResult:
 
 
 def max_per_request() -> int:
-    return settings.server.attachment_max_per_request
+    return settings.attachment_max_per_request
 
 
 def max_bytes() -> int:
@@ -224,7 +224,7 @@ def sync_tracker_issue_and_attachments(db: Session, repair_request: RepairReques
 
 
 def run_attachment_cleanup(db: Session) -> AttachmentCleanupResult:
-    max_age = timedelta(days=settings.server.attachment_orphan_max_age_days)
+    max_age = timedelta(days=settings.attachment_orphan_max_age_days)
     valid_ids = {row[0] for row in db.query(RepairRequest.id).all()}
 
     orphan_dirs = 0

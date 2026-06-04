@@ -28,7 +28,8 @@ export const LOG_LOGGER_GROUPS: { title: string; items: LogLoggerRef[] }[] = [
             {
                 id: 'main',
                 title: 'Старт приложения',
-                description: 'Жизненный цикл FastAPI: очистка вложений при старте и по расписанию, необработанные исключения.',
+                description:
+                    'Жизненный цикл FastAPI: очистка вложений при старте и по расписанию, необработанные исключения.',
                 typicalMessages: [
                     'attachment_cleanup',
                     'attachment_cleanup_failed',
@@ -50,8 +51,7 @@ export const LOG_LOGGER_GROUPS: { title: string; items: LogLoggerRef[] }[] = [
             {
                 id: 'fixmykit.auth',
                 title: 'Вход и JWT',
-                description:
-                    'Логин/пароль, проверка Bearer-токена и токена в query (SSE). Пароли в лог не пишутся.',
+                description: 'Логин/пароль, проверка Bearer-токена и токена в query (SSE). Пароли в лог не пишутся.',
                 typicalMessages: [
                     'auth_login_success',
                     'auth_login_failed',
@@ -70,9 +70,14 @@ export const LOG_LOGGER_GROUPS: { title: string; items: LogLoggerRef[] }[] = [
             {
                 id: 'fixmykit.db',
                 title: 'База данных',
-                description:
-                    'Пул соединений SQLAlchemy: checkout/checkin (DEBUG), ошибки запросов и сбои драйвера.',
-                typicalMessages: ['db_connect', 'db_pool_checkout', 'db_pool_checkin', 'db_error', 'db_unexpected_error'],
+                description: 'Пул соединений SQLAlchemy: checkout/checkin (DEBUG), ошибки запросов и сбои драйвера.',
+                typicalMessages: [
+                    'db_connect',
+                    'db_pool_checkout',
+                    'db_pool_checkin',
+                    'db_error',
+                    'db_unexpected_error',
+                ],
             },
         ],
     },
@@ -154,9 +159,15 @@ export const LOG_MESSAGE_HINTS: LogMessageRef[] = [
     { match: 'auth_token_invalid', description: 'JWT не подписан, просрочен или повреждён.' },
     { match: 'auth_user_not_found_or_inactive', description: 'Пользователь удалён/отключён, токен ещё в браузере.' },
     { match: 'tracker_webhook_status', description: 'Вебхук статуса: что пришло из Трекера (raw_status, db_status).' },
-    { match: 'tracker_webhook_unmapped_status', description: 'Статус из Трекера не в TRACKER_STATUS_ALIASES — правьте макрос или алиасы.' },
+    {
+        match: 'tracker_webhook_unmapped_status',
+        description: 'Статус из Трекера не в TRACKER_STATUS_ALIASES — правьте макрос или алиасы.',
+    },
     { match: 'tracker_webhook_noop', description: 'Статус уже такой же — изменений в БД не было.' },
-    { match: 'tracker_webhook_label_updated', description: 'Обновлена только подпись tracker_status_label при том же enum-статусе.' },
+    {
+        match: 'tracker_webhook_label_updated',
+        description: 'Обновлена только подпись tracker_status_label при том же enum-статусе.',
+    },
     { match: 'tracker_api_http_error', description: 'Трекер ответил 4xx/5xx (status, body_preview в extra).' },
     { match: 'tracker_api_network_error', description: 'Нет сети до api.tracker.yandex.net или таймаут.' },
     { match: 'tracker_outbound_failed', description: 'С сайта не удалось отправить статус/комментарий в Трекер.' },
@@ -178,10 +189,7 @@ export function findLoggerRef(logger: string | null | undefined): LogLoggerRef |
     return ALL_LOGGERS.find((r) => logger.startsWith(r.id) || logger.includes(r.id));
 }
 
-export function findMessageHint(
-    message: string | null | undefined,
-    logger?: string | null,
-): LogMessageRef | undefined {
+export function findMessageHint(message: string | null | undefined, logger?: string | null): LogMessageRef | undefined {
     if (!message?.trim()) {
         return undefined;
     }

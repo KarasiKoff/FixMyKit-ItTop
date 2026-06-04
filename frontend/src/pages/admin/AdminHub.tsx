@@ -113,10 +113,7 @@ export function AdminHub() {
                 <div className="admin-hub-grid admin-hub-grid--row">
                     {hubItems.map((item) => {
                         const locked = item.adminOnly && !isAdmin;
-                        const cardClass = [
-                            'admin-hub-card',
-                            item.titleOnly ? 'admin-hub-card--title-only' : '',
-                        ]
+                        const cardClass = ['admin-hub-card', item.titleOnly ? 'admin-hub-card--title-only' : '']
                             .filter(Boolean)
                             .join(' ');
                         if (locked) {

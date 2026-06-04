@@ -39,7 +39,11 @@ export function Login() {
                             {error ? <p className="error-text">{error}</p> : null}
                             <label>
                                 Логин
-                                <input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" />
+                                <input
+                                    value={username}
+                                    onChange={(event) => setUsername(event.target.value)}
+                                    autoComplete="username"
+                                />
                             </label>
                             <label>
                                 Пароль

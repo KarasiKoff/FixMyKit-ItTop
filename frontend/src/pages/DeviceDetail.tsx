@@ -32,10 +32,7 @@ function historyEntryIconKind(entry: RepairHistoryEntry): 'ok' | 'tracker' | 're
 function IconBarcode() {
     return (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-                d="M4 7h1v10H4V7zm3 0h2v10H7V7zm4 0h1v10h-1V7zm3 0h2v10h-2V7zm4 0h1v10h-1V7z"
-                fill="currentColor"
-            />
+            <path d="M4 7h1v10H4V7zm3 0h2v10H7V7zm4 0h1v10h-1V7zm3 0h2v10h-2V7zm4 0h1v10h-1V7z" fill="currentColor" />
         </svg>
     );
 }
@@ -76,10 +73,7 @@ function IconDoor() {
 function IconPerson() {
     return (
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-                d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 9a7 7 0 0 1 14 0H5z"
-                fill="currentColor"
-            />
+            <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm-7 9a7 7 0 0 1 14 0H5z" fill="currentColor" />
         </svg>
     );
 }
@@ -106,10 +100,7 @@ function TimelineIcon({ kind }: { kind: 'ok' | 'tracker' | 'repair' }) {
     if (kind === 'repair') {
         return (
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path
-                    d="M12 2 9.2 8.6 2 11l7.2 2.4L12 20l2.8-6.6L22 11l-7.2-2.4L12 2z"
-                    fill="currentColor"
-                />
+                <path d="M12 2 9.2 8.6 2 11l7.2 2.4L12 20l2.8-6.6L22 11l-7.2-2.4L12 2z" fill="currentColor" />
             </svg>
         );
     }
@@ -249,11 +240,19 @@ export function DeviceDetail() {
                         </div>
 
                         <div className="device-meta-grid grid grid-5">
-                            <DeviceMetaItem icon={<IconBarcode />} label="Инвентарный номер" value={device.inventoryNumber} />
+                            <DeviceMetaItem
+                                icon={<IconBarcode />}
+                                label="Инвентарный номер"
+                                value={device.inventoryNumber}
+                            />
                             <DeviceMetaItem icon={<IconBriefcase />} label="Категория" value={device.category} />
                             <DeviceMetaItem icon={<IconMonitor />} label="Серийный номер" value={device.serialNumber} />
                             <DeviceMetaItem icon={<IconDoor />} label="Кабинет" value={device.room} />
-                            <DeviceMetaItem icon={<IconPerson />} label="Ответственный" value={device.responsible || '—'} />
+                            <DeviceMetaItem
+                                icon={<IconPerson />}
+                                label="Ответственный"
+                                value={device.responsible || '—'}
+                            />
                         </div>
 
                         <DeviceNote
@@ -263,13 +262,21 @@ export function DeviceDetail() {
                         />
 
                         <div className="actions-row device-detail-actions">
-                            <Link className="btn-primary device-detail-actions__primary" to={`/repair?deviceId=${device.id}`}>
+                            <Link
+                                className="btn-primary device-detail-actions__primary"
+                                to={`/repair?deviceId=${device.id}`}
+                            >
                                 Создать заявку
                             </Link>
                             <Link className="btn-ghost" to={`/admin/device/${device.id}/edit`}>
                                 Изменить
                             </Link>
-                            <button type="button" className="btn-danger" disabled={deleting} onClick={() => setDeleteConfirmOpen(true)}>
+                            <button
+                                type="button"
+                                className="btn-danger"
+                                disabled={deleting}
+                                onClick={() => setDeleteConfirmOpen(true)}
+                            >
                                 Удалить устройство
                             </button>
                         </div>
@@ -286,8 +293,14 @@ export function DeviceDetail() {
                                         const iconKind = historyEntryIconKind(entry);
                                         const isLast = index === visibleHistory.length - 1;
                                         return (
-                                            <li key={entry.id} className={`history-timeline__item${isLast ? ' history-timeline__item--last' : ''}`}>
-                                                <span className={`history-timeline__dot history-timeline__dot--${iconKind}`} aria-hidden="true">
+                                            <li
+                                                key={entry.id}
+                                                className={`history-timeline__item${isLast ? ' history-timeline__item--last' : ''}`}
+                                            >
+                                                <span
+                                                    className={`history-timeline__dot history-timeline__dot--${iconKind}`}
+                                                    aria-hidden="true"
+                                                >
                                                     <TimelineIcon kind={iconKind} />
                                                 </span>
                                                 <span className="history-timeline__content">

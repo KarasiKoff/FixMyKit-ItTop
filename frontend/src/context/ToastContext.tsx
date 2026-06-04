@@ -43,9 +43,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     return (
         <ToastContext.Provider value={value}>
             {children}
-            {toast ? (
-                <ToastBanner type={toast.type} message={toast.message} onDismiss={hide} />
-            ) : null}
+            {toast ? <ToastBanner type={toast.type} message={toast.message} onDismiss={hide} /> : null}
         </ToastContext.Provider>
     );
 }

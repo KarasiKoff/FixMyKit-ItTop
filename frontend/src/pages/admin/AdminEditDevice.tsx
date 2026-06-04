@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useToast } from '../../context/ToastContext';
-import { useAppData } from '../../context/AppDataContext';
 import { fetchDeviceById, updateDevice } from '../../api/devices';
 import {
     categoryRequiresSubcategory,
@@ -21,7 +20,6 @@ export function AdminEditDevice() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { showSuccess, showError } = useToast();
-    const { refresh } = useAppData();
 
     const [categories, setCategories] = useState<CategoryDto[]>([]);
     const [audiences, setAudiences] = useState<AudienceDto[]>([]);
@@ -44,12 +42,7 @@ export function AdminEditDevice() {
         if (!id) return;
         let cancelled = false;
 
-        void Promise.all([
-            fetchDeviceById(id),
-            fetchCategories(),
-            fetchAudiences(),
-            fetchUsers({ limit: 100 }),
-        ])
+        void Promise.all([fetchDeviceById(id), fetchCategories(), fetchAudiences(), fetchUsers({ limit: 100 })])
             .then(([device, cats, auds, usersRes]) => {
                 if (cancelled) return;
                 setInventoryNumber(device.inventoryNumber);
@@ -109,7 +102,6 @@ export function AdminEditDevice() {
                 repair_status: status,
                 note: note.trim() || null,
             });
-            await refresh();
             showSuccess('Устройство обновлено');
             navigate(`/devices/${id}`);
         } catch (err) {
@@ -183,11 +175,7 @@ export function AdminEditDevice() {
                     </label>
                     <label className="admin-device-field">
                         <span className="admin-inline-label">Кабинет</span>
-                        <select
-                            value={audienceId}
-                            onChange={(e) => setAudienceId(e.target.value)}
-                            disabled={saving}
-                        >
+                        <select value={audienceId} onChange={(e) => setAudienceId(e.target.value)} disabled={saving}>
                             <option value="">—</option>
                             {audiences.map((a) => (
                                 <option key={a.id} value={String(a.id)}>

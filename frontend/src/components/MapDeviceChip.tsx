@@ -33,10 +33,7 @@ function InventoryFit({ text }: { text: string }) {
     }, [text]);
 
     return (
-        <div
-            ref={wrapRef}
-            className="device-chip__inv-wrap"
-        >
+        <div ref={wrapRef} className="device-chip__inv-wrap">
             <span ref={spanRef} className="device-chip__inv" title={text}>
                 {text}
             </span>

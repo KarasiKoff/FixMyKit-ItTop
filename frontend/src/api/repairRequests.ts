@@ -76,7 +76,7 @@ function mapRepairRequest(item: RepairRequestApi): RepairRequest {
         audienceName: item.audience_name ?? undefined,
         requesterName: item.applicant_name ?? '',
         description: item.description,
-        status: item.status === 'open' ? 'new' : item.status,
+        status: item.status,
         takenBySysadmin: Boolean(item.taken_by_sysadmin_at),
         isPublished: item.is_published ?? false,
         createdAt: item.created_at,
@@ -441,10 +441,9 @@ export async function fetchPublicRepairSummary(deviceId: string): Promise<Public
     if (!deviceId?.trim() || deviceId.trim() === 'undefined') {
         throw new Error('invalid_device_id');
     }
-    const data = await apiRequest<PublicRepairSummaryApi>(
-        `/api/public/devices/${deviceId}/repair-summary`,
-        { skipAuth: true },
-    );
+    const data = await apiRequest<PublicRepairSummaryApi>(`/api/public/devices/${deviceId}/repair-summary`, {
+        skipAuth: true,
+    });
     return {
         device: {
             id: data.device.id,

@@ -4,11 +4,15 @@
 
 ## Структура
 
-- `app/core` — конфигурация и подключение к БД.
+- `app/core` — конфигурация (`Settings`) и подключение к БД.
 - `app/api` — роуты и зависимости API.
 - `app/schemas` — Pydantic-схемы.
-- `app/services` — бизнес-слой (пока пусто).
-- `app/models` — SQLAlchemy-модели (пока пусто).
+- `app/models` — SQLAlchemy-модели.
+- `app/repositories` — доступ к БД: заявки, устройства, пользователи, комментарии, кабинеты (`audience`), категории/подкатегории.
+- `app/clients` — HTTP-клиенты внешних систем (Yandex Tracker).
+- `app/services` — бизнес-логика; оркестрация репозиториев и клиентов.
+
+Tracker: HTTP — `clients/tracker_client.py`, домен задач — `services/tracker_issue_service.py`, фасад импортов — `services/tracker_service.py`.
 
 ## Запуск через Docker Compose
 

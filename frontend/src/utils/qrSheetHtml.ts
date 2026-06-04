@@ -103,9 +103,7 @@ export function buildEmbeddedSheetCss(s: QrSheetSettings): string {
 export function buildPrintPageInnerHtml(items: QrSheetItem[]): string {
     return items
         .map((qr) => {
-            const caption = qr.linkCaption
-                ? `<p class="qr-item__link">${escapeHtml(qr.linkCaption)}</p>`
-                : '';
+            const caption = qr.linkCaption ? `<p class="qr-item__link">${escapeHtml(qr.linkCaption)}</p>` : '';
             return `<div class="qr-item"><img src="${qr.dataUrl}" alt="QR" /><p>${escapeHtml(qr.label)}</p>${caption}</div>`;
         })
         .join('');

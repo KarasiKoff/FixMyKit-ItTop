@@ -1,12 +1,11 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func
 from sqlalchemy.orm import Session, defer, joinedload
 
 from backend.app.api.deps import get_db
 from backend.app.core.config import settings
-from backend.app.models.audience import Audience as AudienceModel
+from backend.app.repositories.audience_repository import AudienceRepository
 from backend.app.models.category import Category as CategoryModel
 from backend.app.schemas.attachments import AttachmentLimitsResponse
 from backend.app.services.attachment_validation import effective_max_attachment_bytes
@@ -73,7 +72,7 @@ def _summarize_public_repair_requests(
 def get_attachment_limits() -> AttachmentLimitsResponse:
     """Лимиты вложений из env (для формы создания заявки)."""
     return AttachmentLimitsResponse(
-        max_per_request=settings.server.attachment_max_per_request,
+        max_per_request=settings.attachment_max_per_request,
         max_bytes=effective_max_attachment_bytes(),
     )
 
@@ -121,12 +120,7 @@ def get_public_audience_by_name(
     name: str = Query(..., min_length=1, description="Название кабинета (без учёта регистра)"),
     db: Session = Depends(get_db),
 ) -> PublicAudienceResponse:
-    room = name.strip()
-    audience = (
-        db.query(AudienceModel)
-        .filter(func.lower(AudienceModel.name) == room.lower())
-        .first()
-    )
+    audience = AudienceRepository(db).get_by_name_casefold(name)
     if audience is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="audience_not_found")
     return PublicAudienceResponse.model_validate(audience)
@@ -134,9 +128,7 @@ def get_public_audience_by_name(
 
 @router.get("/audiences/{audience_id}", response_model=PublicAudienceResponse)
 def get_public_audience(audience_id: UUID, db: Session = Depends(get_db)) -> PublicAudienceResponse:
-    audience = db.query(AudienceModel).filter(AudienceModel.id == audience_id).first()
-    if audience is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="audience_not_found")
+    audience = AudienceRepository(db).get_or_404(audience_id)
     return PublicAudienceResponse.model_validate(audience)
 
 
@@ -186,9 +178,7 @@ def get_public_audience_repair_summary(
     db: Session = Depends(get_db),
 ) -> PublicAudienceRepairSummaryResponse:
     """Публичная история заявок кабинета — для гостей после сканирования QR кабинета."""
-    audience = db.query(AudienceModel).filter(AudienceModel.id == audience_id).first()
-    if audience is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="audience_not_found")
+    audience = AudienceRepository(db).get_or_404(audience_id)
 
     requests = (
         db.query(RepairRequest)

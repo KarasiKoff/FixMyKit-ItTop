@@ -28,7 +28,9 @@ async function layoutReadyFrames(): Promise<void> {
 function qrBoxPx(clipEl: HTMLElement | null): number {
     const elW = clipEl?.getBoundingClientRect().width ?? 0;
     const vw =
-        typeof window !== 'undefined' ? Math.min(window.innerWidth, document.documentElement?.clientWidth ?? window.innerWidth) : 320;
+        typeof window !== 'undefined'
+            ? Math.min(window.innerWidth, document.documentElement?.clientWidth ?? window.innerWidth)
+            : 320;
     const usable = elW > 32 ? elW : vw - 64;
     const rounded = Math.floor(usable - 24);
     return Math.max(140, Math.min(260, rounded));

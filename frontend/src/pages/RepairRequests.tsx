@@ -12,7 +12,6 @@ import { FilterCombobox } from '../components/FilterCombobox';
 import { ScrollToTopButton } from '../components/ScrollToTopButton';
 import { ListPagination } from '../components/ListPagination';
 import { SortableTh } from '../components/SortableTh';
-import { useAppData } from '../context/AppDataContext';
 import { useToast } from '../context/ToastContext';
 import { RepairRequest } from '../types/repairRequest';
 import type { PageSize, RepairRequestSortBy, SortDir } from '../types/listQuery';
@@ -53,7 +52,6 @@ function deviceLabel(request: RepairRequest): string {
 
 export function RepairRequests() {
     const navigate = useNavigate();
-    const { refresh } = useAppData();
     const { showSuccess, showError } = useToast();
 
     const [items, setItems] = useState<RepairRequest[]>([]);
@@ -135,7 +133,6 @@ export function RepairRequests() {
         try {
             const res = await syncAllUnsynchronizedRepairRequests();
             showSuccess(`Готово: синхронизировано ${res.synced} из ${res.attempted}, ошибок: ${res.failed}`);
-            await refresh();
             await load();
         } catch (err) {
             showError(formatApiError(err));
@@ -152,7 +149,6 @@ export function RepairRequests() {
         try {
             await syncRepairRequestTracker(id);
             showSuccess('Синхронизация с Трекером выполнена');
-            await refresh();
             await load();
         } catch (err) {
             showError(formatApiError(err));
@@ -170,9 +166,7 @@ export function RepairRequests() {
             <h2>Все заявки</h2>
             <section className="card">
                 <h3>Поиск и фильтрация</h3>
-                <p className="filter-hint">
-                    Поиск по части текста. Поле «Устройство» ищет в инв. номере и названии.
-                </p>
+                <p className="filter-hint">Поиск по части текста. Поле «Устройство» ищет в инв. номере и названии.</p>
                 <div className="grid grid-filters grid-filters--3">
                     <FilterCombobox
                         label="Устройство"
@@ -194,11 +188,14 @@ export function RepairRequests() {
                             className={`filter-select-field-input${draftFilters.status === '' ? ' is-empty' : ''}`}
                             value={draftFilters.status}
                             onChange={(event) =>
-                                setDraftFilters((p) => ({ ...p, status: event.target.value as RequestFilters['status'] }))
+                                setDraftFilters((p) => ({
+                                    ...p,
+                                    status: event.target.value as RequestFilters['status'],
+                                }))
                             }
                         >
                             <option value="">Любой статус</option>
-                            <option value="open">{repairRequestStatusLabel('new')}</option>
+                            <option value="open">{repairRequestStatusLabel('open')}</option>
                             <option value="in_progress">{repairRequestStatusLabel('in_progress')}</option>
                             <option value="needs_info">{repairRequestStatusLabel('needs_info')}</option>
                             <option value="closed">{repairRequestStatusLabel('closed')}</option>
@@ -226,7 +223,12 @@ export function RepairRequests() {
 
             <section className="card">
                 <div className="requests-toolbar">
-                    <button type="button" className="btn-primary" disabled={bulkLoading} onClick={() => void handleBulkSync()}>
+                    <button
+                        type="button"
+                        className="btn-primary"
+                        disabled={bulkLoading}
+                        onClick={() => void handleBulkSync()}
+                    >
                         {bulkLoading ? 'Синхронизация…' : 'Синхронизировать все несинхронизированные'}
                     </button>
                 </div>
@@ -348,7 +350,9 @@ export function RepairRequests() {
                                                         disabled={syncingId !== null}
                                                         onClick={() => void handleRowSync(request.id)}
                                                     >
-                                                        {syncingId === request.id ? 'Синхронизация…' : 'Синхронизировать'}
+                                                        {syncingId === request.id
+                                                            ? 'Синхронизация…'
+                                                            : 'Синхронизировать'}
                                                     </button>
                                                 ) : null}
                                             </td>

@@ -1,6 +1,12 @@
 import React, { createContext, useEffect, useState, ReactNode } from 'react';
 import { ApiError } from '../api/client';
-import { clearStoredAuthToken, getCurrentUser, getStoredAuthToken, login as loginApi, setStoredAuthToken } from '../api/auth';
+import {
+    clearStoredAuthToken,
+    getCurrentUser,
+    getStoredAuthToken,
+    login as loginApi,
+    setStoredAuthToken,
+} from '../api/auth';
 import { User } from '../types/user';
 
 type AuthContextValue = {
@@ -14,8 +20,8 @@ type AuthContextValue = {
 export const AuthContext = createContext<AuthContextValue>({
     user: null,
     isAuthenticated: false,
-    signIn: async () => { },
-    signOut: () => { },
+    signIn: async () => {},
+    signOut: () => {},
     isLoading: true,
 });
 

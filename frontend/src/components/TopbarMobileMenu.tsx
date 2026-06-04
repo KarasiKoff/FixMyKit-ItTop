@@ -6,12 +6,7 @@ import { UserAccountMenu } from './UserAccountMenu';
 function IconMenu() {
     return (
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-            <path
-                d="M4 7h16M4 12h16M4 17h16"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-            />
+            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
         </svg>
     );
 }
@@ -96,13 +91,7 @@ export function TopbarMobileMenu() {
                         </div>
                         <nav className="topbar-drawer__nav">
                             {DRAWER_LINKS.map(({ to, label, end }) => (
-                                <NavLink
-                                    key={to}
-                                    to={to}
-                                    end={end}
-                                    className="topbar-drawer__link"
-                                    onClick={close}
-                                >
+                                <NavLink key={to} to={to} end={end} className="topbar-drawer__link" onClick={close}>
                                     {label}
                                 </NavLink>
                             ))}

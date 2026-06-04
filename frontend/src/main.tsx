@@ -7,13 +7,13 @@ import { AttachmentLimitsProvider } from './context/AttachmentLimitsContext';
 import './styles/app.css';
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
-  <React.StrictMode>
-    <AttachmentLimitsProvider>
-      <AuthProvider>
-        <AppDataProvider>
-          <AppRouter />
-        </AppDataProvider>
-      </AuthProvider>
-    </AttachmentLimitsProvider>
-  </React.StrictMode>,
+    <React.StrictMode>
+        <AttachmentLimitsProvider>
+            <AuthProvider>
+                <AppDataProvider>
+                    <AppRouter />
+                </AppDataProvider>
+            </AuthProvider>
+        </AttachmentLimitsProvider>
+    </React.StrictMode>,
 );

@@ -174,5 +174,65 @@ class Settings(BaseModel):
     def database_url(self) -> str:
         return self.database.database_url
 
+    @property
+    def tracker_base_url(self) -> str:
+        return self.server.tracker_base_url
+
+    @property
+    def tracker_token(self) -> str | None:
+        return self.server.tracker_token
+
+    @property
+    def tracker_org_id(self) -> str | None:
+        return self.server.tracker_org_id
+
+    @property
+    def tracker_queue(self) -> str | None:
+        return self.server.tracker_queue
+
+    @property
+    def tracker_timeout_seconds(self) -> int:
+        return self.server.tracker_timeout_seconds
+
+    @property
+    def tracker_attachment_timeout_seconds(self) -> int:
+        return self.server.tracker_attachment_timeout_seconds
+
+    @property
+    def tracker_webhook_secret(self) -> str | None:
+        return self.server.tracker_webhook_secret
+
+    @property
+    def tracker_webhook_actor_login(self) -> str:
+        return self.server.tracker_webhook_actor_login
+
+    @property
+    def upload_dir(self) -> str:
+        return self.server.upload_dir
+
+    @property
+    def attachment_max_bytes(self) -> int:
+        return self.server.attachment_max_bytes
+
+    @property
+    def attachment_max_per_request(self) -> int:
+        return self.server.attachment_max_per_request
+
+    @property
+    def attachment_orphan_max_age_days(self) -> int:
+        return self.server.attachment_orphan_max_age_days
+
+    @property
+    def public_frontend_base_url(self) -> str:
+        return self.server.public_frontend_base_url
+
+    @property
+    def clck_shortener_enabled(self) -> bool:
+        return self.server.clck_shortener_enabled
+
+    @property
+    def log_dir(self) -> str:
+        return self.server.log_dir
+
 
 settings = Settings()

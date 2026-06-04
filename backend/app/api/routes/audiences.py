@@ -6,11 +6,9 @@ from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_current_user, get_db
 from backend.app.models.audience import Audience as AudienceModel
-from backend.app.models.device import Device as DeviceModel
 from backend.app.models.enums import UserRole
-from backend.app.models.repair_history import RepairHistory
-from backend.app.models.repair_request import RepairRequest
 from backend.app.models.user import User
+from backend.app.repositories.audience_repository import AudienceRepository
 from backend.app.schemas.audience import Audience, AudienceCreate, AudienceList, AudienceUpdate
 
 router = APIRouter(prefix="/api/audiences", tags=["audiences"])
@@ -31,10 +29,7 @@ def list_audiences(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN, UserRole.SYSADMIN})),
 ) -> AudienceList:
-    query = db.query(AudienceModel)
-    if name is not None:
-        query = query.filter(AudienceModel.name.ilike(f"%{name}%"))
-    items = query.order_by(AudienceModel.name).all()
+    items = AudienceRepository(db).list_all(name_contains=name)
     return AudienceList(items=items)
 
 
@@ -44,8 +39,7 @@ def create_audience(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN})),
 ) -> Audience:
-    existing = db.query(AudienceModel).filter(AudienceModel.name == payload.name).first()
-    if existing is not None:
+    if AudienceRepository(db).get_by_name(payload.name) is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="audience_exists")
 
     audience = AudienceModel(name=payload.name)
@@ -55,14 +49,6 @@ def create_audience(
     return audience
 
 
-def _delete_devices_for_audience(db: Session, audience_id: UUID) -> None:
-    device_ids = [row[0] for row in db.query(DeviceModel.id).filter(DeviceModel.audience_id == audience_id).all()]
-    for device_id in device_ids:
-        db.query(RepairHistory).filter(RepairHistory.device_id == device_id).delete(synchronize_session=False)
-        db.query(RepairRequest).filter(RepairRequest.device_id == device_id).delete(synchronize_session=False)
-        db.query(DeviceModel).filter(DeviceModel.id == device_id).delete(synchronize_session=False)
-
-
 @router.patch("/{audience_id}", response_model=Audience)
 def update_audience(
     audience_id: UUID,
@@ -70,13 +56,11 @@ def update_audience(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN})),
 ) -> Audience:
-    audience = db.query(AudienceModel).filter(AudienceModel.id == audience_id).first()
-    if audience is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="audience_not_found")
+    repo = AudienceRepository(db)
+    audience = repo.get_or_404(audience_id)
 
     if payload.name is not None and payload.name != audience.name:
-        clash = db.query(AudienceModel).filter(AudienceModel.name == payload.name).first()
-        if clash is not None:
+        if repo.get_by_name(payload.name) is not None:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="audience_exists")
         audience.name = payload.name
 
@@ -95,10 +79,8 @@ def delete_audience(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN})),
 ) -> None:
-    audience = db.query(AudienceModel).filter(AudienceModel.id == audience_id).first()
-    if audience is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="audience_not_found")
-
-    _delete_devices_for_audience(db, audience_id)
+    repo = AudienceRepository(db)
+    audience = repo.get_or_404(audience_id)
+    repo.delete_devices_for_audience(audience_id)
     db.delete(audience)
     db.commit()

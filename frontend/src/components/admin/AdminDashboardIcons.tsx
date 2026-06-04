@@ -224,8 +224,8 @@ export function IconCircleCheck(props: IconProps) {
 export function IconLock(props: IconProps) {
     return (
         <svg {...defaults} width={18} height={18} {...props}>
-              <rect x="5" y="11" width="14" height="9" rx="2" />
-              <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+            <rect x="5" y="11" width="14" height="9" rx="2" />
+            <path d="M8 11V8a4 4 0 0 1 8 0v3" />
         </svg>
     );
 }

@@ -1,141 +1,141 @@
 @media (max-width: 768px) {
-  :root {
-    --page-padding-x: 14px;
-  }
+    :root {
+        --page-padding-x: 14px;
+    }
 
-  .topbar {
-    align-items: stretch;
-    padding: 12px var(--page-padding-x);
-  }
+    .topbar {
+        align-items: stretch;
+        padding: 12px var(--page-padding-x);
+    }
 
-  .topbar-inner {
-    flex-wrap: nowrap;
-    justify-content: space-between;
-    align-items: center;
-    gap: 12px;
-  }
+    .topbar-inner {
+        flex-wrap: nowrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+    }
 
-  .topbar-brand {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
+    .topbar-brand {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
 
-  .topbar-brand h1 {
-    text-align: left;
-  }
+    .topbar-brand h1 {
+        text-align: left;
+    }
 
-  .topbar-nav {
-    justify-content: flex-end;
-    flex: 1 1 auto;
-    gap: 8px;
-    width: auto;
-  }
+    .topbar-nav {
+        justify-content: flex-end;
+        flex: 1 1 auto;
+        gap: 8px;
+        width: auto;
+    }
 
-  .topbar-nav a,
-  .topbar-nav .nav-button {
-    min-height: 44px;
-    padding: 11px 16px;
-    flex: 0 0 auto;
-    max-width: none;
-    white-space: nowrap;
-    text-align: center;
-    line-height: 1.25;
-  }
+    .topbar-nav a,
+    .topbar-nav .nav-button {
+        min-height: 44px;
+        padding: 11px 16px;
+        flex: 0 0 auto;
+        max-width: none;
+        white-space: nowrap;
+        text-align: center;
+        line-height: 1.25;
+    }
 
-  .topbar-nav-auth {
-    display: none !important;
-  }
+    .topbar-nav-auth {
+        display: none !important;
+    }
 
-  .topbar-account--desktop {
-    display: none !important;
-  }
+    .topbar-account--desktop {
+        display: none !important;
+    }
 
-  .topbar-menu-trigger {
-    display: inline-flex;
-    flex: 0 0 auto;
-  }
+    .topbar-menu-trigger {
+        display: inline-flex;
+        flex: 0 0 auto;
+    }
 
-  button[aria-label='Обновить'],
-  button[aria-label='Обновить список'] {
-    display: none !important;
-  }
+    button[aria-label='Обновить'],
+    button[aria-label='Обновить список'] {
+        display: none !important;
+    }
 
-  .admin-page-head--edges .page-title-actions {
-    padding-inline: 0;
-    min-height: auto;
-  }
+    .admin-page-head--edges .page-title-actions {
+        padding-inline: 0;
+        min-height: auto;
+    }
 
-  .admin-page-head--edges .page-title-actions > .btn-ghost {
-    display: none;
-  }
+    .admin-page-head--edges .page-title-actions > .btn-ghost {
+        display: none;
+    }
 
-  .btn-primary {
-    min-height: 46px;
-  }
+    .btn-primary {
+        min-height: 46px;
+    }
 
-  .page {
-    padding-top: 20px;
-    padding-bottom: 36px;
-    gap: 16px;
-  }
+    .page {
+        padding-top: 20px;
+        padding-bottom: 36px;
+        gap: 16px;
+    }
 
-  .page-title {
-    font-size: clamp(1.35rem, 4.5vw, 1.65rem);
-  }
+    .page-title {
+        font-size: clamp(1.35rem, 4.5vw, 1.65rem);
+    }
 
-  .card {
-    padding: 18px 16px;
-  }
+    .card {
+        padding: 18px 16px;
+    }
 
-  .login-page {
-    align-items: center;
-    padding-top: clamp(20px, 4vh, 40px);
-    padding-bottom: clamp(24px, 5vh, 48px);
-  }
+    .login-page {
+        align-items: center;
+        padding-top: clamp(20px, 4vh, 40px);
+        padding-bottom: clamp(24px, 5vh, 48px);
+    }
 
-  .login-stack {
-    width: 100%;
-    max-width: 440px;
-  }
+    .login-stack {
+        width: 100%;
+        max-width: 440px;
+    }
 
-  .card-heading {
-    font-size: 15px;
-  }
+    .card-heading {
+        font-size: 15px;
+    }
 
-  .admin-hub-grid.admin-hub-grid--row {
-    grid-template-columns: 1fr;
-  }
+    .admin-hub-grid.admin-hub-grid--row {
+        grid-template-columns: 1fr;
+    }
 
-  .scanner-wrap {
-    max-width: 100%;
-  }
+    .scanner-wrap {
+        max-width: 100%;
+    }
 
-  .device-title-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+    .device-title-row {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 
-  .actions-row {
-    flex-direction: column;
-  }
+    .actions-row {
+        flex-direction: column;
+    }
 
-  .actions-row a,
-  .actions-row button {
-    width: 100%;
-    justify-content: center;
-  }
+    .actions-row a,
+    .actions-row button {
+        width: 100%;
+        justify-content: center;
+    }
 
-  .grid-5 {
-    grid-template-columns: 1fr;
-  }
+    .grid-5 {
+        grid-template-columns: 1fr;
+    }
 
-  .grid-2 {
-    grid-template-columns: 1fr;
-  }
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
 
-  th,
-  td {
-    padding: 10px 8px;
-    font-size: 14px;
-  }
+    th,
+    td {
+        padding: 10px 8px;
+        font-size: 14px;
+    }
 }

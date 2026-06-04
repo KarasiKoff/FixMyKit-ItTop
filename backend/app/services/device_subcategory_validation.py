@@ -3,18 +3,11 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from backend.app.models.subcategory import Subcategory as SubcategoryModel
+from backend.app.repositories.category_repository import SubcategoryRepository
 
 
 def count_active_subcategories(db: Session, category_id: UUID) -> int:
-    return (
-        db.query(SubcategoryModel)
-        .filter(
-            SubcategoryModel.category_id == category_id,
-            SubcategoryModel.is_active.is_(True),
-        )
-        .count()
-    )
+    return SubcategoryRepository(db).count_active_for_category(category_id)
 
 
 def validate_device_subcategory(
@@ -30,9 +23,12 @@ def validate_device_subcategory(
         )
 
     if subcategory_id is not None:
-        sub = db.query(SubcategoryModel).filter(SubcategoryModel.id == subcategory_id).first()
+        sub = SubcategoryRepository(db).get_by_id(subcategory_id)
         if sub is None:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="subcategory_not_found")
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="subcategory_not_found",
+            )
         if sub.category_id != category_id:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,

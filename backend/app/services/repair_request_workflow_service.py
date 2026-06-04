@@ -44,12 +44,16 @@ TRACKER_CLOSE_RESOLUTION_KEY: dict[RepairCloseResolution, str] = {
 
 
 def _reopen_from_closed(db: Session, repair_request: RepairRequest) -> None:
-    from backend.app.models.device import Device
     from backend.app.models.enums import RepairStatus
+    from backend.app.repositories.device_repository import DeviceRepository
 
     repair_request.closed_at = None
     repair_request.closed_by_user_id = None
-    device = db.query(Device).filter(Device.id == repair_request.device_id).first()
+    device = (
+        DeviceRepository(db).get_by_id(repair_request.device_id)
+        if repair_request.device_id is not None
+        else None
+    )
     if device is not None:
         device.repair_status = RepairStatus.IN_REPAIR
 

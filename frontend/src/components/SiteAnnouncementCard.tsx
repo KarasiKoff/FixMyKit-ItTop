@@ -21,19 +21,13 @@ function AnnouncementIcon({ severity }: { severity: ActiveAnnouncement['severity
     if (severity === 'warning') {
         return (
             <svg className="site-announcement__icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                    fill="currentColor"
-                    d="M1 21h22L12 2 1 21zm11-3h-2v-2h2v2zm0-8h-2v5h2V10z"
-                />
+                <path fill="currentColor" d="M1 21h22L12 2 1 21zm11-3h-2v-2h2v2zm0-8h-2v5h2V10z" />
             </svg>
         );
     }
     return (
         <svg className="site-announcement__icon-svg" viewBox="0 0 24 24" aria-hidden="true">
-            <path
-                fill="currentColor"
-                d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 14h-2v-5h2v5zm0-7h-2V7h2v2z"
-            />
+            <path fill="currentColor" d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 14h-2v-5h2v5zm0-7h-2V7h2v2z" />
         </svg>
     );
 }
@@ -49,10 +43,7 @@ export function SiteAnnouncementCard({ item, onDismiss, dismissible = false }: S
     const markdownHtml = renderAnnouncementMarkdownHtml(item.message);
 
     return (
-        <article
-            className={`site-announcement site-announcement--${item.severity}`}
-            role="status"
-        >
+        <article className={`site-announcement site-announcement--${item.severity}`} role="status">
             <span className="site-announcement__icon" aria-hidden="true">
                 {item.emoji ? (
                     <span className="site-announcement__emoji">{item.emoji}</span>

@@ -7,9 +7,9 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from backend.app.models.audience import Audience
-from backend.app.models.device import Device
 from backend.app.models.enums import RequestStatus
+from backend.app.repositories.audience_repository import AudienceRepository
+from backend.app.repositories.device_repository import DeviceRepository
 from backend.app.models.repair_request import RepairRequest
 
 ACTIVE_STATUSES = (
@@ -35,14 +35,14 @@ def parse_repair_target(
 
 
 def ensure_device_exists(db: Session, device_id: UUID) -> None:
-    if db.query(Device.id).filter(Device.id == device_id).first() is None:
+    if not DeviceRepository(db).exists(device_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found"
         )
 
 
 def ensure_audience_exists(db: Session, audience_id: UUID) -> None:
-    if db.query(Audience.id).filter(Audience.id == audience_id).first() is None:
+    if not AudienceRepository(db).exists(audience_id):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="audience_not_found"
         )

@@ -16,9 +16,7 @@ export function useRepairRequestSse(options: {
         if (!enabled) {
             return undefined;
         }
-        const url = buildRepairRequestsSseUrl(
-            repairRequestId ? { repairRequestId } : undefined,
-        );
+        const url = buildRepairRequestsSseUrl(repairRequestId ? { repairRequestId } : undefined);
         if (!url) {
             return undefined;
         }
@@ -30,7 +28,7 @@ export function useRepairRequestSse(options: {
                 const data = JSON.parse(event.data) as RepairRequestSsePayload;
                 onEventRef.current(data);
             } catch {
-                
+                /* malformed SSE payload */
             }
         };
 

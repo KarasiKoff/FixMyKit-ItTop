@@ -9,7 +9,9 @@ export function DeviceCard({ device }: { device: Device }) {
             <p>Инвентарный номер: {device.inventoryNumber}</p>
             <p>
                 Статус:{' '}
-                <span className={deviceRepairStatusPillClass(device.status)}>{deviceRepairStatusLabel(device.status)}</span>
+                <span className={deviceRepairStatusPillClass(device.status)}>
+                    {deviceRepairStatusLabel(device.status)}
+                </span>
             </p>
         </article>
     );

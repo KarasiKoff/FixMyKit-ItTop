@@ -8,7 +8,7 @@ export function splitResolutionNoteFromApi(raw: string | null | undefined): {
     resolutionBody: string;
     trackerClosedBy: string | undefined;
 } {
-    let s = raw ?? '';
+    const s = raw ?? '';
     if (!s.trim()) {
         return { resolutionBody: '', trackerClosedBy: undefined };
     }
