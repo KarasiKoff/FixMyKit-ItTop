@@ -1,0 +1,72 @@
+.admin-users-create {
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border-subtle);
+}
+
+.admin-users-create__title {
+    margin: 0 0 12px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.admin-users-create .admin-inline-field {
+    flex: 1 1 140px;
+    max-width: 220px;
+}
+
+.admin-users-create .admin-inline-field--narrow {
+    flex: 0 1 160px;
+    max-width: 180px;
+}
+
+.admin-users-create .admin-inline-actions .btn-primary {
+    min-height: 42px;
+    padding-inline: 18px;
+}
+
+.admin-filter-bar--embedded {
+    margin-bottom: 16px;
+}
+
+.admin-filter-bar__row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 16px;
+}
+
+.admin-filter-bar__fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 12px 20px;
+    flex: 1 1 200px;
+    min-width: 0;
+}
+
+.admin-filter-bar__fields .admin-search-field {
+    flex: 1 1 260px;
+    max-width: min(480px, 100%);
+}
+
+.admin-filter-bar__fields .admin-search-field input {
+    width: 100%;
+}
+
+.admin-filter-bar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+}
+
+.admin-filter-bar__actions button {
+    width: auto;
+    min-height: 40px;
+}
+
+.admin-filter-bar__actions .btn-ghost {
+    min-height: 38px;
+}
