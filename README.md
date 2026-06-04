@@ -444,6 +444,8 @@ settings.database.database_url      # PostgreSQL (SQLAlchemy + Alembic)
 
 Полный перечень переменных — в таблице ниже и в [`.env.example`](.env.example).
 
+**Yandex Tracker (DI для тестов):** HTTP-контракт `TrackerHttpClient` (`backend/app/clients/tracker_protocol.py`), реализация `TrackerClient`, подмена `FakeTrackerClient` в pytest через `set_tracker_issue_service(TrackerIssueService(fake))` / `reset_tracker_issue_service()`.
+
 ---
 
 ## Переменные окружения

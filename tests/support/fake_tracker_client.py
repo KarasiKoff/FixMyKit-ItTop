@@ -91,16 +91,11 @@ def patch_tracker_issue_service(
     monkeypatch: pytest.MonkeyPatch,
     client: FakeTrackerClient | None = None,
 ) -> FakeTrackerClient:
-    """Подменяет singleton TrackerIssueService; возвращает FakeTrackerClient (calls)."""
+    """Подменяет singleton TrackerIssueService; после теста monkeypatch откатывает _default_service."""
     fake = client or tracker_create_issue_client()
-    service = TrackerIssueService(fake)
     monkeypatch.setattr(
-        "backend.app.services.tracker_issue_service.get_tracker_issue_service",
-        lambda: service,
-    )
-    monkeypatch.setattr(
-        "backend.app.services.tracker_service.get_tracker_issue_service",
-        lambda: service,
+        "backend.app.services.tracker_issue_service._default_service",
+        TrackerIssueService(fake),
     )
     return fake
 

@@ -196,3 +196,13 @@ def get_tracker_client() -> TrackerClient:
     if _default_client is None:
         _default_client = TrackerClient()
     return _default_client
+
+
+def set_tracker_client(client: TrackerClient | None) -> None:
+    """Подмена HTTP-клиента (тесты); None — сброс к дефолтному при следующем get."""
+    global _default_client
+    _default_client = client
+
+
+def reset_tracker_client() -> None:
+    set_tracker_client(None)

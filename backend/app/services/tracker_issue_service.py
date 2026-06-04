@@ -9,7 +9,8 @@ from urllib.parse import quote
 from urllib.parse import quote as urlquote
 from uuid import uuid4
 
-from backend.app.clients.tracker_client import TrackerClient, TrackerCredentials, TrackerUnavailableError, get_tracker_client
+from backend.app.clients.tracker_client import TrackerCredentials, TrackerUnavailableError, get_tracker_client
+from backend.app.clients.tracker_protocol import TrackerHttpClient
 from backend.app.core.config import settings
 from backend.app.models.repair_request import RepairRequest
 from backend.app.models.user import User
@@ -52,8 +53,8 @@ UNPUBLISH_TRACKER_COMMENT = yfm_red(
 
 
 class TrackerIssueService:
-    def __init__(self, client: TrackerClient | None = None) -> None:
-        self._client = client or get_tracker_client()
+    def __init__(self, client: TrackerHttpClient | None = None) -> None:
+        self._client: TrackerHttpClient = client or get_tracker_client()
 
     def credentials(self) -> TrackerCredentials:
         return self._client.credentials()
@@ -379,3 +380,13 @@ def get_tracker_issue_service() -> TrackerIssueService:
     if _default_service is None:
         _default_service = TrackerIssueService()
     return _default_service
+
+
+def set_tracker_issue_service(service: TrackerIssueService | None) -> None:
+    """Подмена доменного сервиса Tracker (тесты); None — сброс singleton."""
+    global _default_service
+    _default_service = service
+
+
+def reset_tracker_issue_service() -> None:
+    set_tracker_issue_service(None)
