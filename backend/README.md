@@ -1,18 +1,43 @@
 # Backend scaffold
 
-Каркас backend-слоя на FastAPI без реализации таблиц и миграций.
+Каркас backend-слоя на FastAPI.
 
 ## Структура
 
 - `app/core` — конфигурация (`Settings`) и подключение к БД.
-- `app/api` — роуты и зависимости API.
+- `app/api` — роуты и зависимости API (тонкие делегаты).
 - `app/schemas` — Pydantic-схемы.
 - `app/models` — SQLAlchemy-модели.
-- `app/repositories` — доступ к БД: заявки, устройства, пользователи, комментарии, кабинеты (`audience`), категории/подкатегории.
-- `app/clients` — HTTP-клиенты внешних систем (Yandex Tracker).
-- `app/services` — бизнес-логика; оркестрация репозиториев и клиентов.
+- `app/repositories` — CRUD и простые выборки по сущностям.
+- `app/queries` — сложные списки (join, фильтры, suggest).
+- `app/clients` — HTTP-клиенты (Yandex Tracker).
+- `app/services` — бизнес-логика.
 
-Tracker: HTTP — `clients/tracker_client.py`, домен задач — `services/tracker_issue_service.py`, фасад импортов — `services/tracker_service.py`.
+### Репозитории (`app/repositories/`)
+
+| Модуль | Сущность |
+|--------|----------|
+| `repair_request_repository` | заявки |
+| `device_repository` | устройства |
+| `user_repository` | пользователи |
+| `repair_request_comment_repository` | комментарии к заявке |
+| `audience_repository` | кабинеты |
+| `category_repository` / `SubcategoryRepository` | категории |
+| `repair_history_repository` | история ремонта |
+| `room_map_repository` | позиции на карте кабинета |
+| `site_announcement_repository` | баннеры объявлений |
+
+### Tracker
+
+- HTTP — `clients/tracker_client.py`
+- Домен — `services/tracker_issue_service.py` + `tracker_types.py`
+- Фасад импортов — `services/tracker_service.py`
+
+### Query-слой
+
+- `queries/device_list_query.py` — список и suggest устройств
+- `queries/repair_request_list_query.py` — список и suggest заявок
+- `queries/admin_stats_query.py` — агрегаты админ-статистики
 
 ## Запуск через Docker Compose
 
@@ -52,54 +77,3 @@ Python entrypoint находится в корневом `main.py`, а `pyprojec
 - `alembic.ini`
 - `alembic/env.py`
 - `alembic/versions/`
-
-Остаётся только создавать миграции.
-
-Из **корня репозитория** (рядом с `.env`):
-
-```bash
-alembic -c backend/alembic.ini revision --autogenerate -m "init"
-alembic -c backend/alembic.ini upgrade head
-```
-
-Или через `uv`:
-
-```bash
-uv run alembic -c backend/alembic.ini upgrade head
-```
-
-Из каталога `backend/`:
-
-```bash
-alembic revision --autogenerate -m "init"
-alembic upgrade head
-```
-
-Как это работает:
-
-- `alembic.ini` указывает на `backend/alembic/` (через `%(here)s`), поэтому команды одинаково работают из корня и из `backend`.
-- `alembic/env.py` берёт `settings.database_url` из `app/core/config.py`.
-- `Settings` читает `.env` из корня проекта (и как fallback — `backend/.env`), поэтому пропадает ошибка `POSTGRES_* Field required` из-за "не той папки запуска".
-
-Структура конфига выполнена в стиле `ServerConfig` + `DbConfig` + общий `Settings` (аналогично старому проекту с разделением server/database блоков).
-
-## Зависимости (текущий базовый набор)
-
-- `fastapi`
-- `uvicorn[standard]`
-- `sqlalchemy`
-- `psycopg[binary]`
-- `pydantic-settings`
-- `PyJWT`
-- `python-multipart`
-- `alembic`
-
-## SSE (live-обновления заявок)
-
-`GET /api/events/stream?access_token=<JWT>` — поток Server-Sent Events для admin/sysadmin.
-
-- Событие `repair_request` с JSON: `repair_request_id`, `device_id`, `status`, `source`.
-- Опционально `repair_request_id=<uuid>` — только события по одной заявке.
-- Публикация: после изменений в API и вебхуках Трекера (in-memory hub, **один процесс** uvicorn).
-
-На проде в nginx для API: `proxy_buffering off;` и увеличенный `proxy_read_timeout` (см. `deploy/nginx-fixmykit.example.conf`).

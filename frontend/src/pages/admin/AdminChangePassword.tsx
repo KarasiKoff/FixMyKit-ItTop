@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { changeOwnPassword } from '../../api/auth';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../hooks/useToast';
 import { formatApiError } from '../../utils/formatApiError';
 
 export function AdminChangePassword() {

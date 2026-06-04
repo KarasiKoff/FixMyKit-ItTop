@@ -14,7 +14,7 @@ import { FormSubmitOverlay } from '../components/ui/FormSubmitOverlay';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { Device } from '../types/device';
 import { RepairRequestDetail } from '../types/repairRequest';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../hooks/useToast';
 import {
     repairRequestStatusLabel,
     repairRequestStatusPillClassForRequest,

@@ -13,7 +13,7 @@ import {
     IconRefRooms,
     IconSync,
 } from '../../components/admin/AdminDashboardIcons';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../hooks/useToast';
 import { formatApiError } from '../../utils/formatApiError';
 
 function monthStartISO(): string {

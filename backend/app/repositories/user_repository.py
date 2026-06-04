@@ -9,6 +9,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from backend.app.core.config import settings
+from backend.app.models.enums import UserRole
 from backend.app.models.user import User
 
 
@@ -30,8 +31,39 @@ class UserRepository:
             .first()
         )
 
+    def get_by_id(self, user_id: UUID) -> User | None:
+        return self._db.query(User).filter(User.id == user_id).first()
+
+    def get_or_404(self, user_id: UUID) -> User:
+        user = self.get_by_id(user_id)
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user_not_found")
+        return user
+
     def get_by_login(self, login: str) -> User | None:
         return self._db.query(User).filter(User.login == login).first()
+
+    def list_paginated(
+        self,
+        *,
+        role: UserRole | str | None = None,
+        is_active: bool | None = None,
+        search: str | None = None,
+        limit: int = 10,
+        offset: int = 0,
+    ) -> tuple[list[User], int]:
+        query = self._db.query(User)
+        if role:
+            query = query.filter(User.role == role)
+        if is_active is not None:
+            query = query.filter(User.is_active == is_active)
+        if search:
+            query = query.filter(
+                (User.login.ilike(f"%{search}%")) | (User.full_name.ilike(f"%{search}%")),
+            )
+        total = query.count()
+        users = query.offset(offset).limit(limit).all()
+        return users, total
 
     def exists_by_login(self, login: str) -> bool:
         return self.get_by_login(login) is not None

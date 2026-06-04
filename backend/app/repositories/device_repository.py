@@ -5,6 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import HTTPException, status
+from sqlalchemy import func
 from sqlalchemy.orm import Query, Session, defer, joinedload
 
 from backend.app.models.category import Category
@@ -25,8 +26,36 @@ class DeviceRepository:
             joinedload(Device.responsible),
         )
 
+    def public_query(self) -> Query[Device]:
+        """Публичные страницы: без responsible, без icon blob."""
+        return self._db.query(Device).options(
+            joinedload(Device.category).defer(Category.icon_data),
+            joinedload(Device.subcategory),
+            joinedload(Device.audience),
+        )
+
     def get_with_relations(self, device_id: UUID) -> Device | None:
         return self.base_query().filter(Device.id == device_id).first()
+
+    def get_public_with_relations(self, device_id: UUID) -> Device | None:
+        return self.public_query().filter(Device.id == device_id).first()
+
+    def get_by_inventory_casefold(self, inventory_number: str) -> Device | None:
+        inv = inventory_number.strip()
+        return (
+            self.public_query()
+            .filter(func.lower(Device.inventory_number) == inv.lower())
+            .first()
+        )
+
+    def get_public_or_404(self, device_id: UUID) -> Device:
+        device = self.get_public_with_relations(device_id)
+        if device is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="device_not_found",
+            )
+        return device
 
     def get_by_id(self, device_id: UUID) -> Device | None:
         return self._db.query(Device).filter(Device.id == device_id).first()

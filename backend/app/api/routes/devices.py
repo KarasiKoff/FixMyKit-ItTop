@@ -9,13 +9,12 @@ from backend.app.api.deps import get_db, require_roles
 from backend.app.core.config import settings
 from backend.app.models.device import Device as DeviceModel
 from backend.app.models.enums import RepairStatus, UserRole
-from backend.app.models.repair_history import RepairHistory
-from backend.app.models.repair_request import RepairRequest
 from backend.app.schemas.device import Device, DeviceCreate, DeviceHistoryResponse, DeviceListResponse, DeviceQrResponse, DeviceUpdate
 from backend.app.schemas.repair_history import RepairHistoryResponse
 from backend.app.schemas.suggest import SuggestResponse
 from backend.app.repositories.device_repository import DeviceRepository, device_base_query
-from backend.app.services.device_list_query import fetch_devices_page, suggest_devices
+from backend.app.queries.device_list_query import fetch_devices_page, suggest_devices
+from backend.app.repositories.repair_history_repository import RepairHistoryRepository
 from backend.app.services.device_subcategory_validation import validate_device_subcategory
 from backend.app.services.repair_history_service import add_repair_history
 
@@ -224,14 +223,7 @@ def get_device_qr(device_id: UUID, db: Session = Depends(get_db)) -> DeviceQrRes
 )
 def get_device_history(device_id: UUID, db: Session = Depends(get_db)) -> DeviceHistoryResponse:
     DeviceRepository(db).get_or_404(device_id)
-
-    rows = (
-        db.query(RepairHistory)
-        .options(joinedload(RepairHistory.repair_request))
-        .filter(RepairHistory.device_id == device_id)
-        .order_by(RepairHistory.created_at.desc())
-        .all()
-    )
+    rows = RepairHistoryRepository(db).list_for_device(device_id)
     items = [
         RepairHistoryResponse(
             id=row.id,

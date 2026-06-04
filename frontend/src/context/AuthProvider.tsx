@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useState, ReactNode } from 'react';
+import React, { useEffect, useState, ReactNode } from 'react';
 import { ApiError } from '../api/client';
 import {
     clearStoredAuthToken,
@@ -7,23 +7,7 @@ import {
     login as loginApi,
     setStoredAuthToken,
 } from '../api/auth';
-import { User } from '../types/user';
-
-type AuthContextValue = {
-    user: null | User;
-    isAuthenticated: boolean;
-    signIn: (username: string, password: string) => Promise<void>;
-    signOut: () => void;
-    isLoading: boolean;
-};
-
-export const AuthContext = createContext<AuthContextValue>({
-    user: null,
-    isAuthenticated: false,
-    signIn: async () => {},
-    signOut: () => {},
-    isLoading: true,
-});
+import { AuthContext, type AuthContextValue } from './auth-context';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AuthContextValue['user']>(null);

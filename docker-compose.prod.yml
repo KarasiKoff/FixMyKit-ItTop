@@ -45,6 +45,16 @@ services:
     volumes:
       - uploads_data_prod:/data/uploads
       - logs_data_prod:/data/logs
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "uv run python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready')\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
     networks:
       - fixmykit_prod
 
@@ -58,7 +68,8 @@ services:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
     restart: always
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     ports:
       - "127.0.0.1:8080:80"
     networks:

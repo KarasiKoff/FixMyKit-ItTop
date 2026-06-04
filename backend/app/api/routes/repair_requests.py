@@ -51,7 +51,7 @@ from backend.app.services.repair_request_create_service import (
     parse_staff_create_request,
     public_create_response,
 )
-from backend.app.services.repair_request_list_query import fetch_repair_requests_page, suggest_repair_requests
+from backend.app.queries.repair_request_list_query import fetch_repair_requests_page, suggest_repair_requests
 from backend.app.services.repair_request_presenters import repair_request_to_list_response
 from backend.app.repositories.repair_request_repository import (
     get_repair_request_or_404,

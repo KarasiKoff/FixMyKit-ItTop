@@ -1,11 +1,5 @@
-import React, { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react';
-
-type ToastContextValue = {
-    showSuccess: (message: string) => void;
-    showError: (message: string) => void;
-};
-
-const ToastContext = createContext<ToastContextValue | null>(null);
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { ToastContext } from './toast-context';
 
 const TOAST_DURATION_MS = {
     success: 2200,
@@ -73,12 +67,4 @@ function ToastBanner({
             </div>
         </div>
     );
-}
-
-export function useToast() {
-    const ctx = useContext(ToastContext);
-    if (!ctx) {
-        throw new Error('useToast must be used within ToastProvider');
-    }
-    return ctx;
 }

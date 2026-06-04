@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../hooks/useAuth';
 import { createAudience, deleteAudience, fetchAudiences, updateAudience, type AudienceDto } from '../../api/audiences';
 import { IconCheck, IconClose, IconEdit, IconTrash } from '../../components/admin/AdminDashboardIcons';
@@ -22,7 +22,7 @@ export function AdminAddRoom() {
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [sheetModalOpen, setSheetModalOpen] = useState(false);
 
-    async function reload() {
+    const reload = useCallback(async () => {
         setLoading(true);
         try {
             const items = await fetchAudiences();
@@ -32,11 +32,11 @@ export function AdminAddRoom() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [showError]);
 
     useEffect(() => {
         void reload();
-    }, []);
+    }, [reload]);
 
     async function handleAdd(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();

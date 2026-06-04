@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from backend.app.api.deps import get_db, require_admin_or_sysadmin
 from backend.app.models.user import User
 from backend.app.schemas.admin_stats import AdminStatsResponse
-from backend.app.services.admin_stats_service import build_admin_stats
+from backend.app.queries.admin_stats_query import query_admin_stats
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -18,4 +18,4 @@ def get_admin_stats(
     db: Session = Depends(get_db),
     _: User = Depends(require_admin_or_sysadmin),
 ) -> AdminStatsResponse:
-    return build_admin_stats(db, date_from, date_to)
+    return query_admin_stats(db, date_from, date_to)

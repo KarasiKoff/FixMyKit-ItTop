@@ -19,7 +19,10 @@ from backend.app.schemas.repair_request import (
     RepairRequestWorkflowUpdate,
 )
 from backend.app.services.repair_history_service import add_repair_history
-from backend.app.repositories.repair_request_repository import get_repair_request_or_404
+from backend.app.repositories.repair_request_repository import (
+    RepairRequestRepository,
+    get_repair_request_or_404,
+)
 from backend.app.services.repair_request_status_service import (
     close_repair_request as close_repair_request_impl,
     update_repair_request_status as update_repair_request_status_impl,
@@ -35,8 +38,8 @@ from backend.app.services.repair_request_workflow_service import apply_workflow_
 from backend.app.services.realtime_notify import notify_repair_request_updated
 
 
-def _to_detail(repair_request: RepairRequest) -> RepairRequestDetail:
-    return RepairRequestDetail.model_validate(repair_request)
+def _to_detail(db: Session, request_id: UUID) -> RepairRequestDetail:
+    return RepairRequestRepository(db).load_detail(request_id)
 
 
 def update_workflow(
@@ -57,7 +60,7 @@ def update_workflow(
     )
     db.refresh(repair_request)
     notify_repair_request_updated(repair_request, source="api")
-    return _to_detail(repair_request)
+    return _to_detail(db, request_id)
 
 
 def update_status(
@@ -70,7 +73,7 @@ def update_status(
     require_tracker_ticket(repair_request)
     update_repair_request_status_impl(db, repair_request, actor, payload)
     notify_repair_request_updated(repair_request, source="api")
-    return _to_detail(repair_request)
+    return _to_detail(db, request_id)
 
 
 def close_request(
@@ -83,7 +86,7 @@ def close_request(
     require_tracker_ticket(repair_request)
     close_repair_request_impl(db, repair_request, actor, payload)
     notify_repair_request_updated(repair_request, source="api")
-    return _to_detail(repair_request)
+    return _to_detail(db, request_id)
 
 
 def update_take(
@@ -119,7 +122,7 @@ def update_take(
     db.refresh(repair_request)
     sync_sysadmin_taken_to_tracker(repair_request, taken=payload.taken)
     notify_repair_request_updated(repair_request, source="api")
-    return _to_detail(repair_request)
+    return _to_detail(db, request_id)
 
 
 def update_publish(
@@ -134,7 +137,7 @@ def update_publish(
     db.refresh(repair_request)
     sync_publish_to_tracker(repair_request, payload.is_published)
     notify_repair_request_updated(repair_request, source="api")
-    return _to_detail(repair_request)
+    return _to_detail(db, request_id)
 
 
 def push_status_to_tracker(db: Session, request_id: UUID) -> RepairRequestDetail:
@@ -148,4 +151,4 @@ def push_status_to_tracker(db: Session, request_id: UUID) -> RepairRequestDetail
     retry_pending_status_sync(db, repair_request)
     db.refresh(repair_request)
     notify_repair_request_updated(repair_request, source="api")
-    return _to_detail(repair_request)
+    return _to_detail(db, request_id)

@@ -1,4 +1,3 @@
-from typing import List
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -7,6 +6,7 @@ from sqlalchemy.orm import Session
 from backend.app.api.deps import get_current_admin, get_db, require_admin_or_sysadmin
 from backend.app.core.security import hash_password
 from backend.app.models.user import User
+from backend.app.repositories.user_repository import UserRepository
 from backend.app.schemas.user import (
     UserCreateAdmin,
     UserListResponse,
@@ -28,22 +28,16 @@ def get_users(
     db: Session = Depends(get_db),
     _: User = Depends(require_admin_or_sysadmin),
 ) -> UserListResponse:
-    query = db.query(User)
-
-    if role:
-        query = query.filter(User.role == role)
-    if is_active is not None:
-        query = query.filter(User.is_active == is_active)
-    if search:
-        query = query.filter(
-            (User.login.ilike(f"%{search}%")) | (User.full_name.ilike(f"%{search}%"))
-        )
-
-    total = query.count()
-    users = query.offset(offset).limit(limit).all()
-
+    users, total = UserRepository(db).list_paginated(
+        role=role,
+        is_active=is_active,
+        search=search,
+        limit=limit,
+        offset=offset,
+    )
     return UserListResponse(
-        items=[UserResponse.model_validate(user) for user in users], total=total
+        items=[UserResponse.model_validate(user) for user in users],
+        total=total,
     )
 
 
@@ -53,9 +47,7 @@ def create_user(
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin),
 ) -> UserResponse:
-    # Check if login already exists
-    existing_user = db.query(User).filter(User.login == user_data.login).first()
-    if existing_user:
+    if UserRepository(db).exists_by_login(user_data.login):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="login_exists")
 
     new_user = User(
@@ -79,11 +71,7 @@ def update_user(
     db: Session = Depends(get_db),
     current_admin: User = Depends(get_current_admin),
 ) -> UserResponse:
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="user_not_found"
-        )
+    user = UserRepository(db).get_or_404(user_id)
 
     update_data = user_data.model_dump(exclude_unset=True)
     if user_id == current_admin.id and update_data.get("is_active") is False:
@@ -112,12 +100,6 @@ def admin_reset_user_password(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_admin),
 ) -> None:
-    """Сброс пароля пользователя администратором (без знания старого пароля)."""
-    user = db.query(User).filter(User.id == user_id).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="user_not_found"
-        )
-
+    user = UserRepository(db).get_or_404(user_id)
     user.password_hash = hash_password(password_data.password)
     db.commit()

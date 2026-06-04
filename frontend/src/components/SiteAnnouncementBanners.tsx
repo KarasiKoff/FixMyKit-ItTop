@@ -6,7 +6,8 @@ import { dismissAnnouncement, isAnnouncementDismissed } from '../utils/announcem
 import { ConfirmDialog } from './ConfirmDialog';
 import { SiteAnnouncementCard } from './SiteAnnouncementCard';
 
-function filterDismissed(items: ActiveAnnouncement[]): ActiveAnnouncement[] {
+function filterDismissed(items: ActiveAnnouncement[], dismissEpoch: number): ActiveAnnouncement[] {
+    void dismissEpoch;
     return items.filter((item) => !isAnnouncementDismissed(item.slot, item.dismiss_version ?? 1));
 }
 
@@ -42,7 +43,7 @@ export function SiteAnnouncementBanners() {
         setEntered(true);
     }, []);
 
-    const visible = useMemo(() => filterDismissed(items), [items, dismissVersion]);
+    const visible = useMemo(() => filterDismissed(items, dismissVersion), [items, dismissVersion]);
 
     useEffect(() => {
         if (carouselIndex >= visible.length) {

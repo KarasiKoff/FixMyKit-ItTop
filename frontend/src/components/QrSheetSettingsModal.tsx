@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../hooks/useToast';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import type { QrPrintTarget } from '../types/qrPrintTarget';
