@@ -101,36 +101,164 @@ function AppShell() {
             </header>
             <SiteAnnouncementBanners />
             <div className="app-shell-main">
-            <Routes>
-                <Route
-                    path="/"
-                    element={isAuthenticated ? <Navigate to="/devices" replace /> : <Navigate to="/repair" replace />}
-                />
-                <Route path="/login" element={<RequireGuest><Login /></RequireGuest>} />
-                <Route path="/devices" element={<RequireAuth><DevicesList /></RequireAuth>} />
-                <Route path="/devices/:id" element={<RequireAuth><DeviceDetail /></RequireAuth>} />
-                <Route path="/room-maps" element={<RequireAuth><RoomMapsPage /></RequireAuth>} />
-                <Route path="/repair" element={<NewRepairRequest />} />
-                <Route path="/requests" element={<RequireAuth><RepairRequests /></RequireAuth>} />
-                <Route path="/requests/:id" element={<RequireAuth><RepairRequestDetailPage /></RequireAuth>} />
-                <Route path="/users" element={<RequireAuth><UsersManagement /></RequireAuth>} />
-                <Route path="/admin" element={<RequireAuth><AdminHub /></RequireAuth>} />
-                <Route path="/admin/logs" element={<RequireAuth><AdminLogsPage /></RequireAuth>} />
-                <Route path="/admin/announcements" element={<RequireAuth><AdminAnnouncementsPage /></RequireAuth>} />
-                <Route path="/admin/users" element={<RequireAuth><AdminUsersPage /></RequireAuth>} />
-                <Route path="/admin/add/category" element={<RequireAuth><AdminAddCategory /></RequireAuth>} />
-                <Route path="/admin/add/room" element={<RequireAuth><AdminAddRoom /></RequireAuth>} />
-                <Route path="/admin/add/device" element={<RequireAuth><AdminAddDevice /></RequireAuth>} />
-                <Route path="/admin/password" element={<RequireAuth><AdminChangePassword /></RequireAuth>} />
-                <Route path="/admin/room/:id/map" element={<RequireAuth><RoomMapEditor /></RequireAuth>} />
-                <Route path="/admin/device/:id/edit" element={<RequireAuth><AdminEditDevice /></RequireAuth>} />
-                <Route path="/admin/add/user" element={<Navigate to="/admin/users" replace />} />
-                <Route path="/scan" element={<ErrorBoundary><QRScan /></ErrorBoundary>} />
-                <Route path="/device/:id/public" element={<DevicePublicPage />} />
-                <Route path="/audience/:id/public" element={<AudiencePublicPage />} />
-                <Route path="/privacy" element={<PrivacyPage />} />
-                <Route path="*" element={<NotFoundPage />} />
-            </Routes>
+                <Routes>
+                    <Route
+                        path="/"
+                        element={
+                            isAuthenticated ? <Navigate to="/devices" replace /> : <Navigate to="/repair" replace />
+                        }
+                    />
+                    <Route
+                        path="/login"
+                        element={
+                            <RequireGuest>
+                                <Login />
+                            </RequireGuest>
+                        }
+                    />
+                    <Route
+                        path="/devices"
+                        element={
+                            <RequireAuth>
+                                <DevicesList />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/devices/:id"
+                        element={
+                            <RequireAuth>
+                                <DeviceDetail />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/room-maps"
+                        element={
+                            <RequireAuth>
+                                <RoomMapsPage />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route path="/repair" element={<NewRepairRequest />} />
+                    <Route
+                        path="/requests"
+                        element={
+                            <RequireAuth>
+                                <RepairRequests />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/requests/:id"
+                        element={
+                            <RequireAuth>
+                                <RepairRequestDetailPage />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/users"
+                        element={
+                            <RequireAuth>
+                                <UsersManagement />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/admin"
+                        element={
+                            <RequireAuth>
+                                <AdminHub />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/admin/logs"
+                        element={
+                            <RequireAuth>
+                                <AdminLogsPage />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/admin/announcements"
+                        element={
+                            <RequireAuth>
+                                <AdminAnnouncementsPage />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/admin/users"
+                        element={
+                            <RequireAuth>
+                                <AdminUsersPage />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/admin/add/category"
+                        element={
+                            <RequireAuth>
+                                <AdminAddCategory />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/admin/add/room"
+                        element={
+                            <RequireAuth>
+                                <AdminAddRoom />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/admin/add/device"
+                        element={
+                            <RequireAuth>
+                                <AdminAddDevice />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/admin/password"
+                        element={
+                            <RequireAuth>
+                                <AdminChangePassword />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/admin/room/:id/map"
+                        element={
+                            <RequireAuth>
+                                <RoomMapEditor />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route
+                        path="/admin/device/:id/edit"
+                        element={
+                            <RequireAuth>
+                                <AdminEditDevice />
+                            </RequireAuth>
+                        }
+                    />
+                    <Route path="/admin/add/user" element={<Navigate to="/admin/users" replace />} />
+                    <Route
+                        path="/scan"
+                        element={
+                            <ErrorBoundary>
+                                <QRScan />
+                            </ErrorBoundary>
+                        }
+                    />
+                    <Route path="/device/:id/public" element={<DevicePublicPage />} />
+                    <Route path="/audience/:id/public" element={<AudiencePublicPage />} />
+                    <Route path="/privacy" element={<PrivacyPage />} />
+                    <Route path="*" element={<NotFoundPage />} />
+                </Routes>
             </div>
         </div>
     );

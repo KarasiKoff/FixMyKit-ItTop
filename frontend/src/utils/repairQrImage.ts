@@ -108,7 +108,6 @@ async function logoDataUrlForQrEmbedding(logoDataUrl: string, qrSizePx: number):
     return logoDataUrl;
 }
 
-
 export async function generateRepairQrPngDataUrl(
     payloadUrl: string,
     sizePx: number,

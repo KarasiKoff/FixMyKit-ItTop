@@ -19,7 +19,6 @@ const STATUS_ICON_URLS = {
     taken: new URL('../icon/take-by-sysadmin.svg', import.meta.url).href,
 } as const;
 
-
 type Props = {
     requestId: string;
     request: RepairRequestDetail;
@@ -27,29 +26,6 @@ type Props = {
     onUpdated: (request: RepairRequestDetail) => void;
     onCommentsChanged?: () => void;
 };
-
-
-
-function statusPillClass(workflow: RepairWorkflowState, current: RepairWorkflowState, canChange: boolean): string {
-    const base = 'repair-pill-btn';
-    if (!canChange) {
-        return `${base} repair-pill-btn--disabled`;
-    }
-
-    if (workflow !== current) {
-        return `${base} repair-pill-btn--ghost`;
-    }
-
-    if (workflow === 'needs_info') {
-        return `${base} repair-pill-btn--active-needs`;
-    }
-
-    if (workflow === 'closed') {
-        return `${base} repair-pill-btn--active-closed`;
-    }
-
-    return `${base} repair-pill-btn--active`;
-}
 
 function StatusIconAsset({ src }: { src: string }) {
     const mask = `url("${src}")`;
@@ -81,7 +57,14 @@ function IconClosed() {
     return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" strokeWidth="2" />
-            <path d="m8.8 12.2 2.2 2.2 4.2-4.2" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            <path
+                d="m8.8 12.2 2.2 2.2 4.2-4.2"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
         </svg>
     );
 }
@@ -93,14 +76,32 @@ function IconTaken() {
 function IconSync() {
     return (
         <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M20 7v5h-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M4 17v-5h5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M6.5 9.5A7 7 0 0 1 18 7M17.5 14.5A7 7 0 0 1 6 17" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+            <path
+                d="M20 7v5h-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+            <path
+                d="M4 17v-5h5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
+            <path
+                d="M6.5 9.5A7 7 0 0 1 18 7M17.5 14.5A7 7 0 0 1 6 17"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+            />
         </svg>
     );
 }
-
-
 
 export function RepairRequestStatusPanel({
     requestId,
@@ -116,15 +117,11 @@ export function RepairRequestStatusPanel({
     const current = workflowFromRequest(request);
     const canChange = hasTrackerTicket && !busy;
     const showTrackerStatusRetry = Boolean(request.trackerStatusSyncPending && hasTrackerTicket);
-    const sliderValue: 'open' | 'in_progress' | null =
-        current === 'open' || current === 'in_progress' ? current : null;
-
-
+    const sliderValue: 'open' | 'in_progress' | null = current === 'open' || current === 'in_progress' ? current : null;
 
     async function applyWorkflow(
         workflow: RepairWorkflowState,
         opts?: { resolution?: RepairCloseResolution; comment?: string },
-
     ) {
         setBusy(true);
         try {
@@ -186,8 +183,6 @@ export function RepairRequestStatusPanel({
         void applyWorkflow(next);
     }
 
-
-
     async function onSetTaken(taken: boolean) {
         if (!canChange) {
             return;
@@ -207,18 +202,19 @@ export function RepairRequestStatusPanel({
             const updated = await patchRepairRequestTake(requestId, taken);
             onUpdated(updated);
             showSuccess(taken ? 'Отмечено: забрал сисадмин' : 'Устройство возвращено');
-
         } catch (err) {
             showError(formatApiError(err));
         } finally {
             setBusy(false);
         }
-
     }
 
     return (
         <>
-            <section className={`repair-status-icon-panel ${!canChange ? 'repair-status-icon-panel--disabled' : ''}`} aria-label="Статус заявки">
+            <section
+                className={`repair-status-icon-panel ${!canChange ? 'repair-status-icon-panel--disabled' : ''}`}
+                aria-label="Статус заявки"
+            >
                 <div
                     className={`repair-status-vertical-switch ${
                         sliderValue === 'open'
@@ -243,7 +239,9 @@ export function RepairRequestStatusPanel({
                         onClick={() => onSelect('open')}
                     >
                         <IconOpen />
-                        <span className="repair-status-tooltip" role="tooltip">Открыта</span>
+                        <span className="repair-status-tooltip" role="tooltip">
+                            Открыта
+                        </span>
                     </button>
                     <button
                         type="button"
@@ -256,7 +254,9 @@ export function RepairRequestStatusPanel({
                         onClick={() => onSelect('in_progress')}
                     >
                         <IconInProgress />
-                        <span className="repair-status-tooltip" role="tooltip">В работу</span>
+                        <span className="repair-status-tooltip" role="tooltip">
+                            В работу
+                        </span>
                     </button>
                 </div>
 
@@ -269,7 +269,9 @@ export function RepairRequestStatusPanel({
                     aria-label="Нужна информация"
                 >
                     <IconNeedsInfo />
-                    <span className="repair-status-tooltip" role="tooltip">Нужна информация</span>
+                    <span className="repair-status-tooltip" role="tooltip">
+                        Нужна информация
+                    </span>
                 </button>
 
                 <button
@@ -281,7 +283,9 @@ export function RepairRequestStatusPanel({
                     aria-label="Закрыть"
                 >
                     <IconClosed />
-                    <span className="repair-status-tooltip" role="tooltip">Закрыть</span>
+                    <span className="repair-status-tooltip" role="tooltip">
+                        Закрыть
+                    </span>
                 </button>
 
                 {current !== 'closed' ? (
@@ -319,7 +323,6 @@ export function RepairRequestStatusPanel({
                 ) : null}
             </section>
 
-
             <RepairWorkflowModal
                 open={modal !== null}
                 mode={modal ?? 'needs_info'}
@@ -329,7 +332,6 @@ export function RepairRequestStatusPanel({
                         setModal(null);
                     }
                 }}
-
                 onConfirm={({ comment, resolution }) => {
                     if (modal === 'needs_info') {
                         void applyWorkflow('needs_info', { comment });

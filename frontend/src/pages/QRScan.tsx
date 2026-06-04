@@ -2,10 +2,9 @@ import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRScanner } from '../components/QRScanner';
 import { useAuth } from '../hooks/useAuth';
-import { useAppData } from '../context/AppDataContext';
 import { useToast } from '../context/ToastContext';
 import { formatApiError } from '../utils/formatApiError';
-import { fetchPublicDeviceByInventory } from '../api/devices';
+import { fetchPublicDeviceByInventory, resolveDeviceByScanInput } from '../api/devices';
 import { fetchAudiences } from '../api/audiences';
 import { fetchPublicAudienceByName } from '../api/public';
 import { isUuid } from '../utils/uuid';
@@ -58,7 +57,6 @@ export function QRScan() {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const { isAuthenticated } = useAuth();
-    const { devices } = useAppData();
     const { showError } = useToast();
 
     useEffect(() => {
@@ -124,27 +122,14 @@ export function QRScan() {
             return;
         }
 
-        if (!isAuthenticated) {
-            try {
-                const device = await fetchPublicDeviceByInventory(raw);
-                navigate(`/device/${device.id}/public`);
-            } catch (err) {
-                showError(formatApiError(err));
-                throw err;
-            }
-            return;
-        }
-
-        const normalized = raw.toLowerCase();
-        const byId = devices.find((device) => device.id.toLowerCase() === normalized);
-        const byInventory = devices.find((device) => device.inventoryNumber.toLowerCase() === normalized);
-        const device = byId ?? byInventory;
-        if (device) {
+        try {
+            const device = isAuthenticated
+                ? await resolveDeviceByScanInput(raw)
+                : await fetchPublicDeviceByInventory(raw);
             navigate(`/device/${device.id}/public`);
-        } else {
-            showError(
-                'Не найдено. Введите инвентарный номер или UUID устройства, либо точное название кабинета.',
-            );
+        } catch (err) {
+            showError(formatApiError(err));
+            throw err;
         }
     }
 

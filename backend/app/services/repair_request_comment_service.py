@@ -1,10 +1,13 @@
 from uuid import UUID
 
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
 from backend.app.models.repair_request import RepairRequest
 from backend.app.models.repair_request_comment import RepairRequestComment
 from backend.app.models.user import User
+from backend.app.repositories.repair_request_comment_repository import (
+    RepairRequestCommentRepository,
+)
 from backend.app.schemas.repair_request_comment import RepairRequestCommentResponse
 from backend.app.services.comment_body_normalize import (
     legacy_markdown_author_to_plain,
@@ -14,13 +17,7 @@ from backend.app.services.repair_request_tracker_outbound import sync_user_comme
 
 
 def list_comments(db: Session, repair_request_id: UUID) -> list[RepairRequestCommentResponse]:
-    rows = (
-        db.query(RepairRequestComment)
-        .options(joinedload(RepairRequestComment.author))
-        .filter(RepairRequestComment.repair_request_id == repair_request_id)
-        .order_by(RepairRequestComment.created_at.asc())
-        .all()
-    )
+    rows = RepairRequestCommentRepository(db).list_for_request(repair_request_id)
     return [_comment_response(row) for row in rows]
 
 
@@ -41,14 +38,9 @@ def create_comment(
     db.add(row)
     db.commit()
     db.refresh(row)
-    row = (
-        db.query(RepairRequestComment)
-        .options(joinedload(RepairRequestComment.author))
-        .filter(RepairRequestComment.id == row.id)
-        .first()
-    )
-    assert row is not None
-    return _comment_response(row)
+    loaded = RepairRequestCommentRepository(db).get_with_author(row.id)
+    assert loaded is not None
+    return _comment_response(loaded)
 
 
 def _comment_response(row: RepairRequestComment) -> RepairRequestCommentResponse:

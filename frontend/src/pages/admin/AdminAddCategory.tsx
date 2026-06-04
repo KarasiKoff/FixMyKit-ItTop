@@ -24,14 +24,7 @@ const ICON_HINT = 'PNG, JPEG, WebP, SVG · до 1 МБ';
 
 function CategoryRowIcon({ id, hasIcon }: { id: string; hasIcon: boolean }) {
     const src = useCategoryIconSrc(id, hasIcon);
-    return (
-        <img
-            src={src}
-            alt=""
-            className="category-name-cell__icon"
-            draggable={false}
-        />
-    );
+    return <img src={src} alt="" className="category-name-cell__icon" draggable={false} />;
 }
 
 function NewIconPicker({
@@ -84,13 +77,14 @@ function EditIconPicker({
     const iconSrc = useCategoryIconSrc(hasIcon ? categoryId : null, hasIcon);
 
     return (
-        <div className={`category-edit-icon-field${hasIcon ? ' category-edit-icon-field--has-icon' : ''}${disabled ? ' row-disabled' : ''}`}>
-            <label className="category-edit-icon-field__label" title={hasIcon ? 'Нажмите чтобы сменить иконку' : ICON_HINT}>
-                {hasIcon ? (
-                    <img src={iconSrc} alt="иконка категории" draggable={false} />
-                ) : (
-                    <span>🖼 Иконка</span>
-                )}
+        <div
+            className={`category-edit-icon-field${hasIcon ? ' category-edit-icon-field--has-icon' : ''}${disabled ? ' row-disabled' : ''}`}
+        >
+            <label
+                className="category-edit-icon-field__label"
+                title={hasIcon ? 'Нажмите чтобы сменить иконку' : ICON_HINT}
+            >
+                {hasIcon ? <img src={iconSrc} alt="иконка категории" draggable={false} /> : <span>🖼 Иконка</span>}
                 <input
                     ref={inputRef}
                     type="file"
@@ -465,7 +459,7 @@ export function AdminAddCategory() {
     const [modalCategoryId, setModalCategoryId] = useState<string | null>(null);
     const [modalBusy, setModalBusy] = useState(false);
 
-    const modalCategory = modalCategoryId ? rows.find((r) => r.id === modalCategoryId) ?? null : null;
+    const modalCategory = modalCategoryId ? (rows.find((r) => r.id === modalCategoryId) ?? null) : null;
 
     async function reload() {
         setLoading(true);
@@ -537,7 +531,10 @@ export function AdminAddCategory() {
             </div>
 
             <section className="card admin-crud-sheet">
-                <form className="admin-inline-form admin-inline-form--tight admin-category-page-form" onSubmit={handleAdd}>
+                <form
+                    className="admin-inline-form admin-inline-form--tight admin-category-page-form"
+                    onSubmit={handleAdd}
+                >
                     <label className="admin-inline-field admin-inline-field--grow">
                         <span className="admin-inline-label">Название</span>
                         <input

@@ -53,9 +53,7 @@ export function RepairRequestForm({
 
     const selectedDevice = devices.find((device) => device.id === deviceId);
     const lockedTargetDisplay =
-        deviceSelectDisabled && devices.length > 0
-            ? selectedDevice?.inventoryNumber?.trim() || '—'
-            : null;
+        deviceSelectDisabled && devices.length > 0 ? selectedDevice?.inventoryNumber?.trim() || '—' : null;
 
     const formClass = ['repair-request-form', isBusy ? 'repair-request-form--busy' : ''].filter(Boolean).join(' ');
 

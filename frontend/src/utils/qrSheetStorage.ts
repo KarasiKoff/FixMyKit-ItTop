@@ -59,7 +59,10 @@ export function saveQrSheetSettings(s: QrSheetSettings): void {
 
 /** Для имени файла: убрать недопустимые символы. */
 export function sanitizePdfSuffixPart(raw: string): string {
-    return raw.replace(/[\u0000-\u001f<>:"/\\|?*]+/g, '').trim().slice(0, 80);
+    return raw
+        .replace(/[\u0000-\u001f<>:"/\\|?*]+/g, '')
+        .trim()
+        .slice(0, 80);
 }
 
 export function buildPdfFilename(suffix: string): string {

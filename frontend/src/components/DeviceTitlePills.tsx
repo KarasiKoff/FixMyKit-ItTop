@@ -1,6 +1,10 @@
 import React from 'react';
 import type { Device } from '../types/device';
-import { deviceRepairStatusLabel, deviceRepairStatusPillClass, deviceSubcategoryPillClass } from '../utils/statusDisplay';
+import {
+    deviceRepairStatusLabel,
+    deviceRepairStatusPillClass,
+    deviceSubcategoryPillClass,
+} from '../utils/statusDisplay';
 
 type Props = {
     subcategory?: string | null;
@@ -14,9 +18,7 @@ export function DeviceTitlePills({ subcategory, status }: Props) {
 
     return (
         <div className="device-title-row__pills">
-            {subcategory ? (
-                <span className={deviceSubcategoryPillClass()}>{subcategory}</span>
-            ) : null}
+            {subcategory ? <span className={deviceSubcategoryPillClass()}>{subcategory}</span> : null}
             {status ? (
                 <span className={deviceRepairStatusPillClass(status)}>{deviceRepairStatusLabel(status)}</span>
             ) : null}

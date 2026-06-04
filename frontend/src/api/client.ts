@@ -15,18 +15,18 @@ export type ApiRequestOptions = RequestInit & { skipAuth?: boolean };
 
 export function apiBaseUrl(): string {
     const raw = import.meta.env.VITE_API_BASE_URL;
-    if (raw === undefined || raw === null || String(raw).trim() === "") {
-        return "";
+    if (raw === undefined || raw === null || String(raw).trim() === '') {
+        return '';
     }
-    return String(raw).replace(/\/+$/, "");
+    return String(raw).replace(/\/+$/, '');
 }
 
 export function resolveApiUrl(path: string): string {
-    if (path.startsWith("http://") || path.startsWith("https://")) {
+    if (path.startsWith('http://') || path.startsWith('https://')) {
         return path;
     }
     const base = apiBaseUrl();
-    return base === "" ? path : `${base}${path.startsWith("/") ? path : `/${path}`}`;
+    return base === '' ? path : `${base}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
 export async function apiRequest<T>(path: string, init: ApiRequestOptions = {}): Promise<T> {
@@ -62,7 +62,10 @@ export async function apiRequest<T>(path: string, init: ApiRequestOptions = {}):
         if (response.status === 401 && !skipAuth) {
             clearStoredAuthToken();
         }
-        throw new ApiError(response.status, typeof payload === 'object' && payload !== null && 'detail' in payload ? payload.detail : payload);
+        throw new ApiError(
+            response.status,
+            typeof payload === 'object' && payload !== null && 'detail' in payload ? payload.detail : payload,
+        );
     }
 
     return payload as T;

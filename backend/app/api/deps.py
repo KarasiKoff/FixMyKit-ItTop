@@ -11,6 +11,7 @@ from backend.app.core.database import SessionLocal
 from backend.app.core.security import decode_access_token
 from backend.app.models.enums import UserRole
 from backend.app.models.user import User
+from backend.app.repositories.user_repository import UserRepository
 
 logger = logging.getLogger("fixmykit.auth")
 
@@ -44,7 +45,7 @@ def _user_from_access_token(token: str, db: Session) -> User:
         logger.warning("auth_token_invalid_sub", extra={"sub": str(user_id)[:36]})
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token")
 
-    user = db.query(User).filter(User.id == user_uuid, User.is_active.is_(True)).first()
+    user = UserRepository(db).get_active_by_id(user_uuid)
     if user is None:
         logger.warning("auth_user_not_found_or_inactive", extra={"user_id": str(user_uuid)})
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token")

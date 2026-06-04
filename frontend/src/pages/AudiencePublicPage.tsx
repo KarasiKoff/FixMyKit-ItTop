@@ -60,10 +60,12 @@ function ActiveRequestCard({ req }: { req: PublicRepairRequestItem }) {
 function ModerationBanner() {
     return (
         <div className="public-history-moderation-banner">
-            <span className="public-history-moderation-icon" aria-hidden="true">⏳</span>
+            <span className="public-history-moderation-icon" aria-hidden="true">
+                ⏳
+            </span>
             <span>
-                <strong>Есть активная заявка</strong> — она находится на модерации и будет видна после
-                подтверждения администратором.
+                <strong>Есть активная заявка</strong> — она находится на модерации и будет видна после подтверждения
+                администратором.
             </span>
         </div>
     );
@@ -80,9 +82,7 @@ function HistoryItem({ item, isLast }: { item: PublicRepairRequestItem; isLast: 
                     <span className={statusPillClass(item.status)}>{statusLabel(item.status)}</span>
                     <time>{formatDate(item.createdAt)}</time>
                     {item.closedAt ? (
-                        <span className="history-timeline__note">
-                            — закрыта {formatDate(item.closedAt)}
-                        </span>
+                        <span className="history-timeline__note">— закрыта {formatDate(item.closedAt)}</span>
                     ) : null}
                 </div>
                 <p className="public-history-item-desc">{item.description}</p>

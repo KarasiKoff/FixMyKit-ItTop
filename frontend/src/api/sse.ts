@@ -16,9 +16,7 @@ function apiBaseUrl(): string {
     return String(raw).replace(/\/+$/, '');
 }
 
-export function buildRepairRequestsSseUrl(options?: {
-    repairRequestId?: string;
-}): string | null {
+export function buildRepairRequestsSseUrl(options?: { repairRequestId?: string }): string | null {
     const token = getStoredAuthToken();
     if (!token) {
         return null;

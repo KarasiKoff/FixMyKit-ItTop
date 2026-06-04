@@ -10,19 +10,18 @@ from backend.app.core.database import SessionLocal
 from backend.app.core.security import hash_password
 from backend.app.models.enums import UserRole
 from backend.app.models.user import User
+from backend.app.repositories.user_repository import UserRepository
 
 
 def ensure_tracker_webhook_actor() -> None:
-    secret = (settings.server.tracker_webhook_secret or "").strip()
+    secret = (settings.tracker_webhook_secret or "").strip()
     if not secret:
         return
 
-    login = (
-        settings.server.tracker_webhook_actor_login or "tracker_webhook"
-    ).strip() or "tracker_webhook"
+    login = (settings.tracker_webhook_actor_login or "tracker_webhook").strip() or "tracker_webhook"
     db: Session = SessionLocal()
     try:
-        if db.query(User).filter(User.login == login).first() is not None:
+        if UserRepository(db).exists_by_login(login):
             return
         user = User(
             login=login,

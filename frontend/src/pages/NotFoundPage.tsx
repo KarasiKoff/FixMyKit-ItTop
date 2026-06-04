@@ -18,8 +18,8 @@ export function NotFoundPage() {
                     <div className="not-found-banner__copy">
                         <h1 className="not-found-banner__title">404 — страница не найдена</h1>
                         <p className="not-found-banner__lead muted-text">
-                            Скорее всего, ссылка устарела, страница переехала или оборудование снято с учёта. Проверьте адрес
-                            или вернитесь на главную.
+                            Скорее всего, ссылка устарела, страница переехала или оборудование снято с учёта. Проверьте
+                            адрес или вернитесь на главную.
                         </p>
                     </div>
                     <div className="not-found-banner__visual">

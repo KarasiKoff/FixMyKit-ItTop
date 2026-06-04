@@ -21,10 +21,7 @@ export function useRoomMapDisplay(
     gridRows: number,
     devices: DeviceOnMap[],
 ): { displayDevices: MapDisplayDevice[] } {
-    const layout = useMemo(
-        () => computeFixedGridLayout(MAP_CHIP_SIZE_PX, gridCols, gridRows),
-        [gridCols, gridRows],
-    );
+    const layout = useMemo(() => computeFixedGridLayout(MAP_CHIP_SIZE_PX, gridCols, gridRows), [gridCols, gridRows]);
 
     const displayDevices = useMemo((): MapDisplayDevice[] => {
         if (!layout) {

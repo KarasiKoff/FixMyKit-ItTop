@@ -3,14 +3,14 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
 from fastapi.responses import Response
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, defer, joinedload
+from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_current_user, get_db
-from backend.app.models.device import Device as DeviceModel
 from backend.app.models.category import Category as CategoryModel
 from backend.app.models.enums import UserRole
 from backend.app.models.subcategory import Subcategory as SubcategoryModel
 from backend.app.models.user import User
+from backend.app.repositories.category_repository import CategoryRepository, SubcategoryRepository
 from backend.app.schemas.category import (
     Category,
     CategoryCreate,
@@ -39,13 +39,7 @@ def list_categories(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN, UserRole.SYSADMIN})),
 ) -> CategoryList:
-    query = db.query(CategoryModel).options(
-        defer(CategoryModel.icon_data),
-        joinedload(CategoryModel.subcategories),
-    )
-    if is_active is not None:
-        query = query.filter(CategoryModel.is_active == is_active)
-    items = query.order_by(CategoryModel.created_at.desc()).all()
+    items = CategoryRepository(db).list_all(is_active=is_active)
     return CategoryList(items=[CategoryWithSubcategories.model_validate(item) for item in items])
 
 
@@ -55,9 +49,7 @@ def get_category_icon(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_user),
 ) -> Response:
-    category = db.query(CategoryModel).filter(CategoryModel.id == category_id).first()
-    if category is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="category_not_found")
+    category = CategoryRepository(db).get_or_404(category_id)
     if not category.icon_mime or not category.icon_data:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="icon_not_found")
     return Response(
@@ -73,8 +65,7 @@ def create_category(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN})),
 ) -> Category:
-    existing = db.query(CategoryModel).filter(CategoryModel.name == payload.name).first()
-    if existing is not None:
+    if CategoryRepository(db).get_by_name(payload.name) is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="category_exists")
 
     category = CategoryModel(name=payload.name)
@@ -91,9 +82,7 @@ async def upload_category_icon(
     _: User = Depends(require_roles({UserRole.ADMIN})),
     file: UploadFile = File(...),
 ) -> Category:
-    category = db.query(CategoryModel).filter(CategoryModel.id == category_id).first()
-    if category is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="category_not_found")
+    category = CategoryRepository(db).get_or_404(category_id)
 
     raw = await file.read()
     try:
@@ -117,9 +106,7 @@ def delete_category_icon(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN})),
 ) -> Category:
-    category = db.query(CategoryModel).filter(CategoryModel.id == category_id).first()
-    if category is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="category_not_found")
+    category = CategoryRepository(db).get_or_404(category_id)
     category.icon_mime = None
     category.icon_data = None
     db.commit()
@@ -134,13 +121,11 @@ def update_category(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN})),
 ) -> Category:
-    category = db.query(CategoryModel).filter(CategoryModel.id == category_id).first()
-    if category is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="category_not_found")
+    repo = CategoryRepository(db)
+    category = repo.get_or_404(category_id)
 
     if payload.name is not None and payload.name != category.name:
-        existing = db.query(CategoryModel).filter(CategoryModel.name == payload.name).first()
-        if existing is not None:
+        if repo.get_by_name(payload.name) is not None:
             raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="category_exists")
         category.name = payload.name
 
@@ -158,14 +143,9 @@ def delete_category(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN})),
 ) -> None:
-    category = db.query(CategoryModel).filter(CategoryModel.id == category_id).first()
-    if category is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="category_not_found")
-
-    db.query(DeviceModel).filter(DeviceModel.category_id == category_id).update(
-        {DeviceModel.category_id: None, DeviceModel.subcategory_id: None},
-        synchronize_session=False,
-    )
+    repo = CategoryRepository(db)
+    category = repo.get_or_404(category_id)
+    repo.clear_devices_category(category_id)
     db.delete(category)
     db.commit()
 
@@ -181,9 +161,7 @@ def create_subcategory(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN})),
 ) -> Subcategory:
-    category = db.query(CategoryModel).filter(CategoryModel.id == category_id).first()
-    if category is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="category_not_found")
+    CategoryRepository(db).get_or_404(category_id)
 
     name = payload.name.strip()
     if not name:
@@ -207,9 +185,7 @@ def update_subcategory(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN})),
 ) -> Subcategory:
-    sub = db.query(SubcategoryModel).filter(SubcategoryModel.id == subcategory_id).first()
-    if sub is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="subcategory_not_found")
+    sub = SubcategoryRepository(db).get_or_404(subcategory_id)
 
     if payload.name is not None:
         name = payload.name.strip()
@@ -234,13 +210,8 @@ def delete_subcategory(
     db: Session = Depends(get_db),
     _: User = Depends(require_roles({UserRole.ADMIN})),
 ) -> None:
-    sub = db.query(SubcategoryModel).filter(SubcategoryModel.id == subcategory_id).first()
-    if sub is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="subcategory_not_found")
-
-    db.query(DeviceModel).filter(DeviceModel.subcategory_id == subcategory_id).update(
-        {DeviceModel.subcategory_id: None},
-        synchronize_session=False,
-    )
+    sub_repo = SubcategoryRepository(db)
+    sub = sub_repo.get_or_404(subcategory_id)
+    sub_repo.clear_devices_subcategory(subcategory_id)
     db.delete(sub)
     db.commit()

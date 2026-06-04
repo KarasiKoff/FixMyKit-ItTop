@@ -5,7 +5,7 @@ export type RepairRequest = {
     audienceName?: string;
     requesterName: string;
     description: string;
-    status: 'new' | 'in_progress' | 'needs_info' | 'closed';
+    status: 'open' | 'in_progress' | 'needs_info' | 'closed';
     takenBySysadmin: boolean;
     isPublished: boolean;
     createdAt: string;

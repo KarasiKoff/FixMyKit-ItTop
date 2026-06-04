@@ -2,10 +2,9 @@ import { apiRequest } from './client';
 
 export async function fetchPublicAudienceByName(name: string) {
     const params = new URLSearchParams({ name: name.trim() });
-    return apiRequest<{ id: string; name: string }>(
-        `/api/public/audiences/by-name?${params.toString()}`,
-        { skipAuth: true },
-    );
+    return apiRequest<{ id: string; name: string }>(`/api/public/audiences/by-name?${params.toString()}`, {
+        skipAuth: true,
+    });
 }
 
 export async function shortenPublicUrl(url: string) {

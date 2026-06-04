@@ -17,7 +17,14 @@ import {
     slotsPerPage,
 } from '../utils/qrSheetLayout';
 import { buildPdfFilename, loadQrSheetSettings, saveQrSheetSettings } from '../utils/qrSheetStorage';
-import { buildEmbeddedSheetCss, buildPrintDocumentHtml, buildPrintPagesMarkup, chunkItems, qrRasterPxFromMm, type QrSheetItem } from '../utils/qrSheetHtml';
+import {
+    buildEmbeddedSheetCss,
+    buildPrintDocumentHtml,
+    buildPrintPagesMarkup,
+    chunkItems,
+    qrRasterPxFromMm,
+    type QrSheetItem,
+} from '../utils/qrSheetHtml';
 import { resolveScanShortLinkCaption } from '../utils/qrPayload';
 export type QrSheetVariant = 'device' | 'audience';
 
@@ -380,8 +387,6 @@ export function QrSheetSettingsModal({ open, onClose, items, variant = 'device' 
     const slots = slotsPerPage(cols, rows);
     const pagesEst = slots > 0 ? estimatePageCount(items.length, cols, rows) : null;
 
-    const pageSlots = slots > 0 ? slots : Math.max(1, items.length);
-
     const firstPageItems = useMemo(() => {
         const colsCss = Math.max(1, cols);
         const rowsCss = Math.max(1, rows);
@@ -499,13 +504,30 @@ export function QrSheetSettingsModal({ open, onClose, items, variant = 'device' 
                 if (context) {
                     context.fillStyle = '#ffffff';
                     context.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
-                    context.drawImage(canvas, 0, y, canvas.width, pageCanvas.height, 0, 0, pageCanvas.width, pageCanvas.height);
+                    context.drawImage(
+                        canvas,
+                        0,
+                        y,
+                        canvas.width,
+                        pageCanvas.height,
+                        0,
+                        0,
+                        pageCanvas.width,
+                        pageCanvas.height,
+                    );
                 }
                 const pageDataUrl = pageCanvas.toDataURL('image/png');
                 if (page > 0) {
                     pdf.addPage();
                 }
-                pdf.addImage(pageDataUrl, 'PNG', 0, 0, pageWidthMm, Math.min(pageHeightMm, pageCanvas.height / pxPerMm));
+                pdf.addImage(
+                    pageDataUrl,
+                    'PNG',
+                    0,
+                    0,
+                    pageWidthMm,
+                    Math.min(pageHeightMm, pageCanvas.height / pxPerMm),
+                );
             }
 
             pdf.save(buildPdfFilename(settings.pdfNameSuffix));
@@ -668,7 +690,14 @@ export function QrSheetSettingsModal({ open, onClose, items, variant = 'device' 
                                 ) : null}
                             </div>
                             {logoDataUrl ? (
-                                <button type="button" className="modal-panel__btn-ghost qr-sheet-logo-clear" onClick={() => { setLogoDataUrl(null); setLogoName(null); }}>
+                                <button
+                                    type="button"
+                                    className="modal-panel__btn-ghost qr-sheet-logo-clear"
+                                    onClick={() => {
+                                        setLogoDataUrl(null);
+                                        setLogoName(null);
+                                    }}
+                                >
                                     Убрать логотип
                                 </button>
                             ) : null}
@@ -704,7 +733,9 @@ export function QrSheetSettingsModal({ open, onClose, items, variant = 'device' 
                                 value={settings.pdfNameSuffix}
                                 onChange={(e) => patch({ pdfNameSuffix: e.target.value })}
                             />
-                            <span className="qr-sheet-field__hint">Файл: {buildPdfFilename(settings.pdfNameSuffix)}</span>
+                            <span className="qr-sheet-field__hint">
+                                Файл: {buildPdfFilename(settings.pdfNameSuffix)}
+                            </span>
                         </div>
 
                         {warnings.length > 0 && (

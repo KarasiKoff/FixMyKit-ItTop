@@ -49,10 +49,7 @@ export function RepairSubmitSuccess({
                 </ul>
             ) : null}
             <div className="repair-submit-success__actions">
-                <Link
-                    to={primaryTo}
-                    className="repair-submit-success__btn repair-submit-success__btn--primary"
-                >
+                <Link to={primaryTo} className="repair-submit-success__btn repair-submit-success__btn--primary">
                     {primaryIsScan ? <QrIcon /> : null}
                     <span>{primaryLabel}</span>
                 </Link>

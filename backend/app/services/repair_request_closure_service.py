@@ -4,8 +4,8 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
-from backend.app.models.device import Device
 from backend.app.models.enums import RepairStatus, RequestStatus
+from backend.app.repositories.device_repository import DeviceRepository
 from backend.app.models.repair_request import RepairRequest
 from backend.app.models.user import User
 from backend.app.services.repair_history_service import add_repair_history
@@ -37,7 +37,11 @@ def record_repair_request_closed(
     resolution_note: str | None,
     resolution_desc: str | None = None,
 ) -> None:
-    device = db.query(Device).filter(Device.id == repair_request.device_id).first()
+    device = (
+        DeviceRepository(db).get_by_id(repair_request.device_id)
+        if repair_request.device_id is not None
+        else None
+    )
     old_rs = device.repair_status if device else None
     apply_closed_fields(repair_request, closed_by, resolution_note, resolution_desc)
     if device is not None:

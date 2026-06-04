@@ -1,19 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import {
-    ANNOUNCEMENT_POLL_MS,
-    fetchActiveAnnouncements,
-    type ActiveAnnouncement,
-} from '../api/announcements';
+import { ANNOUNCEMENT_POLL_MS, fetchActiveAnnouncements, type ActiveAnnouncement } from '../api/announcements';
 import { useAuth } from '../hooks/useAuth';
 import { dismissAnnouncement, isAnnouncementDismissed } from '../utils/announcementDismiss';
 import { ConfirmDialog } from './ConfirmDialog';
 import { SiteAnnouncementCard } from './SiteAnnouncementCard';
 
 function filterDismissed(items: ActiveAnnouncement[]): ActiveAnnouncement[] {
-    return items.filter(
-        (item) => !isAnnouncementDismissed(item.slot, item.dismiss_version ?? 1),
-    );
+    return items.filter((item) => !isAnnouncementDismissed(item.slot, item.dismiss_version ?? 1));
 }
 
 export function SiteAnnouncementBanners() {
@@ -120,9 +114,7 @@ export function SiteAnnouncementBanners() {
                                         className="site-announcements-carousel__arrow"
                                         aria-label="Следующее объявление"
                                         disabled={carouselIndex >= visible.length - 1}
-                                        onClick={() =>
-                                            setCarouselIndex((i) => Math.min(visible.length - 1, i + 1))
-                                        }
+                                        onClick={() => setCarouselIndex((i) => Math.min(visible.length - 1, i + 1))}
                                     >
                                         ›
                                     </button>
@@ -147,11 +139,7 @@ export function SiteAnnouncementBanners() {
                             </div>
                         ) : null}
                         {active ? (
-                            <SiteAnnouncementCard
-                                item={active}
-                                dismissible
-                                onDismiss={() => requestDismiss(active)}
-                            />
+                            <SiteAnnouncementCard item={active} dismissible onDismiss={() => requestDismiss(active)} />
                         ) : null}
                     </div>
                 </div>
@@ -161,10 +149,7 @@ export function SiteAnnouncementBanners() {
                 open={dismissConfirmOpen && pendingDismiss !== null}
                 title="Скрыть важное объявление?"
                 message={
-                    <p>
-                        Плашка исчезнет только у вас в этом браузере. Администратор может снова показать её
-                        всем.
-                    </p>
+                    <p>Плашка исчезнет только у вас в этом браузере. Администратор может снова показать её всем.</p>
                 }
                 confirmLabel="Скрыть"
                 cancelLabel="Оставить"

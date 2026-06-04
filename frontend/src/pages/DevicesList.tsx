@@ -111,10 +111,7 @@ export function DevicesList() {
 
     const selectedDevicesList = useMemo(() => items.filter((d) => selectedDevices.has(d.id)), [items, selectedDevices]);
 
-    const selectedQrTargets = useMemo(
-        () => selectedDevicesList.map(qrPrintTargetFromDevice),
-        [selectedDevicesList],
-    );
+    const selectedQrTargets = useMemo(() => selectedDevicesList.map(qrPrintTargetFromDevice), [selectedDevicesList]);
 
     const handleSelectAll = () => {
         if (selectedDevices.size === items.length) {
@@ -251,7 +248,10 @@ export function DevicesList() {
                             className={`filter-select-field-input${draftFilters.status === '' ? ' is-empty' : ''}`}
                             value={draftFilters.status}
                             onChange={(event) =>
-                                setDraftFilters((p) => ({ ...p, status: event.target.value as DeviceFilters['status'] }))
+                                setDraftFilters((p) => ({
+                                    ...p,
+                                    status: event.target.value as DeviceFilters['status'],
+                                }))
                             }
                         >
                             <option value="">Любой статус</option>

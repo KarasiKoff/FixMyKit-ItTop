@@ -1,4 +1,4 @@
-import type { RepairRequest, RepairRequestDetail } from '../types/repairRequest';
+import type { RepairRequestDetail } from '../types/repairRequest';
 
 export type RepairWorkflowState = 'open' | 'in_progress' | 'needs_info' | 'closed';
 
@@ -22,7 +22,7 @@ export function workflowFromRequest(
     if (request.status === 'closed') {
         return 'closed';
     }
-    if (request.status === 'new') {
+    if (request.status === 'open') {
         return 'open';
     }
     if (request.status === 'needs_info') {

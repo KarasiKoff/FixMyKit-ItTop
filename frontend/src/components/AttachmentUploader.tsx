@@ -1,10 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useAttachmentLimits } from '../context/AttachmentLimitsContext';
-import {
-    attachmentPreviewKind,
-    formatMaxAttachmentSize,
-    isAllowedAttachmentFile,
-} from '../utils/attachmentLimits';
+import { attachmentPreviewKind, formatMaxAttachmentSize, isAllowedAttachmentFile } from '../utils/attachmentLimits';
 
 export type AttachmentDraft = {
     id: string;
@@ -204,8 +200,8 @@ export function AttachmentUploader({
                 </div>
             ) : null}
             <p className="attachment-uploader__privacy" role="note">
-                Пожалуйста, убедитесь, что на загружаемых скриншотах и фото нет конфиденциальной информации,
-                паролей или персональных данных третьих лиц.
+                Пожалуйста, убедитесь, что на загружаемых скриншотах и фото нет конфиденциальной информации, паролей или
+                персональных данных третьих лиц.
             </p>
             {trimNotice ? <p className="attachment-uploader__notice">{trimNotice}</p> : null}
             {error ? <p className="attachment-uploader__error">{error}</p> : null}

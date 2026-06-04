@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session, defer, joinedload, load_only
 
 from backend.app.api.deps import get_db, require_admin_only, require_admin_or_sysadmin
-from backend.app.models.audience import Audience
 from backend.app.models.category import Category as CategoryModel
+from backend.app.repositories.audience_repository import AudienceRepository
 from backend.app.models.device import Device as DeviceModel
 from backend.app.models.room_device_position import RoomDevicePosition
 from backend.app.schemas.room_map import (
@@ -19,11 +19,8 @@ from backend.app.schemas.room_map import (
 router = APIRouter(prefix="/api/audiences", tags=["room-map"])
 
 
-def _get_audience_or_404(db: Session, audience_id: UUID) -> Audience:
-    obj = db.query(Audience).filter(Audience.id == audience_id).first()
-    if obj is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="audience_not_found")
-    return obj
+def _get_audience_or_404(db: Session, audience_id: UUID):
+    return AudienceRepository(db).get_or_404(audience_id)
 
 
 def _build_map_response(audience_id: UUID, db: Session) -> RoomMapResponse:

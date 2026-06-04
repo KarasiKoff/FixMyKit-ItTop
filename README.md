@@ -208,7 +208,8 @@ fix-my-kit/
    | Фронтенд (Vite) | http://localhost:5173 |
    | API | http://localhost:8000 |
    | Swagger (если `API_DOCS_ENABLED=true`) | http://localhost:8000/docs |
-   | Health | http://localhost:8000/health |
+   | Health (liveness) | http://localhost:8000/health |
+   | Health (readiness) | http://localhost:8000/health/ready |
 
 При старте контейнера backend автоматически выполняет `alembic upgrade head` и создаёт admin-пользователя из `.env`.
 
@@ -244,8 +245,36 @@ npm run dev
 
 ### Проверка API
 
-- `GET /health` — liveness
-- `GET /api/health/ready` — проверка подключения к PostgreSQL
+- `GET /health` — liveness (`{"status":"ok"}`)
+- `GET /health/ready` — readiness: `SELECT 1` к PostgreSQL (503, если БД недоступна)
+
+### Kubernetes (probes)
+
+Для backend-контейнера (порт API, обычно `8000`):
+
+| Probe | HTTP | Успех |
+|-------|------|--------|
+| **Liveness** | `GET /health` | 200 |
+| **Readiness** | `GET /health/ready` | 200 при доступной БД |
+
+Пример фрагмента манифеста:
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 10
+  periodSeconds: 10
+readinessProbe:
+  httpGet:
+    path: /health/ready
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+```
+
+Пути **без** префикса `/api` — readiness зарегистрирован на корневом роутере приложения.
 
 ---
 

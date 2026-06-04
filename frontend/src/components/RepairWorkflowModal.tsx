@@ -86,8 +86,9 @@ export function RepairWorkflowModal({ open, mode, busy = false, onConfirm, onCan
                             {CLOSE_RESOLUTION_OPTIONS.map((opt) => (
                                 <label
                                     key={opt.id}
-                                    className={`workflow-resolution-option ${resolution === opt.id ? 'workflow-resolution-option--active' : ''
-                                        }`}
+                                    className={`workflow-resolution-option ${
+                                        resolution === opt.id ? 'workflow-resolution-option--active' : ''
+                                    }`}
                                 >
                                     <input
                                         type="radio"

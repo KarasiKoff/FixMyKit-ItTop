@@ -1,8 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    fetchRepairRequestAttachments,
-    repairAttachmentContentUrl,
-} from '../api/repairRequestAttachments';
+import { fetchRepairRequestAttachments, repairAttachmentContentUrl } from '../api/repairRequestAttachments';
 import { getStoredAuthToken } from '../api/auth';
 import type { TrackerAttachment } from '../types/repairRequest';
 import { formatApiError } from '../utils/formatApiError';
@@ -353,7 +350,10 @@ export function RepairAttachmentsModal({
                                                 >
                                                     <span className="attachments-modal__thumb-name">{item.name}</span>
                                                     {st === 'loading' || st === 'idle' ? (
-                                                        <span className="attachments-modal__thumb-dot" aria-hidden="true" />
+                                                        <span
+                                                            className="attachments-modal__thumb-dot"
+                                                            aria-hidden="true"
+                                                        />
                                                     ) : null}
                                                 </button>
                                             </li>

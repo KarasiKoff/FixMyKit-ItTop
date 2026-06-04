@@ -126,6 +126,19 @@ export async function fetchPublicDeviceById(id: string, init?: ApiRequestOptions
     );
 }
 
+/** Поиск устройства по QR/ручному вводу: UUID или точный инв. номер. */
+export async function resolveDeviceByScanInput(raw: string): Promise<Device> {
+    const trimmed = raw.trim();
+    if (!trimmed) {
+        throw new Error('empty_scan_input');
+    }
+    const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (uuidRe.test(trimmed)) {
+        return fetchDeviceById(trimmed);
+    }
+    return fetchPublicDeviceByInventory(trimmed);
+}
+
 export async function fetchPublicDeviceByInventory(inventoryNumber: string) {
     const params = new URLSearchParams({ number: inventoryNumber.trim() });
     return mapDevice(

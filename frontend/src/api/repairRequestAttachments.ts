@@ -34,9 +34,7 @@ export function repairAttachmentContentUrl(
 }
 
 export async function fetchRepairRequestAttachments(requestId: string): Promise<TrackerAttachment[]> {
-    const res = await apiRequest<{ items: TrackerAttachmentApi[] }>(
-        `/api/repair-requests/${requestId}/attachments`,
-    );
+    const res = await apiRequest<{ items: TrackerAttachmentApi[] }>(`/api/repair-requests/${requestId}/attachments`);
     return res.items.map(mapAttachment);
 }
 

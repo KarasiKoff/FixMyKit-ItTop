@@ -54,7 +54,12 @@ export function ListPagination({
                 {canGoBack || canGoForward ? (
                     <div className="list-pagination-actions">
                         {canGoBack ? (
-                            <button type="button" className="btn-ghost" disabled={loading} onClick={() => onPageChange(safePage - 1)}>
+                            <button
+                                type="button"
+                                className="btn-ghost"
+                                disabled={loading}
+                                onClick={() => onPageChange(safePage - 1)}
+                            >
                                 Назад
                             </button>
                         ) : null}

@@ -3,10 +3,7 @@ import type { RepairRequest } from '../types/repairRequest';
 import type { RepairHistoryEntry } from '../types/repairHistory';
 import { workflowFromRequest, workflowPillClass, workflowStatusLabel } from './repairWorkflow';
 
-export function repairRequestStatusLabel(
-    status: RepairRequest['status'],
-    trackerStatusLabel?: string | null,
-): string {
+export function repairRequestStatusLabel(status: RepairRequest['status'], trackerStatusLabel?: string | null): string {
     return workflowStatusLabel(workflowFromRequest({ status, trackerStatusLabel }));
 }
 
@@ -27,10 +24,7 @@ export function repairRequestWorkflowBubble(
     if (request.status === 'closed') {
         return { label: 'Решён', className: 'status-pill status-pill--request-resolved' };
     }
-    if (
-        (request.status === 'in_progress' || request.status === 'needs_info') &&
-        request.takenBySysadmin
-    ) {
+    if ((request.status === 'in_progress' || request.status === 'needs_info') && request.takenBySysadmin) {
         return { label: 'Забрал сисадмин', className: 'status-pill status-pill--sysadmin-taken' };
     }
     return null;
@@ -38,7 +32,7 @@ export function repairRequestWorkflowBubble(
 
 export function repairRequestStatusPillClass(status: RepairRequest['status']): string {
     switch (status) {
-        case 'new':
+        case 'open':
             return 'status-pill status-pill--request-new';
         case 'in_progress':
             return 'status-pill status-pill--request-progress';
@@ -56,9 +50,7 @@ export function deviceRepairStatusLabel(status: Device['status']): string {
 }
 
 export function deviceRepairStatusPillClass(status: Device['status']): string {
-    return status === 'in_repair'
-        ? 'status-pill status-pill--device-in-repair'
-        : 'status-pill status-pill--device-ok';
+    return status === 'in_repair' ? 'status-pill status-pill--device-in-repair' : 'status-pill status-pill--device-ok';
 }
 
 export function deviceSubcategoryPillClass(): string {

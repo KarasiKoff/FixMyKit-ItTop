@@ -110,15 +110,9 @@ export function AdminAddRoom() {
 
     const sortedRows = [...rows].sort((a, b) => a.name.localeCompare(b.name, 'ru'));
 
-    const selectedRows = useMemo(
-        () => sortedRows.filter((r) => selectedIds.has(r.id)),
-        [sortedRows, selectedIds],
-    );
+    const selectedRows = useMemo(() => sortedRows.filter((r) => selectedIds.has(r.id)), [sortedRows, selectedIds]);
 
-    const selectedQrTargets = useMemo(
-        () => selectedRows.map(qrPrintTargetFromAudience),
-        [selectedRows],
-    );
+    const selectedQrTargets = useMemo(() => selectedRows.map(qrPrintTargetFromAudience), [selectedRows]);
 
     function handleSelectAll() {
         if (selectedIds.size === sortedRows.length) {
@@ -183,25 +177,28 @@ export function AdminAddRoom() {
                 ) : sortedRows.length === 0 ? (
                     <p className="admin-crud-empty muted-text">Кабинеты не добавлены</p>
                 ) : (
-                <div className="table-wrap admin-table-wrap">
-                    <table className="admin-table">
-                        <thead>
-                            <tr>
-                                <th className="table-col-center table-col--narrow">
-                                    <input
-                                        type="checkbox"
-                                        checked={sortedRows.length > 0 && selectedIds.size === sortedRows.length}
-                                        onChange={handleSelectAll}
-                                        aria-label="Выбрать все кабинеты"
-                                    />
-                                </th>
-                                <th className="table-col-start">Номер / название</th>
-                                <th className="table-col-center table-col--narrow">Действия</th>
-                            </tr>
-                        </thead>
-                        <tbody>
+                    <div className="table-wrap admin-table-wrap">
+                        <table className="admin-table">
+                            <thead>
+                                <tr>
+                                    <th className="table-col-center table-col--narrow">
+                                        <input
+                                            type="checkbox"
+                                            checked={sortedRows.length > 0 && selectedIds.size === sortedRows.length}
+                                            onChange={handleSelectAll}
+                                            aria-label="Выбрать все кабинеты"
+                                        />
+                                    </th>
+                                    <th className="table-col-start">Номер / название</th>
+                                    <th className="table-col-center table-col--narrow">Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
                                 {sortedRows.map((row) => (
-                                    <tr key={row.id} className={editingId === row.id ? 'admin-table-row--editing' : undefined}>
+                                    <tr
+                                        key={row.id}
+                                        className={editingId === row.id ? 'admin-table-row--editing' : undefined}
+                                    >
                                         <td className="table-col-center">
                                             <input
                                                 type="checkbox"
@@ -212,7 +209,11 @@ export function AdminAddRoom() {
                                         </td>
                                         <td className="table-col-start admin-table-cell--input">
                                             {editingId === row.id ? (
-                                                <input value={editNumber} onChange={(e) => setEditNumber(e.target.value)} disabled={!isAdmin} />
+                                                <input
+                                                    value={editNumber}
+                                                    onChange={(e) => setEditNumber(e.target.value)}
+                                                    disabled={!isAdmin}
+                                                />
                                             ) : (
                                                 row.name
                                             )}
@@ -287,9 +288,9 @@ export function AdminAddRoom() {
                                         </td>
                                     </tr>
                                 ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </tbody>
+                        </table>
+                    </div>
                 )}
             </section>
 

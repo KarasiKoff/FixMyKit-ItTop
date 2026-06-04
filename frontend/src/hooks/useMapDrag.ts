@@ -27,9 +27,7 @@ export type UseMapDragOptions = {
 
 export function useMapDrag({ initialPositions, gridCols, gridRows }: UseMapDragOptions) {
     const [positions, setPositions] = useState<DraftPositions>(() =>
-        Object.fromEntries(
-            initialPositions.map((p) => [p.deviceId, { xPct: p.xPct, yPct: p.yPct }]),
-        ),
+        Object.fromEntries(initialPositions.map((p) => [p.deviceId, { xPct: p.xPct, yPct: p.yPct }])),
     );
 
     const canvasRef = useRef<HTMLDivElement>(null);
@@ -51,23 +49,20 @@ export function useMapDrag({ initialPositions, gridCols, gridRows }: UseMapDragO
         return computeGridLayout(r.width, r.height, MAP_CHIP_SIZE_PX, cols, rows) ?? fixed;
     }, []);
 
-    const onChipMouseDown = useCallback(
-        (deviceId: string, e: React.MouseEvent) => {
-            e.preventDefault();
-            e.stopPropagation();
-            const pos = positionsRef.current[deviceId];
-            if (!pos) return;
-            dragging.current = {
-                deviceId,
-                startClientX: e.clientX,
-                startClientY: e.clientY,
-                origXPct: pos.xPct,
-                origYPct: pos.yPct,
-            };
-            setDraggingDeviceId(deviceId);
-        },
-        [],
-    );
+    const onChipMouseDown = useCallback((deviceId: string, e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const pos = positionsRef.current[deviceId];
+        if (!pos) return;
+        dragging.current = {
+            deviceId,
+            startClientX: e.clientX,
+            startClientY: e.clientY,
+            origXPct: pos.xPct,
+            origYPct: pos.yPct,
+        };
+        setDraggingDeviceId(deviceId);
+    }, []);
 
     useEffect(() => {
         if (!draggingDeviceId) return;
@@ -175,9 +170,7 @@ export function useMapDrag({ initialPositions, gridCols, gridRows }: UseMapDragO
     }, []);
 
     const resetPositions = useCallback((incoming: DeviceOnMap[]) => {
-        setPositions(
-            Object.fromEntries(incoming.map((p) => [p.deviceId, { xPct: p.xPct, yPct: p.yPct }])),
-        );
+        setPositions(Object.fromEntries(incoming.map((p) => [p.deviceId, { xPct: p.xPct, yPct: p.yPct }])));
     }, []);
 
     return {

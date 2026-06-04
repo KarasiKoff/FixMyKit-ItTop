@@ -19,7 +19,7 @@ def get_admin_logs(
     limit: int = Query(200, ge=1, le=1000),
     _: User = Depends(get_current_admin),
 ) -> AdminLogsResponse:
-    log_dir = Path(settings.server.log_dir)
+    log_dir = Path(settings.log_dir)
     raw_items = tail_log_entries(
         log_dir,
         source=source,

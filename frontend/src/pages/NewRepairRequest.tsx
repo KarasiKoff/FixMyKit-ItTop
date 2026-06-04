@@ -6,11 +6,10 @@ import { RepairRequestForm } from '../components/RepairRequestForm';
 import { RepairSubmitSuccess } from '../components/RepairSubmitSuccess';
 import { FormSubmitOverlay } from '../components/ui/FormSubmitOverlay';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
-import { useAppData } from '../context/AppDataContext';
 import { useAuth } from '../hooks/useAuth';
 import { useToast } from '../context/ToastContext';
 import { fetchAudiences, type AudienceDto } from '../api/audiences';
-import { fetchPublicDeviceById } from '../api/devices';
+import { fetchDevices, fetchPublicDeviceById } from '../api/devices';
 import { createRepairRequest as submitRepairRequest, fetchPublicAudienceRepairSummary } from '../api/repairRequests';
 import { Device } from '../types/device';
 import type { PublicAudienceInfo, RepairRequest } from '../types/repairRequest';
@@ -23,7 +22,6 @@ type RequestTarget = 'device' | 'cabinet';
 export function NewRepairRequest() {
     const { isAuthenticated, user } = useAuth();
     const { showSuccess, showError } = useToast();
-    const { devices, refresh, isLoading: appDataLoading } = useAppData();
     const [searchParams] = useSearchParams();
     const deviceIdRaw = searchParams.get('deviceId');
     const preselectedDeviceId = isUuid(deviceIdRaw) ? deviceIdRaw!.trim() : undefined;
@@ -52,9 +50,40 @@ export function NewRepairRequest() {
     const [submitSuccess, setSubmitSuccess] = useState<SubmitSuccessState | null>(null);
     const [sendToTracker, setSendToTracker] = useState(true);
     const [attachmentDrafts, setAttachmentDrafts] = useState<AttachmentDraft[]>([]);
+    const [devices, setDevices] = useState<Device[]>([]);
+    const [devicesLoading, setDevicesLoading] = useState(false);
     const [audiences, setAudiences] = useState<AudienceDto[]>([]);
     const [audiencesLoading, setAudiencesLoading] = useState(false);
     const [submitBusy, setSubmitBusy] = useState(false);
+
+    useEffect(() => {
+        if (!isAuthenticated) {
+            setDevices([]);
+            setDevicesLoading(false);
+            return;
+        }
+        let active = true;
+        setDevicesLoading(true);
+        fetchDevices({ limit: 50, offset: 0 })
+            .then((page) => {
+                if (active) {
+                    setDevices(page.items);
+                }
+            })
+            .catch((err) => {
+                if (active) {
+                    showError(formatApiError(err));
+                }
+            })
+            .finally(() => {
+                if (active) {
+                    setDevicesLoading(false);
+                }
+            });
+        return () => {
+            active = false;
+        };
+    }, [isAuthenticated, showError]);
 
     useEffect(() => {
         if (lockedTarget) {
@@ -140,11 +169,7 @@ export function NewRepairRequest() {
     }, [isAuthenticated, preselectedDeviceId, requestTarget]);
 
     useEffect(() => {
-        if (
-            isAuthenticated ||
-            !preselectedAudienceId ||
-            requestTarget !== 'cabinet'
-        ) {
+        if (isAuthenticated || !preselectedAudienceId || requestTarget !== 'cabinet') {
             if (preselectedAudienceId == null) {
                 setPublicAudience(null);
             }
@@ -200,14 +225,13 @@ export function NewRepairRequest() {
         }
     }, [isAuthenticated]);
 
-    const showSuccessScreenAfterSubmit =
-        !isAuthenticated || Boolean(preselectedDeviceId || preselectedAudienceId);
+    const showSuccessScreenAfterSubmit = !isAuthenticated || Boolean(preselectedDeviceId || preselectedAudienceId);
 
     const lockedGuest =
         !isAuthenticated &&
         Boolean(
             (requestTarget === 'device' && preselectedDeviceId) ||
-                (requestTarget === 'cabinet' && Boolean(preselectedAudienceId)),
+            (requestTarget === 'cabinet' && Boolean(preselectedAudienceId)),
         );
 
     const displayDevices: Device[] = useMemo(() => {
@@ -228,11 +252,17 @@ export function NewRepairRequest() {
     const [selectedCategory, setSelectedCategory] = useState('');
 
     const rooms = useMemo(
-        () => Array.from(new Set(devices.map((device) => device.room).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ru')),
+        () =>
+            Array.from(new Set(devices.map((device) => device.room).filter(Boolean))).sort((a, b) =>
+                a.localeCompare(b, 'ru'),
+            ),
         [devices],
     );
     const categories = useMemo(
-        () => Array.from(new Set(devices.map((device) => device.category).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ru')),
+        () =>
+            Array.from(new Set(devices.map((device) => device.category).filter(Boolean))).sort((a, b) =>
+                a.localeCompare(b, 'ru'),
+            ),
         [devices],
     );
 
@@ -247,8 +277,7 @@ export function NewRepairRequest() {
         });
     }, [devices, displayDevices, isAuthenticated, selectedCategory, selectedRoom]);
 
-    const hasGuestTarget =
-        Boolean(preselectedDeviceId) || Boolean(preselectedAudienceId);
+    const hasGuestTarget = Boolean(preselectedDeviceId) || Boolean(preselectedAudienceId);
 
     function deviceTargetLabel(deviceId: string): string {
         const d = displayDevices.find((x) => x.id === deviceId);
@@ -292,7 +321,6 @@ export function NewRepairRequest() {
                 notifyAttachmentOutcome(created, sendToTracker, files.length > 0);
                 setAttachmentDrafts([]);
             }
-            await refresh();
         } else {
             await submitRepairRequest({
                 deviceId: data.deviceId,
@@ -332,7 +360,6 @@ export function NewRepairRequest() {
                 notifyAttachmentOutcome(created, sendToTracker, files.length > 0);
                 setAttachmentDrafts([]);
             }
-            await refresh();
         } else {
             await submitRepairRequest({
                 audienceId: data.audienceId,
@@ -378,8 +405,8 @@ export function NewRepairRequest() {
                 <h2>Новая заявка на ремонт</h2>
                 <section className="card card-form card--narrow-device">
                     <p>
-                        Чтобы создать заявку, отсканируйте QR-код на устройстве или на табличке кабинета — откроется
-                        эта страница с уже выбранным объектом.
+                        Чтобы создать заявку, отсканируйте QR-код на устройстве или на табличке кабинета — откроется эта
+                        страница с уже выбранным объектом.
                     </p>
                     <p>
                         <Link to="/scan">Перейти к сканированию QR</Link>
@@ -414,7 +441,7 @@ export function NewRepairRequest() {
         );
     }
 
-    if (isAuthenticated && (appDataLoading || (requestTarget === 'cabinet' && audiencesLoading))) {
+    if (isAuthenticated && (devicesLoading || (requestTarget === 'cabinet' && audiencesLoading))) {
         return (
             <main className="page page--wide">
                 <h2>Новая заявка на ремонт</h2>
@@ -430,9 +457,7 @@ export function NewRepairRequest() {
     );
 
     if (submitSuccess) {
-        const successLines: string[] = [
-            'Повторно отправлять заявку на этот объект не нужно — она уже принята',
-        ];
+        const successLines: string[] = ['Повторно отправлять заявку на этот объект не нужно — она уже принята'];
         if (submitSuccess.hadFiles) {
             successLines.push('Вложения сохранены вместе с заявкой');
         }
@@ -492,7 +517,10 @@ export function NewRepairRequest() {
                         </label>
                         <label>
                             Тип устройства
-                            <select value={selectedCategory} onChange={(event) => setSelectedCategory(event.target.value)}>
+                            <select
+                                value={selectedCategory}
+                                onChange={(event) => setSelectedCategory(event.target.value)}
+                            >
                                 <option value="">Все категории</option>
                                 {categories.map((category) => (
                                     <option key={category} value={category}>

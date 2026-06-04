@@ -3,8 +3,9 @@ from datetime import date, datetime, time, timezone
 from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
-from backend.app.models.audience import Audience
 from backend.app.models.category import Category
+from backend.app.repositories.audience_repository import AudienceRepository
+from backend.app.repositories.category_repository import CategoryRepository
 from backend.app.models.device import Device
 from backend.app.models.enums import RequestStatus
 from backend.app.models.repair_request import RepairRequest
@@ -95,8 +96,8 @@ def build_admin_stats(db: Session, date_from: date | None, date_to: date | None)
     tracker_synced = int(db.query(func.count(RepairRequest.id)).filter(sync_filter).scalar() or 0)
 
     devices_total = int(db.query(func.count(Device.id)).scalar() or 0)
-    categories_total = int(db.query(func.count(Category.id)).scalar() or 0)
-    audiences_total = int(db.query(func.count(Audience.id)).scalar() or 0)
+    categories_total = CategoryRepository(db).count()
+    audiences_total = AudienceRepository(db).count()
 
     category_rows = (
         db.query(
