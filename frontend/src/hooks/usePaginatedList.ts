@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { PageSize, SortDir } from '../types/listQuery';
 import { filtersEqual } from '../utils/filtersMatch';
 
@@ -41,6 +41,11 @@ export function usePaginatedList<TItem, TFilters extends Record<string, unknown>
     const [draftFilters, setDraftFilters] = useState<TFilters>(emptyFilters);
     const [appliedFilters, setAppliedFilters] = useState<TFilters>(emptyFilters);
 
+    const loadRef = useRef(load);
+    const onErrorRef = useRef(onError);
+    loadRef.current = load;
+    onErrorRef.current = onError;
+
     const applyFilters = useCallback(() => {
         setAppliedFilters({ ...draftFilters });
         setPage(1);
@@ -53,7 +58,7 @@ export function usePaginatedList<TItem, TFilters extends Record<string, unknown>
                 setError(null);
             }
             try {
-                const result = await load({
+                const result = await loadRef.current({
                     filters: appliedFilters,
                     page,
                     pageSize,
@@ -67,14 +72,14 @@ export function usePaginatedList<TItem, TFilters extends Record<string, unknown>
                 if (!opts?.silent) {
                     setError(message);
                 }
-                onError?.(message);
+                onErrorRef.current?.(message);
             } finally {
                 if (!opts?.silent) {
                     setFetching(false);
                 }
             }
         },
-        [appliedFilters, load, onError, page, pageSize, sortBy, sortDir],
+        [appliedFilters, page, pageSize, sortBy, sortDir],
     );
 
     useEffect(() => {

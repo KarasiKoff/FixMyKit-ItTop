@@ -51,36 +51,30 @@ export function ListPagination({
                 ) : (
                     <span className="list-pagination-status">{total > 0 ? `Всего ${total}` : 'Нет записей'}</span>
                 )}
-                {canGoBack || canGoForward ? (
-                    <div className="list-pagination-actions">
-                        {canGoBack ? (
-                            <button
-                                type="button"
-                                className="btn-ghost"
-                                disabled={loading}
-                                onClick={() => onPageChange(safePage - 1)}
-                            >
-                                Назад
-                            </button>
-                        ) : null}
-                        {canGoForward ? (
-                            <button
-                                type="button"
-                                className="btn-ghost"
-                                disabled={loading}
-                                onClick={() => onPageChange(safePage + 1)}
-                            >
-                                Вперёд
-                            </button>
-                        ) : null}
-                    </div>
-                ) : null}
-            </div>
-            {loading ? (
-                <div className="list-pagination__overlay" aria-label="Загрузка">
-                    <span className="list-pagination__spinner" />
+                <div className="list-pagination-actions">
+                    {loading ? <span className="list-pagination__spinner" aria-label="Загрузка" /> : null}
+                    {canGoBack ? (
+                        <button
+                            type="button"
+                            className="btn-ghost"
+                            disabled={loading}
+                            onClick={() => onPageChange(safePage - 1)}
+                        >
+                            Назад
+                        </button>
+                    ) : null}
+                    {canGoForward ? (
+                        <button
+                            type="button"
+                            className="btn-ghost"
+                            disabled={loading}
+                            onClick={() => onPageChange(safePage + 1)}
+                        >
+                            Вперёд
+                        </button>
+                    ) : null}
                 </div>
-            ) : null}
+            </div>
         </div>
     );
 }
