@@ -349,7 +349,7 @@ class TrackerIssueService:
 
     @staticmethod
     def _labels_match(current: str, target: str) -> bool:
-        """Сравнение отображаемых названий статусов Трекера (без синонимов)."""
+        """Сравнение отображаемых названий статусов Трекера"""
         return current.strip().casefold() == target.strip().casefold()
 
     def _list_transitions(self, creds: TrackerCredentials, issue_ref: str) -> list[dict]:
