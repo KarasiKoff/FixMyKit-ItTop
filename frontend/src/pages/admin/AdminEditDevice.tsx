@@ -168,6 +168,7 @@ export function AdminEditDevice() {
                         subcategories={subcategoryOptions}
                         value={subcategoryId}
                         onChange={setSubcategoryId}
+                        categorySelected={Boolean(categoryId)}
                         disabled={saving || Boolean(loadError)}
                         required={subcategoryRequired}
                     />
@@ -231,11 +232,21 @@ export function AdminEditDevice() {
                             disabled={saving}
                         />
                     </label>
-                    <div className="admin-device-actions">
-                        <Link to={`/devices/${id ?? ''}`} className="btn-ghost" tabIndex={saving ? -1 : 0}>
+                    <div className="admin-device-actions admin-device-actions--dual">
+                        <Link
+                            to={`/devices/${id ?? ''}`}
+                            className="btn-ghost admin-device-actions__btn"
+                            tabIndex={saving ? -1 : 0}
+                            aria-disabled={saving}
+                            onClick={(e) => {
+                                if (saving) {
+                                    e.preventDefault();
+                                }
+                            }}
+                        >
                             Отмена
                         </Link>
-                        <button type="submit" className="btn-primary" disabled={saving}>
+                        <button type="submit" className="btn-primary admin-device-actions__btn" disabled={saving}>
                             {saving ? 'Сохранение…' : 'Сохранить изменения'}
                         </button>
                     </div>

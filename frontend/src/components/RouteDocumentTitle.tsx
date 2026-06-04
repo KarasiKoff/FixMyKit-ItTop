@@ -10,6 +10,8 @@ const ROUTE_SUFFIXES: { pattern: string; suffix: string }[] = [
     { pattern: '/admin/add/device', suffix: 'Добавить устройство' },
     { pattern: '/admin/add/user', suffix: 'Пользователи' },
     { pattern: '/admin/users', suffix: 'Пользователи' },
+    { pattern: '/admin/announcements', suffix: 'Объявления' },
+    { pattern: '/admin/logs', suffix: 'Логи' },
     { pattern: '/admin', suffix: 'Админка' },
     { pattern: '/requests/:id', suffix: 'Заявка' },
     { pattern: '/requests', suffix: 'Заявки' },

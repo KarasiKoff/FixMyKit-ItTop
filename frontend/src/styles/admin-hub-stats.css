@@ -1,18 +1,3 @@
-.admin-hub-grid--row {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-@media (max-width: 1200px) {
-  .admin-hub-grid--row {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}
-
-@media (max-width: 900px) {
-  .admin-hub-grid--row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
 .admin-hub-grid {
   display: grid;
   gap: 14px;
@@ -20,11 +5,29 @@
   justify-items: stretch;
 }
 
+
+.admin-hub-grid.admin-hub-grid--row {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 1100px) {
+  .admin-hub-grid.admin-hub-grid--row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-hub-grid.admin-hub-grid--row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .admin-hub-card {
   display: flex;
   flex-direction: column;
   gap: 10px;
   padding: 18px 16px;
+  min-height: 168px;
   border-radius: 12px;
   border: 1px solid var(--border-subtle);
   background: rgba(13, 17, 23, 0.65);
@@ -110,6 +113,16 @@
 .admin-hub-card-icon--device {
   background: rgba(251, 146, 60, 0.2);
   color: #fdba74;
+}
+
+.admin-hub-card-icon--logs {
+  background: rgba(56, 189, 248, 0.2);
+  color: #7dd3fc;
+}
+
+.admin-hub-card-icon--announcements {
+  background: rgba(251, 191, 36, 0.22);
+  color: #fde68a;
 }
 
 /* Admin dashboard statistics */

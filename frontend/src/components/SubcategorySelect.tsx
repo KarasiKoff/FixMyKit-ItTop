@@ -5,6 +5,7 @@ type Props = {
     subcategories: SubcategoryDto[];
     value: string;
     onChange: (subcategoryId: string) => void;
+    categorySelected: boolean;
     disabled?: boolean;
     required?: boolean;
     label?: string;
@@ -14,22 +15,22 @@ export function SubcategorySelect({
     subcategories,
     value,
     onChange,
+    categorySelected,
     disabled,
     required,
     label = 'Подкатегория',
 }: Props) {
-    if (subcategories.length === 0) {
-        return null;
-    }
+    const hasOptions = subcategories.length > 0;
+    const selectDisabled = disabled || !categorySelected || !hasOptions;
 
     return (
         <label className="admin-device-field">
             <span className="admin-inline-label">{label}</span>
             <select
-                value={value}
+                value={hasOptions ? value : ''}
                 onChange={(e) => onChange(e.target.value)}
-                disabled={disabled}
-                required={required}
+                disabled={selectDisabled}
+                required={required && hasOptions}
             >
                 <option value="">—</option>
                 {subcategories.map((s) => (
@@ -38,6 +39,11 @@ export function SubcategorySelect({
                     </option>
                 ))}
             </select>
+            {!categorySelected ? (
+                <p className="form-hint muted-text">Сначала выберите категорию</p>
+            ) : !hasOptions ? (
+                <p className="form-hint muted-text">У этой категории нет подкатегорий</p>
+            ) : null}
         </label>
     );
 }

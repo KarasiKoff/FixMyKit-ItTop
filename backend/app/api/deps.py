@@ -15,6 +15,7 @@ from backend.app.models.user import User
 logger = logging.getLogger("fixmykit.auth")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/auth/token", auto_error=False)
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -59,6 +60,18 @@ def get_current_user(
     return _user_from_access_token(token, db)
 
 
+def get_optional_user(
+    token: str | None = Depends(oauth2_scheme_optional),
+    db: Session = Depends(get_db),
+) -> User | None:
+    if not token or not token.strip():
+        return None
+    try:
+        return _user_from_access_token(token.strip(), db)
+    except HTTPException:
+        return None
+
+
 def get_current_user_from_query_token(
     access_token: str = Query(..., min_length=1, description="JWT для EventSource (SSE)"),
     db: Session = Depends(get_db),
@@ -98,7 +111,9 @@ __all__ = [
     "get_current_user",
     "get_current_user_from_query_token",
     "get_db",
+    "get_optional_user",
     "oauth2_scheme",
+    "oauth2_scheme_optional",
     "require_admin_only",
     "require_admin_or_sysadmin",
     "require_admin_or_sysadmin_from_token",

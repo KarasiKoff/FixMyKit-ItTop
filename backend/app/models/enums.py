@@ -1,6 +1,11 @@
 from enum import Enum
 
 
+def pg_enum_values(enum_cls: type[Enum]) -> list[str]:
+    """Значения str-enum для PostgreSQL (нижний регистр), не имена членов"""
+    return [member.value for member in enum_cls]
+
+
 class UserRole(str, Enum):
     ADMIN = "admin"
     SYSADMIN = "sysadmin"
@@ -22,3 +27,14 @@ class AttachmentsSyncStatus(str, Enum):
     NONE = "none"
     PARTIAL = "partial"
     COMPLETE = "complete"
+
+
+class AnnouncementAudience(str, Enum):
+    ALL = "all"
+    ADMINS_ONLY = "admins_only"
+
+
+class AnnouncementSeverity(str, Enum):
+    INFO = "info"
+    WARNING = "warning"
+    DANGER = "danger"
