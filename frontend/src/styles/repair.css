@@ -363,21 +363,34 @@
     font-size: 1.05rem;
 }
 
-.repair-status-panel__pending {
-    margin-bottom: 8px;
-    padding: 10px 12px;
-    border-radius: 10px;
+.repair-detail-tracker-sync-banner {
+    width: min(520px, 100%);
+    margin: 0 auto 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 12px;
     border: 1px solid rgba(232, 163, 23, 0.45);
-    background: rgba(232, 163, 23, 0.12);
+    background: rgba(232, 163, 23, 0.1);
+    box-sizing: border-box;
 }
 
-.repair-status-panel__pending-text {
-    margin: 0 0 10px;
+.repair-detail-tracker-sync-banner__text {
+    margin: 0;
     font-size: 0.875rem;
     line-height: 1.45;
+    color: var(--text-secondary, #9aa8c7);
+    text-align: center;
 }
 
-.repair-status-panel__pending-btn {
+.repair-detail-tracker-sync-banner__text strong {
+    color: var(--text-primary, inherit);
+    font-weight: 600;
+}
+
+.repair-detail-tracker-sync-banner__btn {
     width: 100%;
 }
 
@@ -838,6 +851,10 @@
         top: auto;
         order: -1;
         margin-bottom: 4px;
+    }
+
+    .repair-detail-tracker-sync-banner {
+        width: 100%;
     }
 
     .repair-status-icon-panel {

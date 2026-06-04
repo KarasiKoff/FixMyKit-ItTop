@@ -15,5 +15,18 @@ dependencies = [
     "uvicorn[standard]",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "httpx>=0.28",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+markers = [
+    "integration: требует PostgreSQL (API-тесты)",
+]
+
 [tool.uv]
 package = false

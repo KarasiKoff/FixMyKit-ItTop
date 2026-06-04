@@ -243,6 +243,99 @@ npm run dev
 
 Фронт: http://localhost:5173 (прокси `/api` → `http://localhost:8000`).
 
+### Тесты
+
+Автотесты разбиты на четыре слоя: быстрые unit-тесты backend без БД, интеграционные API-тесты с PostgreSQL, unit-тесты фронта (Vitest) и опциональные E2E (Playwright) против уже запущенного стека.
+
+#### Backend — unit (`tests/test_*.py`)
+
+Запускаются без PostgreSQL. Проверяют бизнес-логику и сериализацию в изоляции от HTTP и Tracker.
+
+| Файл | Что проверяет |
+|------|----------------|
+| `test_tracker_issue_service.py` | Сопоставление меток Tracker (`_labels_match`): регистр, **«Требуется информация» ≠ «В работе»** (регрессия ложного совпадения при push в Tracker). |
+| `test_repair_request_transitions.py` | Матрица переходов статусов: с сайта (API) `needs_info` → `in_progress`, закрытую заявку API не открывает; из вебхука Tracker закрытую можно открыть, `in_progress` → `open`. |
+| `test_repair_request_presenters.py` | Ответы API: поле `audience_name` из связи с кабинетом, `device_name` из устройства, отсутствие имени без связи. |
+| `test_repair_request_webhook_mapping.py` | Маппинг `tracker_status` → `RequestStatus` по `TRACKER_STATUS_ALIASES`, пустые и неизвестные строки. |
+| `test_comment_body_normalize.py` | Очистка HTML/сущностей в тексте комментариев из Tracker, legacy-префикс `**Автор**:`. |
+| `test_repair_request_workflow_service.py` | Валидация `apply_workflow_change`: комментарий для `needs_info`, резолюция для `closed`. |
+| `test_repair_request_tracker_outbound.py` | `require_tracker_ticket` (409), `sync_tracker_label_with_pending`: сброс/установка `tracker_status_sync_pending`, 502 при недоступном Tracker. |
+
+#### Backend — API (`tests/api/`, маркер `integration`)
+
+`TestClient` + реальная PostgreSQL (по умолчанию БД `fixmykit_test`). Схема поднимается через `Base.metadata.create_all`; исходящие вызовы в Yandex Tracker **замоканы** (статус и комментарии не уходят наружу).
+
+| Файл | Эндпоинты | Что проверяет |
+|------|-----------|----------------|
+| `test_repair_request_create.py` | `POST /api/repair-requests`, `GET .../{id}`, `POST /api/public/repair-requests` | Создание по `audience_id` и по `device_id` (`device_name`); `audience_name` в detail; публичное создание. |
+| `test_repair_request_workflow.py` | `PATCH .../workflow` | `needs_info` (комментарий), `needs_info` → `in_progress`, закрытие (`resolution`, `closed`, метка «Закрыт»). |
+| `test_webhooks.py` | `POST /api/webhooks/yandex-tracker*` | Статус, закрытие, publish, comment (created / skipped_echo), sysadmin-taken; secret 401; noop; неизвестный статус 400. |
+| `test_repair_request_tracker.py` | `POST .../tracker/push-status`, `POST .../tracker/sync` | Push только при `tracker_status_sync_pending`; успешный push; 502 при сбое sync; sync 200/502. |
+| `test_auth_permissions.py` | `GET /api/repair-requests`, `POST /api/audiences` | 401 без токена; 403 для sysadmin на создание кабинета (только admin). |
+
+#### Frontend — Vitest (`frontend/src/**/*.test.ts(x)`)
+
+Проверяют утилиты и UI-компоненты без браузера (jsdom).
+
+| Файл | Что проверяет |
+|------|----------------|
+| `utils/repairWorkflow.test.ts` | Вкладка workflow на карточке заявки берётся из `status` API, а не из `trackerStatusLabel` (чтобы «Требуется информация» в Tracker не показывалась как «В работе»). |
+| `utils/formatApiError.test.ts` | Распознавание ошибки Tracker (`502` / `tracker_unavailable`), текст тоста при `tracker_status_sync_pending`. |
+| `components/RepairTrackerSyncBanner.test.tsx` | Баннер при pending; клик «Синхронизировать» → `pushRepairRequestStatusToTracker`, `onUpdated`, success-тост. |
+| `components/RepairRequestStatusPanel.test.tsx` | После workflow: тост pending при `trackerStatusSyncPending`; при 502 + pending — тот же тост; иначе `formatApiError`. |
+
+#### E2E — Playwright (`e2e/tests/`)
+
+Требуют **уже запущенные** backend и (для UI) frontend. Без сервера тесты пропускаются (`test.skip`).
+
+| Спека | Условие | Что проверяет |
+|-------|---------|----------------|
+| `health.api.spec.ts` | API на `PLAYWRIGHT_API_BASE_URL` | `GET /health`, `GET /health/ready` (readiness пропускается, если БД недоступна). |
+| `repair-workflow.api.spec.ts` | `PLAYWRIGHT_E2E_FULL=1` | Полный сценарий через HTTP: логин, список кабинетов, create, workflow `needs_info` → `in_progress`. |
+| `login.ui.spec.ts` | `PLAYWRIGHT_E2E_UI=1` | Страница `/login`: заголовок «Вход в систему». |
+
+В **CI** четыре параллельных job (на PR/push в `main`/`master`):
+
+| Job | Что делает |
+|-----|------------|
+| `frontend` | lint, format, build, Vitest |
+| `backend-unit` | `compileall`, `pytest` без `tests/api` (без PostgreSQL) |
+| `backend-integration` | `pytest tests/api` + service PostgreSQL |
+| `e2e-api-smoke` | после integration: `uvicorn` + Playwright `--project=api` |
+
+`backend-unit` и `backend-integration` стартуют одновременно; E2E — только если API-тесты прошли.
+
+#### Запуск локально
+
+```bash
+# Backend: unit (без PostgreSQL)
+uv sync --group dev
+uv run pytest tests/ --ignore=tests/api
+
+# Backend: API (нужен PostgreSQL; создайте БД fixmykit_test при необходимости)
+docker compose up -d postgres
+uv run pytest tests/api -m integration
+
+# Все backend-тесты сразу
+uv run pytest
+
+# Frontend (Vitest)
+cd frontend
+npm run test
+
+# E2E: smoke health (запущенный API на :8000)
+cd e2e && npm ci && npx playwright install chromium
+PLAYWRIGHT_API_BASE_URL=http://127.0.0.1:8000 npm test -- --project=api
+
+# E2E: полный workflow API
+PLAYWRIGHT_E2E_FULL=1 PLAYWRIGHT_API_BASE_URL=http://127.0.0.1:8000 npm test -- repair-workflow.api.spec.ts
+
+# E2E: UI (запущенный фронт на :5173)
+PLAYWRIGHT_E2E_UI=1 PLAYWRIGHT_BASE_URL=http://127.0.0.1:5173 npm test -- --project=ui
+```
+
+Переменные для API-тестов (значения по умолчанию в `tests/conftest.py`): `POSTGRES_HOST`, `POSTGRES_PORT`, `POSTGRES_DB` (`fixmykit_test`), `POSTGRES_USER`, `POSTGRES_PASSWORD`, `JWT_SECRET_KEY`, `TRACKER_WEBHOOK_SECRET`.
+
 ### Проверка API
 
 - `GET /health` — liveness (`{"status":"ok"}`)

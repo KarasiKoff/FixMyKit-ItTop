@@ -39,6 +39,15 @@
 - `queries/repair_request_list_query.py` — список и suggest заявок
 - `queries/admin_stats_query.py` — агрегаты админ-статистики
 
+## Тесты
+
+```bash
+uv sync --group dev
+uv run pytest
+```
+
+Описание слоёв (unit / API / что именно проверяется) — в корневом [README.md](../README.md#тесты), раздел **Тесты**.
+
 ## Запуск через Docker Compose
 
 1. Скопируйте `.env.example` в `.env` в корне проекта.

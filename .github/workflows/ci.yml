@@ -22,11 +22,91 @@ jobs:
             - run: npm run lint
             - run: npm run format:check
             - run: npm run build
+            - run: npm run test
 
-    backend:
+    backend-unit:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
             - uses: astral-sh/setup-uv@v5
-            - run: uv sync
+            - run: uv sync --group dev
             - run: uv run python -m compileall backend/app main.py
+            - run: uv run pytest tests/ --ignore=tests/api -q
+
+    backend-integration:
+        runs-on: ubuntu-latest
+        services:
+            postgres:
+                image: postgres:16-alpine
+                env:
+                    POSTGRES_DB: fixmykit_test
+                    POSTGRES_USER: fixmykit
+                    POSTGRES_PASSWORD: fixmykit
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd "pg_isready -U fixmykit -d fixmykit_test"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 10
+        env:
+            POSTGRES_HOST: localhost
+            POSTGRES_PORT: 5432
+            POSTGRES_DB: fixmykit_test
+            POSTGRES_USER: fixmykit
+            POSTGRES_PASSWORD: fixmykit
+            JWT_SECRET_KEY: ci-jwt-secret
+            TRACKER_WEBHOOK_SECRET: ci-webhook-secret
+            TRACKER_WEBHOOK_ACTOR_LOGIN: tracker_webhook
+        steps:
+            - uses: actions/checkout@v4
+            - uses: astral-sh/setup-uv@v5
+            - run: uv sync --group dev
+            - run: uv run pytest tests/api -m integration -q
+
+    e2e-api-smoke:
+        runs-on: ubuntu-latest
+        needs: [backend-integration]
+        services:
+            postgres:
+                image: postgres:16-alpine
+                env:
+                    POSTGRES_DB: fixmykit_test
+                    POSTGRES_USER: fixmykit
+                    POSTGRES_PASSWORD: fixmykit
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd "pg_isready -U fixmykit -d fixmykit_test"
+                    --health-interval 5s
+                    --health-timeout 5s
+                    --health-retries 10
+        env:
+            POSTGRES_HOST: localhost
+            POSTGRES_PORT: 5432
+            POSTGRES_DB: fixmykit_test
+            POSTGRES_USER: fixmykit
+            POSTGRES_PASSWORD: fixmykit
+            JWT_SECRET_KEY: ci-jwt-secret
+            TRACKER_WEBHOOK_SECRET: ci-webhook-secret
+            TRACKER_WEBHOOK_ACTOR_LOGIN: tracker_webhook
+            PLAYWRIGHT_API_BASE_URL: http://127.0.0.1:8000
+        steps:
+            - uses: actions/checkout@v4
+            - uses: astral-sh/setup-uv@v5
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+            - run: uv sync --group dev
+            - run: uv run alembic -c backend/alembic.ini upgrade head
+            - name: Playwright API smoke (health)
+              run: |
+                  uv run uvicorn main:app --host 127.0.0.1 --port 8000 &
+                  for i in $(seq 1 30); do
+                    if curl -sf http://127.0.0.1:8000/health; then break; fi
+                    sleep 1
+                  done
+                  cd e2e
+                  npm ci
+                  npx playwright install chromium --with-deps
+                  npm test -- --project=api

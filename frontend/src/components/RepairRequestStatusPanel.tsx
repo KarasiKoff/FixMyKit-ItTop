@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-import {
-    fetchRepairRequest,
-    patchRepairRequestTake,
-    patchRepairRequestWorkflow,
-    pushRepairRequestStatusToTracker,
-} from '../api/repairRequests';
+import { fetchRepairRequest, patchRepairRequestTake, patchRepairRequestWorkflow } from '../api/repairRequests';
 import type { RepairRequestDetail } from '../types/repairRequest';
 import { useToast } from '../hooks/useToast';
-import { formatApiError } from '../utils/formatApiError';
+import {
+    formatApiError,
+    isTrackerUnavailableError,
+    TRACKER_SYNC_PENDING_TOAST,
+} from '../utils/formatApiError';
 import { type RepairWorkflowState, workflowFromRequest } from '../utils/repairWorkflow';
 import { RepairWorkflowModal, type RepairWorkflowModalMode } from './RepairWorkflowModal';
 import type { RepairCloseResolution } from '../utils/repairWorkflow';
@@ -73,36 +72,6 @@ function IconTaken() {
     return <StatusIconAsset src={STATUS_ICON_URLS.taken} />;
 }
 
-function IconSync() {
-    return (
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-                d="M20 7v5h-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-            <path
-                d="M4 17v-5h5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-            <path
-                d="M6.5 9.5A7 7 0 0 1 18 7M17.5 14.5A7 7 0 0 1 6 17"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-            />
-        </svg>
-    );
-}
-
 export function RepairRequestStatusPanel({
     requestId,
     request,
@@ -116,7 +85,6 @@ export function RepairRequestStatusPanel({
 
     const current = workflowFromRequest(request);
     const canChange = hasTrackerTicket && !busy;
-    const showTrackerStatusRetry = Boolean(request.trackerStatusSyncPending && hasTrackerTicket);
     const sliderValue: 'open' | 'in_progress' | null = current === 'open' || current === 'in_progress' ? current : null;
 
     async function applyWorkflow(
@@ -135,33 +103,27 @@ export function RepairRequestStatusPanel({
             if (workflow === 'needs_info') {
                 onCommentsChanged?.();
             }
-            showSuccess('Статус обновлён');
+            if (updated.trackerStatusSyncPending) {
+                showError(TRACKER_SYNC_PENDING_TOAST);
+            } else {
+                showSuccess('Статус обновлён');
+            }
         } catch (err) {
-            showError(formatApiError(err));
+            let refreshed: RepairRequestDetail | null = null;
             try {
-                onUpdated(await fetchRepairRequest(requestId));
+                refreshed = await fetchRepairRequest(requestId);
+                onUpdated(refreshed);
             } catch {
                 /* ignore */
+            }
+            if (refreshed?.trackerStatusSyncPending && isTrackerUnavailableError(err)) {
+                showError(TRACKER_SYNC_PENDING_TOAST);
+            } else {
+                showError(formatApiError(err));
             }
         } finally {
             setBusy(false);
             setModal(null);
-        }
-    }
-
-    async function pushStatusToTracker() {
-        if (!showTrackerStatusRetry || busy) {
-            return;
-        }
-        setBusy(true);
-        try {
-            const updated = await pushRepairRequestStatusToTracker(requestId);
-            onUpdated(updated);
-            showSuccess('Статус отправлен в Трекер');
-        } catch (err) {
-            showError(formatApiError(err));
-        } finally {
-            setBusy(false);
         }
     }
 
@@ -306,21 +268,6 @@ export function RepairRequestStatusPanel({
                     </button>
                 ) : null}
 
-                {showTrackerStatusRetry ? (
-                    <button
-                        type="button"
-                        className="repair-status-icon-btn repair-status-icon-btn--sync"
-                        disabled={busy}
-                        onClick={() => void pushStatusToTracker()}
-                        title={busy ? 'Отправка статуса…' : 'Отправить статус в Трекер'}
-                        aria-label={busy ? 'Отправка статуса…' : 'Отправить статус в Трекер'}
-                    >
-                        <IconSync />
-                        <span className="repair-status-tooltip" role="tooltip">
-                            {busy ? 'Отправка статуса…' : 'Отправить статус в Трекер'}
-                        </span>
-                    </button>
-                ) : null}
             </section>
 
             <RepairWorkflowModal
