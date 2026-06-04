@@ -133,6 +133,7 @@ export function isTrackerUnavailableError(err: unknown): boolean {
     return false;
 }
 
+/** Сообщение, когда статус в FixMyKit уже сохранён, а Трекер не ответил. */
 export const TRACKER_SYNC_PENDING_TOAST =
     'Статус на сайте обновлён. Яндекс Трекер недоступен — нажмите «Синхронизировать с Трекером».';
 

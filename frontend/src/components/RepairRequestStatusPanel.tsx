@@ -173,10 +173,11 @@ export function RepairRequestStatusPanel({
 
     return (
         <>
-            <section
-                className={`repair-status-icon-panel ${!canChange ? 'repair-status-icon-panel--disabled' : ''}`}
-                aria-label="Статус заявки"
-            >
+            <div className="repair-status-panel-card">
+                <section
+                    className={`repair-status-icon-panel ${!canChange ? 'repair-status-icon-panel--disabled' : ''}`}
+                    aria-label="Статус заявки"
+                >
                 <div
                     className={`repair-status-vertical-switch ${
                         sliderValue === 'open'
@@ -267,8 +268,8 @@ export function RepairRequestStatusPanel({
                         </span>
                     </button>
                 ) : null}
-
-            </section>
+                </section>
+            </div>
 
             <RepairWorkflowModal
                 open={modal !== null}

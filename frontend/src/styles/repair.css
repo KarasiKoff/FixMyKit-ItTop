@@ -352,10 +352,7 @@
     max-width: none;
     margin-inline: 0;
     text-align: left;
-    display: flex;
-    flex-direction: column;
     align-self: start;
-    gap: 8px;
 }
 
 .repair-status-panel-card__title {
