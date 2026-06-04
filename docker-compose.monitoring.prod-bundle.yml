@@ -1,0 +1,59 @@
+# Сценарий 2: prod и мониторинг одной командой (один проект fixmykit-prod).
+#
+# docker compose \
+#   -f docker-compose.prod.yml \
+#   -f docker-compose.monitoring.yml \
+#   -f docker-compose.monitoring.prod-bundle.yml \
+#   --env-file .env.production \
+#   --env-file .env.monitoring up -d --build
+
+name: fixmykit-prod
+
+services:
+  prometheus:
+    networks:
+      - fmk_monitoring
+      - fixmykit_prod
+    environment:
+      BACKEND_METRICS_TARGET: ${BACKEND_METRICS_TARGET:-backend:8000}
+      MONITORING_ENVIRONMENT: ${MONITORING_ENVIRONMENT:-production}
+
+  postgres-exporter:
+    networks:
+      - fmk_monitoring
+      - fixmykit_prod
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB}?sslmode=disable
+
+  promtail:
+    networks:
+      - fmk_monitoring
+      - fixmykit_prod
+    volumes:
+      - logs_data_prod:/var/log/fixmykit:ro
+
+  loki:
+    networks:
+      - fmk_monitoring
+      - fixmykit_prod
+
+  grafana:
+    networks:
+      - fmk_monitoring
+      - fixmykit_prod
+    environment:
+      GRAFANA_POSTGRES_URL: postgres:5432
+
+  alertmanager:
+    networks:
+      - fmk_monitoring
+      - fixmykit_prod
+
+  alertserver:
+    networks:
+      - fmk_monitoring
+      - fixmykit_prod
+
+networks:
+  fixmykit_prod:
+    name: fixmykit-prod

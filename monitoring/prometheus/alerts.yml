@@ -1,0 +1,44 @@
+groups:
+  - name: fixmykit
+    rules:
+      - alert: BackendDown
+        expr: up{job="fmk-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API Fix My Kit недоступен"
+          description: "Prometheus не получает метрики с бэкенда (job fmk-backend) более 2 минут."
+
+      - alert: PostgresExporterDown
+        expr: up{job="fmk-db"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "postgres-exporter недоступен"
+          description: "Нет scrape postgres-exporter:9187 — проверьте контейнер и доступ к PostgreSQL."
+
+      - alert: HighHttp5xxRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="fmk-backend", status="5xx"}[5m]))
+            /
+            sum(rate(http_requests_total{job="fmk-backend"}[5m]))
+          ) > 0.05
+          and sum(rate(http_requests_total{job="fmk-backend"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Высокая доля HTTP 5xx на API"
+          description: "Более 5% ответов API — 5xx за последние 5 минут."
+
+      - alert: PostgresConnectionsHigh
+        expr: pg_stat_database_numbackends{datname!~"template.*"} > 80
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Много подключений к PostgreSQL"
+          description: "Число активных подключений к БД {{ $labels.datname }} превышает 80."

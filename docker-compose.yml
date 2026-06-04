@@ -1,3 +1,7 @@
+# docker compose --env-file .env up -d
+# Сеть fixmykit-dev — для overlay мониторинга (docker-compose.monitoring.local.yml)
+name: fixmykit-dev
+
 x-env: &env
   env_file:
     - ${ENV_FILE:-.env}
@@ -21,6 +25,8 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
+    networks:
+      - fixmykit_dev
 
   backend:
     <<: [*env]
@@ -41,6 +47,8 @@ services:
     volumes:
       - ./data/uploads:/app/data/uploads
       - ./data/logs:/app/data/logs
+    networks:
+      - fixmykit_dev
 
   frontend:
     <<: [*env]
@@ -59,6 +67,13 @@ services:
       VITE_PROXY_TARGET: ${VITE_PROXY_TARGET:-http://backend:8000}
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
+    networks:
+      - fixmykit_dev
 
 volumes:
   postgres_data:
+
+networks:
+  fixmykit_dev:
+    name: fixmykit-dev
+    driver: bridge

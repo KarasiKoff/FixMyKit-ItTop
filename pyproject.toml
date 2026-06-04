@@ -7,6 +7,7 @@ dependencies = [
     "alembic",
     "bcrypt",
     "fastapi",
+    "prometheus-fastapi-instrumentator>=8.0.0",
     "psycopg[binary]",
     "pydantic-settings",
     "pyjwt",
