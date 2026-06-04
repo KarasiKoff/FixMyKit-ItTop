@@ -61,5 +61,4 @@ def change_own_password(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_current_password")
 
     current_user.password_hash = hash_password(payload.new_password)
-    db.add(current_user)
-    db.commit()
+    UserRepository(db).commit()

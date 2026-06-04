@@ -13,6 +13,7 @@ from backend.app.models.enums import RepairStatus
 from backend.app.repositories.device_repository import DeviceRepository
 from backend.app.models.repair_request import RepairRequest
 from backend.app.models.user import User
+from backend.app.repositories.repair_request_repository import RepairRequestRepository
 from backend.app.schemas.repair_request import (
     PublicRepairRequestCreate,
     PublicRepairRequestResponse,
@@ -85,15 +86,13 @@ def _persist_new_request(db: Session, fields: RepairRequestCreateFields) -> Repa
         device_id=fields.device_id,
         audience_id=fields.audience_id,
     )
-    repair_request = RepairRequest(
+    repair_request = RepairRequestRepository(db).add_new(
         device_id=fields.device_id,
         audience_id=fields.audience_id,
         description=fields.description,
         applicant_name=fields.applicant_name,
         author_user_id=fields.author_user_id,
     )
-    db.add(repair_request)
-    db.flush()
     _record_request_created(db, repair_request)
     db.commit()
     db.refresh(repair_request)

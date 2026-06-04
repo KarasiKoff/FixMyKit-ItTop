@@ -5,7 +5,6 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_current_user, get_db
-from backend.app.models.audience import Audience as AudienceModel
 from backend.app.models.enums import UserRole
 from backend.app.models.user import User
 from backend.app.repositories.audience_repository import AudienceRepository
@@ -42,11 +41,7 @@ def create_audience(
     if AudienceRepository(db).get_by_name(payload.name) is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="audience_exists")
 
-    audience = AudienceModel(name=payload.name)
-    db.add(audience)
-    db.commit()
-    db.refresh(audience)
-    return audience
+    return AudienceRepository(db).create(payload.name)
 
 
 @router.patch("/{audience_id}", response_model=Audience)
@@ -82,5 +77,4 @@ def delete_audience(
     repo = AudienceRepository(db)
     audience = repo.get_or_404(audience_id)
     repo.delete_devices_for_audience(audience_id)
-    db.delete(audience)
-    db.commit()
+    repo.delete(audience)

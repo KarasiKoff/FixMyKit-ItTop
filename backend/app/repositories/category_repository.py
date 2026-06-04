@@ -5,6 +5,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import HTTPException, status
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query, Session, defer, joinedload
 
 from backend.app.models.category import Category
@@ -57,6 +58,17 @@ class CategoryRepository:
     def count(self) -> int:
         return int(self._db.query(Category).count())
 
+    def create(self, name: str) -> Category:
+        category = Category(name=name)
+        self._db.add(category)
+        self._db.commit()
+        self._db.refresh(category)
+        return category
+
+    def delete(self, category: Category) -> None:
+        self._db.delete(category)
+        self._db.commit()
+
 
 class SubcategoryRepository:
     def __init__(self, db: Session) -> None:
@@ -91,3 +103,18 @@ class SubcategoryRepository:
             {Device.subcategory_id: None},
             synchronize_session=False,
         )
+
+    def create(self, category_id: UUID, name: str) -> Subcategory:
+        sub = Subcategory(category_id=category_id, name=name)
+        self._db.add(sub)
+        try:
+            self._db.commit()
+        except IntegrityError:
+            self._db.rollback()
+            raise
+        self._db.refresh(sub)
+        return sub
+
+    def delete(self, sub: Subcategory) -> None:
+        self._db.delete(sub)
+        self._db.commit()

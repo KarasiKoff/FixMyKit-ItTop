@@ -64,3 +64,14 @@ class AudienceRepository:
 
     def count(self) -> int:
         return int(self._db.query(Audience).count())
+
+    def create(self, name: str) -> Audience:
+        audience = Audience(name=name)
+        self._db.add(audience)
+        self._db.commit()
+        self._db.refresh(audience)
+        return audience
+
+    def delete(self, audience: Audience) -> None:
+        self._db.delete(audience)
+        self._db.commit()

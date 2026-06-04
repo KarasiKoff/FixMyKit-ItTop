@@ -43,3 +43,24 @@ class RepairRequestCommentRepository:
             )
             .first()
         )
+
+    def create(
+        self,
+        *,
+        repair_request_id: UUID,
+        author_user_id: UUID,
+        body: str,
+        tracker_synced: bool = False,
+        tracker_comment_id: str | None = None,
+    ) -> RepairRequestComment:
+        row = RepairRequestComment(
+            repair_request_id=repair_request_id,
+            author_user_id=author_user_id,
+            body=body,
+            tracker_synced=tracker_synced,
+            tracker_comment_id=tracker_comment_id,
+        )
+        self._db.add(row)
+        self._db.commit()
+        self._db.refresh(row)
+        return row

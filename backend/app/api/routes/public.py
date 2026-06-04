@@ -28,7 +28,7 @@ router = APIRouter(prefix="/api/public", tags=["public"])
 @router.get("/attachment-limits", response_model=AttachmentLimitsResponse)
 def get_attachment_limits() -> AttachmentLimitsResponse:
     return AttachmentLimitsResponse(
-        max_per_request=settings.attachment_max_per_request,
+        max_per_request=settings.server.attachment_max_per_request,
         max_bytes=effective_max_attachment_bytes(),
     )
 

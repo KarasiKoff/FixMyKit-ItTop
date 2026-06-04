@@ -3,7 +3,7 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from backend.app.models.enums import RepairStatus
-from backend.app.models.repair_history import RepairHistory
+from backend.app.repositories.repair_history_repository import RepairHistoryRepository
 
 
 def add_repair_history(
@@ -17,12 +17,10 @@ def add_repair_history(
 ) -> None:
     if device_id is None:
         return
-    db.add(
-        RepairHistory(
-            device_id=device_id,
-            repair_request_id=repair_request_id,
-            old_status=old_status,
-            new_status=new_status,
-            note=note,
-        )
+    RepairHistoryRepository(db).add_entry(
+        device_id=device_id,
+        repair_request_id=repair_request_id,
+        old_status=old_status,
+        new_status=new_status,
+        note=note,
     )

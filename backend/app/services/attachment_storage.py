@@ -25,7 +25,7 @@ class PendingAttachment:
 
 
 def upload_root() -> Path:
-    root = Path(settings.upload_dir).resolve()
+    root = Path(settings.server.upload_dir).resolve()
     root.mkdir(parents=True, exist_ok=True)
     return root
 

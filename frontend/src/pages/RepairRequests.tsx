@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     fetchRepairRequests,
@@ -17,7 +17,7 @@ import { RepairRequest } from '../types/repairRequest';
 import type { PageSize, RepairRequestSortBy, SortDir } from '../types/listQuery';
 import { formatApiError } from '../utils/formatApiError';
 import { repairRequestStatusLabel, repairRequestStatusPillClass } from '../utils/statusDisplay';
-import { filtersEqual } from '../utils/filtersMatch';
+import { usePaginatedList } from '../hooks/usePaginatedList';
 import { AttachmentClipIcon } from '../components/AttachmentClipIcon';
 import { yandexTrackerIssueWebHref } from '../utils/yandexTracker';
 import { attachmentClipIsActionable, attachmentClipTone } from '../utils/attachmentSyncDisplay';
@@ -54,64 +54,53 @@ export function RepairRequests() {
     const navigate = useNavigate();
     const { showSuccess, showError } = useToast();
 
-    const [items, setItems] = useState<RepairRequest[]>([]);
-    const [total, setTotal] = useState(0);
-    const [fetching, setFetching] = useState(true);
     const [bulkLoading, setBulkLoading] = useState(false);
     const [syncingId, setSyncingId] = useState<string | null>(null);
-    const [page, setPage] = useState(1);
-    const [pageSize, setPageSize] = useState<PageSize>(20);
-    const [sortBy, setSortBy] = useState<RepairRequestSortBy>(DEFAULT_SORT);
-    const [sortDir, setSortDir] = useState<SortDir>(DEFAULT_DIR);
-    const [draftFilters, setDraftFilters] = useState<RequestFilters>(EMPTY_FILTERS);
-    const [appliedFilters, setAppliedFilters] = useState<RequestFilters>(EMPTY_FILTERS);
 
-    const applyFilters = useCallback(() => {
-        setAppliedFilters({ ...draftFilters });
-        setPage(1);
-    }, [draftFilters]);
-
-    const load = useCallback(
-        async (opts?: { silent?: boolean }) => {
-            if (!opts?.silent) {
-                setFetching(true);
-            }
+    const {
+        items,
+        total,
+        fetching,
+        page,
+        pageSize,
+        sortBy,
+        sortDir,
+        draftFilters,
+        setDraftFilters,
+        applyFilters,
+        filtersPending,
+        setPage,
+        setPageSize,
+        handleSort: handleSortBase,
+        setSortDir,
+        reload,
+    } = usePaginatedList<RepairRequest, RequestFilters, RepairRequestSortBy>({
+        emptyFilters: EMPTY_FILTERS,
+        defaultSort: DEFAULT_SORT,
+        defaultDir: DEFAULT_DIR,
+        load: async ({ filters, page: p, pageSize: ps, sortBy: sb, sortDir: sd }) => {
             try {
-                const result = await fetchRepairRequests({
-                    device: appliedFilters.device || undefined,
-                    applicant: appliedFilters.applicant || undefined,
-                    status: appliedFilters.status || undefined,
-                    sort_by: sortBy,
-                    sort_dir: sortDir,
-                    limit: pageSize,
-                    offset: (page - 1) * pageSize,
+                return await fetchRepairRequests({
+                    device: filters.device || undefined,
+                    applicant: filters.applicant || undefined,
+                    status: filters.status || undefined,
+                    sort_by: sb,
+                    sort_dir: sd,
+                    limit: ps,
+                    offset: (p - 1) * ps,
                 });
-                setItems(result.items);
-                setTotal(result.total);
             } catch (err) {
-                if (!opts?.silent) {
-                    showError(formatApiError(err));
-                }
-            } finally {
-                if (!opts?.silent) {
-                    setFetching(false);
-                }
+                showError(formatApiError(err));
+                throw err;
             }
-        },
-        [appliedFilters, page, pageSize, sortBy, sortDir, showError],
-    );
-
-    useEffect(() => {
-        void load();
-    }, [load]);
-
-    useRepairRequestSse({
-        onEvent: () => {
-            void load({ silent: true });
         },
     });
 
-    const filtersPending = !filtersEqual(draftFilters, appliedFilters);
+    useRepairRequestSse({
+        onEvent: () => {
+            void reload({ silent: true });
+        },
+    });
 
     const suggest = useCallback((field: RepairRequestSuggestField) => {
         return (query: string) => suggestRepairRequests(field, query);
@@ -119,13 +108,15 @@ export function RepairRequests() {
 
     function handleSort(key: string) {
         const col = key as RepairRequestSortBy;
-        setPage(1);
-        if (sortBy === col) {
-            setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-        } else {
-            setSortBy(col);
-            setSortDir(col === 'created_at' ? 'desc' : 'asc');
+        if (sortBy !== col) {
+            setPage(1);
+            handleSortBase(col);
+            if (col === 'created_at') {
+                setSortDir('desc');
+            }
+            return;
         }
+        handleSortBase(key);
     }
 
     async function handleBulkSync() {
@@ -133,7 +124,7 @@ export function RepairRequests() {
         try {
             const res = await syncAllUnsynchronizedRepairRequests();
             showSuccess(`Готово: синхронизировано ${res.synced} из ${res.attempted}, ошибок: ${res.failed}`);
-            await load();
+            await reload();
         } catch (err) {
             showError(formatApiError(err));
         } finally {
@@ -149,7 +140,7 @@ export function RepairRequests() {
         try {
             await syncRepairRequestTracker(id);
             showSuccess('Синхронизация с Трекером выполнена');
-            await load();
+            await reload();
         } catch (err) {
             showError(formatApiError(err));
         } finally {

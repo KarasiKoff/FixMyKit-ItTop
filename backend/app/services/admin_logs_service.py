@@ -94,7 +94,12 @@ def tail_log_entries(
         entries.append(entry)
         if len(entries) >= limit:
             break
-    entries.reverse()
+
+    def _ts_key(e: dict[str, Any]) -> str:
+        ts = e.get("ts")
+        return "" if ts is None else str(ts)
+
+    entries.sort(key=_ts_key, reverse=True)
     return entries
 
 

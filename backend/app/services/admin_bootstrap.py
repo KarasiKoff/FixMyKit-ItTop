@@ -10,8 +10,8 @@ from backend.app.repositories.user_repository import UserRepository
 
 
 def ensure_admin_user() -> None:
-    admin_login = settings.admin_login
-    admin_password = settings.admin_password
+    admin_login = settings.server.admin_login
+    admin_password = settings.server.admin_password
 
     if not admin_login or not admin_password:
         print("Admin bootstrap skipped: ADMIN_LOGIN or ADMIN_PASSWORD is not set")
@@ -29,7 +29,7 @@ def ensure_admin_user() -> None:
             role=UserRole.ADMIN,
             is_active=True,
         )
-        db.add(admin)
+        UserRepository(db).add(admin)
         try:
             db.commit()
         except IntegrityError:

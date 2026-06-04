@@ -26,6 +26,7 @@ testpaths = ["tests"]
 pythonpath = ["."]
 markers = [
     "integration: требует PostgreSQL (API-тесты)",
+    "tracker_http: FakeTrackerClient и реальный try_tracker_sync / sync endpoint",
 ]
 
 [tool.uv]

@@ -1,9 +1,31 @@
 .admin-logs-toolbar {
     display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.admin-logs-toolbar__filters {
+    display: flex;
     flex-wrap: wrap;
     gap: 12px 20px;
     align-items: flex-end;
-    margin-bottom: 12px;
+}
+
+.admin-logs-toolbar__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+}
+
+.admin-logs-toolbar__actions button {
+    width: auto;
+    min-height: 40px;
+}
+
+.admin-logs-toolbar__actions .btn-ghost {
+    min-height: 38px;
 }
 
 .admin-logs-toolbar label {

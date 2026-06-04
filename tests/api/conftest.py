@@ -16,8 +16,10 @@ from backend.app.models import Base
 from backend.app.models.audience import Audience
 from backend.app.models.device import Device
 from backend.app.models.enums import UserRole
-from backend.app.models.repair_request import RepairRequest
 from backend.app.models.user import User
+from backend.app.repositories.audience_repository import AudienceRepository
+from backend.app.repositories.device_repository import DeviceRepository
+from backend.app.repositories.user_repository import UserRepository
 from tests.support.app_factory import create_test_app
 
 pytestmark = pytest.mark.integration
@@ -26,7 +28,7 @@ pytestmark = pytest.mark.integration
 def _database_url() -> str:
     from backend.app.core.config import settings
 
-    return settings.database_url
+    return settings.database.database_url
 
 
 @pytest.fixture(scope="session")
@@ -54,8 +56,9 @@ def session_factory(engine):
 @pytest.fixture(scope="session", autouse=True)
 def seed_static_users(session_factory) -> None:
     with session_factory() as db:
-        if db.query(User).filter(User.login == "admin").first() is None:
-            db.add(
+        repo = UserRepository(db)
+        if repo.get_by_login("admin") is None:
+            repo.create(
                 User(
                     login="admin",
                     password_hash=hash_password("admin"),
@@ -65,8 +68,8 @@ def seed_static_users(session_factory) -> None:
                 )
             )
         login = "tracker_webhook"
-        if db.query(User).filter(User.login == login).first() is None:
-            db.add(
+        if repo.get_by_login(login) is None:
+            repo.create(
                 User(
                     login=login,
                     password_hash=hash_password("unused"),
@@ -75,7 +78,6 @@ def seed_static_users(session_factory) -> None:
                     is_active=True,
                 )
             )
-        db.commit()
 
 
 @pytest.fixture()
@@ -85,9 +87,27 @@ def db(session_factory) -> Generator[Session, None, None]:
         session.rollback()
 
 
+@pytest.fixture()
+def fake_tracker_client(monkeypatch: pytest.MonkeyPatch):
+    """FakeTrackerClient + подмена get_tracker_issue_service."""
+    from tests.support.fake_tracker_client import patch_tracker_issue_service, tracker_create_issue_client
+
+    return patch_tracker_issue_service(monkeypatch, tracker_create_issue_client())
+
+
+@pytest.fixture()
+def failing_tracker_client(monkeypatch: pytest.MonkeyPatch):
+    from tests.support.fake_tracker_client import patch_tracker_issue_service, tracker_failing_client
+
+    return patch_tracker_issue_service(monkeypatch, tracker_failing_client())
+
+
 @pytest.fixture(autouse=True)
-def _mock_tracker_outbound(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Не ходим в Yandex Tracker из API-тестов."""
+def _mock_tracker_outbound(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest) -> None:
+    """Исходящие вызовы Tracker: noop, кроме тестов с marker tracker_http."""
+    from backend.app.models.repair_request import RepairRequest
+
+    tracker_http = request.node.get_closest_marker("tracker_http") is not None
 
     def _allow_workflow_without_ticket(repair_request: RepairRequest) -> str:
         return (
@@ -105,9 +125,6 @@ def _mock_tracker_outbound(monkeypatch: pytest.MonkeyPatch) -> None:
         repair_request.tracker_status_sync_pending = False
         db.commit()
 
-    def _noop_try_sync(request_id) -> None:
-        return None
-
     monkeypatch.setattr(
         "backend.app.services.repair_request_workflow_service.sync_tracker_label_with_pending",
         _noop_sync_label,
@@ -116,10 +133,21 @@ def _mock_tracker_outbound(monkeypatch: pytest.MonkeyPatch) -> None:
         "backend.app.services.repair_request_tracker_outbound.sync_tracker_label_with_pending",
         _noop_sync_label,
     )
-    monkeypatch.setattr(
-        "backend.app.services.repair_request_create_service.try_tracker_sync",
-        _noop_try_sync,
-    )
+
+    if tracker_http:
+        from tests.support.fake_tracker_client import enable_real_try_tracker_sync
+
+        enable_real_try_tracker_sync(monkeypatch)
+    else:
+
+        def _noop_try_sync(request_id) -> None:
+            return None
+
+        monkeypatch.setattr(
+            "backend.app.services.repair_request_create_service.try_tracker_sync",
+            _noop_try_sync,
+        )
+
     monkeypatch.setattr(
         "backend.app.services.repair_request_webhook_service.post_issue_comment",
         lambda *args, **kwargs: None,
@@ -149,25 +177,26 @@ def client(db: Session) -> Generator[TestClient, None, None]:
 
 @pytest.fixture()
 def admin_user(db: Session) -> User:
-    user = db.query(User).filter(User.login == "admin").one()
+    user = UserRepository(db).get_by_login("admin")
+    assert user is not None
     return user
 
 
 @pytest.fixture()
 def sysadmin_user(db: Session) -> User:
     login = "sysadmin_test"
-    user = db.query(User).filter(User.login == login).first()
+    repo = UserRepository(db)
+    user = repo.get_by_login(login)
     if user is None:
-        user = User(
-            login=login,
-            password_hash=hash_password("sysadmin"),
-            role=UserRole.SYSADMIN,
-            full_name="Test Sysadmin",
-            is_active=True,
+        user = repo.create(
+            User(
+                login=login,
+                password_hash=hash_password("sysadmin"),
+                role=UserRole.SYSADMIN,
+                full_name="Test Sysadmin",
+                is_active=True,
+            )
         )
-        db.add(user)
-        db.commit()
-        db.refresh(user)
     return user
 
 
@@ -185,24 +214,18 @@ def admin_headers(admin_user: User) -> dict[str, str]:
 
 @pytest.fixture()
 def device(db: Session, audience: Audience) -> Device:
-    row = Device(
-        inventory_number=f"INV-{uuid4().hex[:8]}",
-        name="Тестовое устройство",
-        audience_id=audience.id,
+    return DeviceRepository(db).save_new(
+        Device(
+            inventory_number=f"INV-{uuid4().hex[:8]}",
+            name="Тестовое устройство",
+            audience_id=audience.id,
+        )
     )
-    db.add(row)
-    db.commit()
-    db.refresh(row)
-    return row
 
 
 @pytest.fixture()
 def audience(db: Session) -> Audience:
-    row = Audience(name=f"Кабинет-{uuid4().hex[:8]}")
-    db.add(row)
-    db.commit()
-    db.refresh(row)
-    return row
+    return AudienceRepository(db).create(f"Кабинет-{uuid4().hex[:8]}")
 
 
 @pytest.fixture()

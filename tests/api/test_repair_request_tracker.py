@@ -2,9 +2,15 @@
 
 from __future__ import annotations
 
+import time
+
+import pytest
 from sqlalchemy.orm import Session
 
 from backend.app.models.repair_request import RepairRequest
+
+pytestmark = pytest.mark.integration
+
 
 def _create_request_id(client, admin_headers, audience_id: str) -> str:
     response = client.post(
@@ -85,31 +91,71 @@ def test_push_status_tracker_unavailable(
     assert repair_request.tracker_status_sync_pending is True
 
 
-def test_tracker_sync_success(client, admin_headers, audience, monkeypatch) -> None:
+@pytest.mark.tracker_http
+def test_tracker_sync_success(
+    client,
+    admin_headers,
+    audience,
+    db,
+    fake_tracker_client,
+) -> None:
     request_id = _create_request_id(client, admin_headers, str(audience.id))
-    monkeypatch.setattr(
-        "backend.app.services.repair_request_tracker_route_service.sync_tracker_issue_and_attachments",
-        lambda db, rr: True,
-    )
     response = client.post(
         f"/api/repair-requests/{request_id}/tracker/sync",
         headers=admin_headers,
     )
     assert response.status_code == 200, response.text
     body = response.json()
-    assert "tracker_ticket_id" in body
+    assert body["tracker_ticket_key"] == "FIX-99"
+    assert body["tracker_ticket_id"] == "12345"
     assert "last_sync_at" in body
+    assert any(call[0] == "POST" for call in fake_tracker_client.calls)
+
+    repair_request = db.get(RepairRequest, request_id)
+    assert repair_request.tracker_ticket_key == "FIX-99"
 
 
-def test_tracker_sync_unavailable(client, admin_headers, audience, monkeypatch) -> None:
+@pytest.mark.tracker_http
+def test_tracker_sync_unavailable(client, admin_headers, audience, failing_tracker_client) -> None:
     request_id = _create_request_id(client, admin_headers, str(audience.id))
-    monkeypatch.setattr(
-        "backend.app.services.repair_request_tracker_route_service.sync_tracker_issue_and_attachments",
-        lambda db, rr: False,
-    )
     response = client.post(
         f"/api/repair-requests/{request_id}/tracker/sync",
         headers=admin_headers,
     )
     assert response.status_code == 502
     assert response.json()["detail"] == "tracker_unavailable"
+    assert any(call[0] == "POST" for call in failing_tracker_client.calls)
+
+
+@pytest.mark.tracker_http
+def test_create_staff_syncs_tracker_in_background(
+    client,
+    admin_headers,
+    audience,
+    db,
+    fake_tracker_client,
+) -> None:
+    response = client.post(
+        "/api/repair-requests",
+        headers=admin_headers,
+        json={
+            "audience_id": str(audience.id),
+            "description": "sync on create",
+            "sync_to_tracker": True,
+        },
+    )
+    assert response.status_code == 201, response.text
+    request_id = response.json()["id"]
+
+    deadline = time.monotonic() + 5.0
+    ticket_key = None
+    while time.monotonic() < deadline:
+        db.expire_all()
+        rr = db.get(RepairRequest, request_id)
+        ticket_key = (rr.tracker_ticket_key or "").strip() if rr else ""
+        if ticket_key:
+            break
+        time.sleep(0.05)
+
+    assert ticket_key == "FIX-99"
+    assert any(call[0] == "POST" for call in fake_tracker_client.calls)
