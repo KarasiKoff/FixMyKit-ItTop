@@ -1,6 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../hooks/useToast';
 import { useAuth } from '../../hooks/useAuth';
 import {
     createCategory,
@@ -461,7 +461,7 @@ export function AdminAddCategory() {
 
     const modalCategory = modalCategoryId ? (rows.find((r) => r.id === modalCategoryId) ?? null) : null;
 
-    async function reload() {
+    const reload = useCallback(async () => {
         setLoading(true);
         try {
             const items = await fetchCategories();
@@ -471,11 +471,11 @@ export function AdminAddCategory() {
         } finally {
             setLoading(false);
         }
-    }
+    }, [showError]);
 
     useEffect(() => {
         void reload();
-    }, []);
+    }, [reload]);
 
     async function handleAdd(event: React.FormEvent<HTMLFormElement>) {
         event.preventDefault();

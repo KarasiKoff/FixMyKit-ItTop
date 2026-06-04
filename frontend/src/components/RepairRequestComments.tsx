@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchRepairRequestComments, postRepairRequestComment } from '../api/repairRequests';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../hooks/useToast';
 import { RepairRequestComment } from '../types/repairRequestComment';
 import { formatApiError } from '../utils/formatApiError';
 import { authorInitials, formatCommentTime, normalizeCommentBodyForDisplay } from '../utils/commentDisplay';

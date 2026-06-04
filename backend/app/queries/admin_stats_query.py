@@ -4,11 +4,11 @@ from sqlalchemy import and_, func, or_
 from sqlalchemy.orm import Session
 
 from backend.app.models.category import Category
-from backend.app.repositories.audience_repository import AudienceRepository
-from backend.app.repositories.category_repository import CategoryRepository
 from backend.app.models.device import Device
 from backend.app.models.enums import RequestStatus
 from backend.app.models.repair_request import RepairRequest
+from backend.app.repositories.audience_repository import AudienceRepository
+from backend.app.repositories.category_repository import CategoryRepository
 from backend.app.schemas.admin_stats import (
     AdminStatsResponse,
     CatalogStats,
@@ -47,7 +47,7 @@ def _sync_in_range(start: datetime | None, end: datetime | None):
     return and_(*clauses)
 
 
-def build_admin_stats(db: Session, date_from: date | None, date_to: date | None) -> AdminStatsResponse:
+def query_admin_stats(db: Session, date_from: date | None, date_to: date | None) -> AdminStatsResponse:
     start, end = _date_range_bounds(date_from, date_to)
     created_filter = _created_in_range(start, end)
     sync_filter = _sync_in_range(start, end)

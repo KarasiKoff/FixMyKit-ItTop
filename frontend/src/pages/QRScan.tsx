@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { QRScanner } from '../components/QRScanner';
 import { useAuth } from '../hooks/useAuth';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../hooks/useToast';
 import { formatApiError } from '../utils/formatApiError';
 import { fetchPublicDeviceByInventory, resolveDeviceByScanInput } from '../api/devices';
 import { fetchAudiences } from '../api/audiences';

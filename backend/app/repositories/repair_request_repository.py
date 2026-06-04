@@ -5,12 +5,21 @@ from __future__ import annotations
 from uuid import UUID
 
 from fastapi import HTTPException, status
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session, joinedload
 
 from backend.app.models.device import Device
+from backend.app.models.enums import RequestStatus
 from backend.app.models.repair_request import RepairRequest
+
+ACTIVE_REQUEST_STATUSES = (
+    RequestStatus.OPEN,
+    RequestStatus.IN_PROGRESS,
+    RequestStatus.NEEDS_INFO,
+)
 from backend.app.schemas.repair_request import RepairRequestDetail
 from backend.app.services.repair_request_attachment_service import refresh_attachment_fields_from_disk
+from backend.app.services.repair_request_presenters import repair_request_to_list_response
 
 
 class RepairRequestRepository:
@@ -38,6 +47,65 @@ class RepairRequestRepository:
             )
         return repair_request
 
+    def get_for_tracker(self, request_id: UUID) -> RepairRequest | None:
+        return (
+            self._db.query(RepairRequest)
+            .filter(RepairRequest.id == request_id)
+            .options(
+                joinedload(RepairRequest.device).joinedload(Device.audience),
+                joinedload(RepairRequest.audience),
+                joinedload(RepairRequest.author),
+            )
+            .first()
+        )
+
+    def has_active_for_target(
+        self,
+        *,
+        device_id: UUID | None = None,
+        audience_id: UUID | None = None,
+    ) -> bool:
+        q = self._db.query(RepairRequest.id).filter(
+            RepairRequest.status.in_(ACTIVE_REQUEST_STATUSES),
+        )
+        if device_id is not None:
+            q = q.filter(RepairRequest.device_id == device_id)
+        elif audience_id is not None:
+            q = q.filter(RepairRequest.audience_id == audience_id)
+        else:
+            return False
+        return q.first() is not None
+
+    def list_for_device(self, device_id: UUID) -> list[RepairRequest]:
+        return (
+            self._db.query(RepairRequest)
+            .filter(RepairRequest.device_id == device_id)
+            .order_by(RepairRequest.created_at.desc())
+            .all()
+        )
+
+    def list_for_audience(self, audience_id: UUID) -> list[RepairRequest]:
+        return (
+            self._db.query(RepairRequest)
+            .filter(RepairRequest.audience_id == audience_id)
+            .order_by(RepairRequest.created_at.desc())
+            .all()
+        )
+
+    def list_ids_without_tracker(self) -> list[UUID]:
+        rows = (
+            self._db.query(RepairRequest.id)
+            .filter(
+                and_(
+                    or_(RepairRequest.tracker_ticket_id.is_(None), RepairRequest.tracker_ticket_id == ""),
+                    or_(RepairRequest.tracker_ticket_key.is_(None), RepairRequest.tracker_ticket_key == ""),
+                )
+            )
+            .order_by(RepairRequest.created_at.asc())
+            .all()
+        )
+        return [row[0] for row in rows]
+
     def load_detail(self, request_id: UUID) -> RepairRequestDetail:
         repair_request = (
             self._db.query(RepairRequest)
@@ -52,7 +120,7 @@ class RepairRequestRepository:
             )
         refresh_attachment_fields_from_disk(repair_request)
         self._db.commit()
-        return RepairRequestDetail.model_validate(repair_request)
+        return repair_request_to_list_response(repair_request)
 
     def find_for_tracker(self, issue_key: str, issue_id: str) -> RepairRequest:
         key = (issue_key or "").strip()

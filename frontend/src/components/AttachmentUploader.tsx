@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useAttachmentLimits } from '../context/AttachmentLimitsContext';
+import { useAttachmentLimits } from '../hooks/useAttachmentLimits';
 import { attachmentPreviewKind, formatMaxAttachmentSize, isAllowedAttachmentFile } from '../utils/attachmentLimits';
 
 export type AttachmentDraft = {
@@ -209,6 +209,3 @@ export function AttachmentUploader({
     );
 }
 
-export function draftsToFiles(drafts: AttachmentDraft[]): File[] {
-    return drafts.map((d) => d.file);
-}

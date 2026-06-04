@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from backend.app.models.enums import RequestStatus
 from backend.app.repositories.audience_repository import AudienceRepository
 from backend.app.repositories.device_repository import DeviceRepository
-from backend.app.models.repair_request import RepairRequest
+from backend.app.repositories.repair_request_repository import RepairRequestRepository
 
 ACTIVE_STATUSES = (
     RequestStatus.OPEN,
@@ -63,15 +63,10 @@ def ensure_no_active_request(
     device_id: UUID | None = None,
     audience_id: UUID | None = None,
 ) -> None:
-    q = db.query(RepairRequest.id).filter(RepairRequest.status.in_(ACTIVE_STATUSES))
-    if device_id is not None:
-        q = q.filter(RepairRequest.device_id == device_id)
-    elif audience_id is not None:
-        q = q.filter(RepairRequest.audience_id == audience_id)
-    else:
-        return
-
-    if q.first() is not None:
+    if RepairRequestRepository(db).has_active_for_target(
+        device_id=device_id,
+        audience_id=audience_id,
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT, detail="active_request_exists"
         )

@@ -28,7 +28,7 @@ import { useAuth } from '../hooks/useAuth';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { UserAccountMenu } from '../components/UserAccountMenu';
 import { TopbarMobileMenu } from '../components/TopbarMobileMenu';
-import { ToastProvider } from '../context/ToastContext';
+import { ToastProvider } from '../context/ToastProvider';
 import { RouteDocumentTitle } from '../components/RouteDocumentTitle';
 
 function RequireAuth({ children }: { children: JSX.Element }) {

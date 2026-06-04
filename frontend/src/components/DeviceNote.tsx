@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { updateDevice } from '../api/devices';
-import { useToast } from '../context/ToastContext';
+import { useToast } from '../hooks/useToast';
 import { formatApiError } from '../utils/formatApiError';
 
 type Props = {

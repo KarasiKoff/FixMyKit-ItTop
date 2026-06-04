@@ -11,7 +11,7 @@ import {
 } from '../../api/announcements';
 import { SiteAnnouncementCard } from '../../components/SiteAnnouncementCard';
 import { useAuth } from '../../hooks/useAuth';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../hooks/useToast';
 import { formatApiError } from '../../utils/formatApiError';
 import { datetimeLocalToIso, isoToDatetimeLocal } from '../../utils/announcementDatetime';
 import {

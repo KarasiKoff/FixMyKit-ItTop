@@ -8,7 +8,7 @@ import {
     type LogSource,
 } from '../../api/adminLogs';
 import { useAuth } from '../../hooks/useAuth';
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../hooks/useToast';
 import { AdminLogsReference } from '../../components/admin/AdminLogsReference';
 import { formatApiError } from '../../utils/formatApiError';
 import { findLoggerRef, findMessageHint } from '../../utils/logReference';

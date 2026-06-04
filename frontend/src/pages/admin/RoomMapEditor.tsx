@@ -11,7 +11,7 @@ import { useFixedMapCanvas } from '../../hooks/useFixedMapCanvas';
 import { MapCanvasStack } from '../../components/MapCanvasStack';
 import { MapDeviceChip } from '../../components/MapDeviceChip';
 
-import { useToast } from '../../context/ToastContext';
+import { useToast } from '../../hooks/useToast';
 
 import { formatApiError } from '../../utils/formatApiError';
 
