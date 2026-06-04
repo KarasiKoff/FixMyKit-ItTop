@@ -2,57 +2,16 @@ from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_db, require_roles
-from backend.app.core.config import settings
-from backend.app.models.device import Device as DeviceModel
 from backend.app.models.enums import RepairStatus, UserRole
+from backend.app.queries.device_list_query import DeviceSortBy, suggest_devices
 from backend.app.schemas.device import Device, DeviceCreate, DeviceHistoryResponse, DeviceListResponse, DeviceQrResponse, DeviceUpdate
-from backend.app.schemas.repair_history import RepairHistoryResponse
 from backend.app.schemas.suggest import SuggestResponse
-from backend.app.repositories.device_repository import DeviceRepository, device_base_query
-from backend.app.queries.device_list_query import DeviceSortBy, fetch_devices_page, suggest_devices
-from backend.app.repositories.repair_history_repository import RepairHistoryRepository
-from backend.app.services.device_subcategory_validation import validate_device_subcategory
-from backend.app.services.repair_history_service import add_repair_history
+from backend.app.services import device_route_service as device_svc
 
 router = APIRouter(prefix="/api/devices", tags=["devices"])
-
-_DEVICE_SORT_FIELDS: set[str] = {
-    "inventory_number",
-    "name",
-    "category_name",
-    "subcategory_name",
-    "audience_name",
-    "responsible_name",
-    "repair_status",
-}
-_DEVICE_SUGGEST_FIELDS: set[str] = {"inventory_number", "name", "category", "room", "responsible"}
-
-
-def _normalize_note(value: str | None) -> str | None:
-    if value is None:
-        return None
-    stripped = value.strip()
-    return stripped if stripped else None
-
-
-def _resolved_category_subcategory(
-    device: DeviceModel,
-    patch_data: dict,
-) -> tuple[UUID | None, UUID | None]:
-    category_id = patch_data["category_id"] if "category_id" in patch_data else device.category_id
-    if category_id is None:
-        return None, None
-    if "subcategory_id" in patch_data:
-        subcategory_id = patch_data["subcategory_id"]
-    elif "category_id" in patch_data and patch_data["category_id"] != device.category_id:
-        subcategory_id = None
-    else:
-        subcategory_id = device.subcategory_id
-    return category_id, subcategory_id
 
 
 @router.get(
@@ -65,7 +24,7 @@ def device_suggest(
     q: str = Query(..., min_length=1),
     db: Session = Depends(get_db),
 ) -> SuggestResponse:
-    if field not in _DEVICE_SUGGEST_FIELDS:
+    if field not in device_svc.DEVICE_SUGGEST_FIELDS:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_suggest_field")
     return SuggestResponse(items=suggest_devices(db, field, q))
 
@@ -88,10 +47,7 @@ def list_devices(
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
 ) -> DeviceListResponse:
-    if sort_by not in _DEVICE_SORT_FIELDS:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_sort_by")
-
-    items, total = fetch_devices_page(
+    return device_svc.list_devices(
         db,
         inventory_number=inventory_number,
         name=name,
@@ -104,7 +60,6 @@ def list_devices(
         limit=limit,
         offset=offset,
     )
-    return DeviceListResponse(items=[Device.model_validate(item) for item in items], total=total)
 
 
 @router.post(
@@ -114,22 +69,7 @@ def list_devices(
     dependencies=[Depends(require_roles(UserRole.ADMIN, UserRole.SYSADMIN))],
 )
 def create_device(payload: DeviceCreate, db: Session = Depends(get_db)) -> Device:
-    data = payload.model_dump()
-    data["note"] = _normalize_note(data.get("note"))
-    validate_device_subcategory(
-        db,
-        category_id=data.get("category_id"),
-        subcategory_id=data.get("subcategory_id"),
-    )
-    device = DeviceModel(**data)
-    try:
-        DeviceRepository(db).save_new(device)
-    except IntegrityError as exc:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="inventory_number_exists") from exc
-    refreshed = device_base_query(db).filter(DeviceModel.id == device.id).first()
-    if refreshed is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found")
-    return Device.model_validate(refreshed)
+    return device_svc.create_device(db, payload)
 
 
 @router.get(
@@ -138,10 +78,7 @@ def create_device(payload: DeviceCreate, db: Session = Depends(get_db)) -> Devic
     dependencies=[Depends(require_roles(UserRole.ADMIN, UserRole.SYSADMIN))],
 )
 def get_device(device_id: UUID, db: Session = Depends(get_db)) -> Device:
-    device = DeviceRepository(db).get_with_relations(device_id)
-    if device is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found")
-    return Device.model_validate(device)
+    return device_svc.get_device(db, device_id)
 
 
 @router.patch(
@@ -150,46 +87,7 @@ def get_device(device_id: UUID, db: Session = Depends(get_db)) -> Device:
     dependencies=[Depends(require_roles(UserRole.ADMIN, UserRole.SYSADMIN))],
 )
 def patch_device(device_id: UUID, payload: DeviceUpdate, db: Session = Depends(get_db)) -> Device:
-    device = DeviceRepository(db).get_by_id(device_id)
-    if device is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found")
-
-    patch_data = payload.model_dump(exclude_unset=True)
-    if "note" in patch_data:
-        patch_data["note"] = _normalize_note(patch_data["note"])
-
-    category_id, subcategory_id = _resolved_category_subcategory(device, patch_data)
-    validate_device_subcategory(db, category_id=category_id, subcategory_id=subcategory_id)
-
-    old_repair_status = device.repair_status
-    for field, value in patch_data.items():
-        setattr(device, field, value)
-    if "category_id" in patch_data:
-        if patch_data["category_id"] is None:
-            device.subcategory_id = None
-        elif "subcategory_id" not in patch_data and patch_data["category_id"] != device.category_id:
-            device.subcategory_id = None
-
-    if "repair_status" in patch_data and device.repair_status != old_repair_status:
-        add_repair_history(
-            db,
-            device_id=device.id,
-            repair_request_id=None,
-            old_status=old_repair_status,
-            new_status=device.repair_status,
-            note="Изменение статуса ремонта устройства",
-        )
-
-    try:
-        db.commit()
-    except IntegrityError as exc:
-        db.rollback()
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="inventory_number_exists") from exc
-
-    refreshed = device_base_query(db).filter(DeviceModel.id == device_id).first()
-    if refreshed is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found")
-    return Device.model_validate(refreshed)
+    return device_svc.patch_device(db, device_id, payload)
 
 
 @router.delete(
@@ -198,9 +96,7 @@ def patch_device(device_id: UUID, payload: DeviceUpdate, db: Session = Depends(g
     dependencies=[Depends(require_roles(UserRole.ADMIN, UserRole.SYSADMIN))],
 )
 def delete_device(device_id: UUID, db: Session = Depends(get_db)) -> None:
-    DeviceRepository(db).get_or_404(device_id)
-    DeviceRepository(db).delete_with_related(device_id)
-    db.commit()
+    device_svc.delete_device(db, device_id)
 
 
 @router.get(
@@ -209,9 +105,7 @@ def delete_device(device_id: UUID, db: Session = Depends(get_db)) -> None:
     dependencies=[Depends(require_roles(UserRole.ADMIN, UserRole.SYSADMIN))],
 )
 def get_device_qr(device_id: UUID, db: Session = Depends(get_db)) -> DeviceQrResponse:
-    DeviceRepository(db).get_or_404(device_id)
-    base = settings.server.public_frontend_base_url.rstrip("/")
-    return DeviceQrResponse(device_id=device_id, url=f"{base}/device/{device_id}/public")
+    return device_svc.device_qr(db, device_id)
 
 
 @router.get(
@@ -220,20 +114,4 @@ def get_device_qr(device_id: UUID, db: Session = Depends(get_db)) -> DeviceQrRes
     dependencies=[Depends(require_roles(UserRole.ADMIN, UserRole.SYSADMIN))],
 )
 def get_device_history(device_id: UUID, db: Session = Depends(get_db)) -> DeviceHistoryResponse:
-    DeviceRepository(db).get_or_404(device_id)
-    rows = RepairHistoryRepository(db).list_for_device(device_id)
-    items = [
-        RepairHistoryResponse(
-            id=row.id,
-            device_id=row.device_id,
-            repair_request_id=row.repair_request_id,
-            old_status=row.old_status,
-            new_status=row.new_status,
-            note=row.note,
-            created_at=row.created_at,
-            tracker_ticket_key=row.repair_request.tracker_ticket_key if row.repair_request else None,
-            tracker_ticket_url=row.repair_request.tracker_ticket_url if row.repair_request else None,
-        )
-        for row in rows
-    ]
-    return DeviceHistoryResponse(items=items)
+    return device_svc.device_history(db, device_id)

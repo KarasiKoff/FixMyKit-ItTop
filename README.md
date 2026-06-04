@@ -15,6 +15,7 @@
 - [Запуск для разработки](#запуск-для-разработки)
 - [Локальный запуск без Docker](#локальный-запуск-без-docker)
 - [Продакшен](#продакшен)
+- [Конфигурация приложения](#конфигурация-приложения)
 - [Переменные окружения](#переменные-окружения)
 - [Интеграция с Яндекс Трекером](#интеграция-с-яндекс-трекером)
 - [API и документация](#api-и-документация)
@@ -140,11 +141,12 @@ fix-my-kit/
 ├── backend/
 │   ├── alembic/            # Миграции БД
 │   └── app/
-│       ├── api/routes/     # REST-эндпоинты
-│       ├── core/           # config, database, security
+│       ├── api/routes/     # Тонкие REST-роуты (repair_requests/ — пакет по зонам)
+│       ├── core/           # config (settings.server / settings.database), database, security
 │       ├── models/         # SQLAlchemy-модели
+│       ├── repositories/   # Доступ к БД
 │       ├── schemas/        # Pydantic-схемы
-│       └── services/       # Бизнес-логика, Tracker, вложения
+│       └── services/       # Бизнес-логика, Tracker, *\_route_service для CRUD
 ├── frontend/
 │   └── src/
 │       ├── api/            # HTTP-клиент к API
@@ -263,14 +265,14 @@ npm run dev
 
 #### Backend — API (`tests/api/`, маркер `integration`)
 
-`TestClient` + реальная PostgreSQL (по умолчанию БД `fixmykit_test`). Схема поднимается через `Base.metadata.create_all`; исходящие вызовы в Yandex Tracker **замоканы** (статус и комментарии не уходят наружу).
+`TestClient` + реальная PostgreSQL (по умолчанию БД `fixmykit_test`). Схема поднимается через `Base.metadata.create_all`. Исходящие вызовы в Tracker по умолчанию **замоканы** (workflow labels, комментарии). Тесты с маркером `tracker_http` используют `FakeTrackerClient` и реальный путь создания задачи (`POST .../tracker/sync`, create с `sync_to_tracker`).
 
 | Файл | Эндпоинты | Что проверяет |
 |------|-----------|----------------|
-| `test_repair_request_create.py` | `POST /api/repair-requests`, `GET .../{id}`, `POST /api/public/repair-requests` | Создание по `audience_id` и по `device_id` (`device_name`); `audience_name` в detail; публичное создание. |
+| `test_repair_request_create.py` | `POST /api/repair-requests`, `GET .../{id}`, `POST /api/public/repair-requests` | Создание по `audience_id` / `device_id`; публичное создание + FakeTracker (`tracker_http`). |
 | `test_repair_request_workflow.py` | `PATCH .../workflow` | `needs_info` (комментарий), `needs_info` → `in_progress`, закрытие (`resolution`, `closed`, метка «Закрыт»). |
 | `test_webhooks.py` | `POST /api/webhooks/yandex-tracker*` | Статус, закрытие, publish, comment (created / skipped_echo), sysadmin-taken; secret 401; noop; неизвестный статус 400. |
-| `test_repair_request_tracker.py` | `POST .../tracker/push-status`, `POST .../tracker/sync` | Push только при `tracker_status_sync_pending`; успешный push; 502 при сбое sync; sync 200/502. |
+| `test_repair_request_tracker.py` | `POST .../tracker/push-status`, `POST .../tracker/sync` | Push только при pending; sync через FakeTracker (`tracker_http`); create staff с sync в фоне; 502 при failing fake. |
 | `test_auth_permissions.py` | `GET /api/repair-requests`, `POST /api/audiences` | 401 без токена; 403 для sysadmin на создание кабинета (только admin). |
 
 #### Frontend — Vitest (`frontend/src/**/*.test.ts(x)`)
@@ -413,6 +415,34 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 ### Вложения на проде
 
 Каталог `UPLOAD_DIR` монтируется в volume `uploads_data_prod`, чтобы файлы переживали перезапуск контейнера.
+
+---
+
+## Конфигурация приложения
+
+Настройки читаются из `.env` в корне репозитория и `backend/.env` (см. `backend/app/core/config.py`). В коде используется единая точка входа:
+
+```python
+from backend.app.core.config import settings
+
+settings.server.jwt_secret_key      # API, JWT, Tracker, вложения, CORS, логи
+settings.database.database_url      # PostgreSQL (SQLAlchemy + Alembic)
+```
+
+| Блок | Класс | Назначение |
+|------|--------|------------|
+| `settings.server` | `ServerConfig` | HTTP API, JWT, bootstrap admin, Yandex Tracker, `UPLOAD_DIR`, лимиты вложений, `PUBLIC_FRONTEND_BASE_URL`, CORS, ротация логов |
+| `settings.database` | `DbConfig` | `POSTGRES_*` → свойство `database_url` |
+
+Прямых полей на корневом `settings` (типа `settings.jwt_secret_key`) **нет** — только `server` и `database`. Это упрощает группировку env и тестов.
+
+**Примеры в коде:**
+
+- `main.py`, `security.py` — `settings.server`
+- `database.py`, `alembic/env.py` — `settings.database.database_url`
+- `tests/api/conftest.py` — та же схема для integration-тестов
+
+Полный перечень переменных — в таблице ниже и в [`.env.example`](.env.example).
 
 ---
 
