@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 
 import pytest
 
-from backend.app.clients.tracker_client import TrackerClient, TrackerCredentials
+from backend.app.clients.tracker_client import TrackerClient, TrackerCredentials, TrackerUnavailableError
 from backend.app.services.tracker_issue_service import TrackerIssueService
 
 TRACKER_TEST_BASE = "https://tracker.test"
@@ -20,6 +20,7 @@ class FakeTrackerClient(TrackerClient):
     list_responses: dict[tuple[str, str], list] = field(default_factory=dict)
     bytes_responses: dict[tuple[str, str], tuple[bytes, str | None]] = field(default_factory=dict)
     calls: list[tuple[str, str, dict | None]] = field(default_factory=list)
+    fail_on_request_json: bool = False
 
     def credentials(self) -> TrackerCredentials:
         return TrackerCredentials(
@@ -31,6 +32,8 @@ class FakeTrackerClient(TrackerClient):
 
     def request_json(self, method: str, url: str, *, data: dict | None = None) -> dict:
         self.calls.append((method, url, data))
+        if self.fail_on_request_json:
+            raise TrackerUnavailableError("tracker_unavailable_test")
         key = (method.upper(), url)
         if key in self.json_responses:
             return self.json_responses[key]
@@ -80,12 +83,17 @@ def tracker_create_issue_client(
     )
 
 
+def tracker_failing_client() -> FakeTrackerClient:
+    return FakeTrackerClient(fail_on_request_json=True)
+
+
 def patch_tracker_issue_service(
     monkeypatch: pytest.MonkeyPatch,
     client: FakeTrackerClient | None = None,
-) -> TrackerIssueService:
-    """Подменяет singleton TrackerIssueService на экземпляр с FakeTrackerClient."""
-    service = TrackerIssueService(client or tracker_create_issue_client())
+) -> FakeTrackerClient:
+    """Подменяет singleton TrackerIssueService; возвращает FakeTrackerClient (calls)."""
+    fake = client or tracker_create_issue_client()
+    service = TrackerIssueService(fake)
     monkeypatch.setattr(
         "backend.app.services.tracker_issue_service.get_tracker_issue_service",
         lambda: service,
@@ -94,4 +102,13 @@ def patch_tracker_issue_service(
         "backend.app.services.tracker_service.get_tracker_issue_service",
         lambda: service,
     )
-    return service
+    return fake
+
+
+def enable_real_try_tracker_sync(monkeypatch: pytest.MonkeyPatch) -> None:
+    from backend.app.services.repair_request_tracker_sync import try_tracker_sync
+
+    monkeypatch.setattr(
+        "backend.app.services.repair_request_create_service.try_tracker_sync",
+        try_tracker_sync,
+    )

@@ -2,7 +2,14 @@
 
 from __future__ import annotations
 
+import time
+
+import pytest
+
 from backend.app.models.enums import RequestStatus
+from backend.app.models.repair_request import RepairRequest
+
+pytestmark = pytest.mark.integration
 
 
 def test_create_repair_request_by_audience_json(
@@ -33,11 +40,13 @@ def test_create_repair_request_by_audience_json(
     assert detail_body["description"] == "Заявка из API-теста"
 
 
-def test_create_public_repair_request_json(client, audience, monkeypatch) -> None:
-    monkeypatch.setattr(
-        "backend.app.services.repair_request_create_service.try_tracker_sync",
-        lambda request_id: None,
-    )
+@pytest.mark.tracker_http
+def test_create_public_repair_request_json(
+    client,
+    audience,
+    db,
+    fake_tracker_client,
+) -> None:
     response = client.post(
         "/api/public/repair-requests",
         json={
@@ -47,7 +56,22 @@ def test_create_public_repair_request_json(client, audience, monkeypatch) -> Non
         },
     )
     assert response.status_code == 201, response.text
-    assert response.json()["status"] == RequestStatus.OPEN.value
+    body = response.json()
+    assert body["status"] == RequestStatus.OPEN.value
+
+    request_id = body["id"]
+    deadline = time.monotonic() + 5.0
+    while time.monotonic() < deadline:
+        db.expire_all()
+        rr = db.get(RepairRequest, request_id)
+        if rr and (rr.tracker_ticket_key or "").strip():
+            break
+        time.sleep(0.05)
+
+    rr = db.get(RepairRequest, request_id)
+    assert rr is not None
+    assert rr.tracker_ticket_key == "FIX-99"
+    assert any(call[0] == "POST" for call in fake_tracker_client.calls)
 
 
 def test_create_repair_request_by_device_json(

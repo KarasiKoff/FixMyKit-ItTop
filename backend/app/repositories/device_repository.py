@@ -6,6 +6,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Query, Session, defer, joinedload
 
 from backend.app.models.category import Category
@@ -76,6 +77,16 @@ class DeviceRepository:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="device_not_found",
             )
+        return device
+
+    def save_new(self, device: Device) -> Device:
+        self._db.add(device)
+        try:
+            self._db.commit()
+        except IntegrityError:
+            self._db.rollback()
+            raise
+        self._db.refresh(device)
         return device
 
     def delete_with_related(self, device_id: UUID) -> None:

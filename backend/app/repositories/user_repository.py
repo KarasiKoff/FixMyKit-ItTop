@@ -72,6 +72,15 @@ class UserRepository:
         self._db.add(user)
         return user
 
+    def create(self, user: User) -> User:
+        self.add(user)
+        self._db.commit()
+        self._db.refresh(user)
+        return user
+
+    def commit(self) -> None:
+        self._db.commit()
+
     def resolve_tracker_actor(self, tracker_user_raw: str | None, fallback: User) -> User:
         raw = (tracker_user_raw or "").strip()
         if not raw:

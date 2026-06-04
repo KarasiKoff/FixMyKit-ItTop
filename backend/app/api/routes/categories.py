@@ -6,9 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_current_user, get_db
-from backend.app.models.category import Category as CategoryModel
 from backend.app.models.enums import UserRole
-from backend.app.models.subcategory import Subcategory as SubcategoryModel
 from backend.app.models.user import User
 from backend.app.repositories.category_repository import CategoryRepository, SubcategoryRepository
 from backend.app.schemas.category import (
@@ -68,11 +66,7 @@ def create_category(
     if CategoryRepository(db).get_by_name(payload.name) is not None:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="category_exists")
 
-    category = CategoryModel(name=payload.name)
-    db.add(category)
-    db.commit()
-    db.refresh(category)
-    return category
+    return CategoryRepository(db).create(payload.name)
 
 
 @router.post("/{category_id}/icon", response_model=Category)
@@ -146,8 +140,7 @@ def delete_category(
     repo = CategoryRepository(db)
     category = repo.get_or_404(category_id)
     repo.clear_devices_category(category_id)
-    db.delete(category)
-    db.commit()
+    repo.delete(category)
 
 
 @router.post(
@@ -167,14 +160,10 @@ def create_subcategory(
     if not name:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="subcategory_name_empty")
 
-    sub = SubcategoryModel(category_id=category_id, name=name)
-    db.add(sub)
     try:
-        db.commit()
+        sub = SubcategoryRepository(db).create(category_id, name)
     except IntegrityError as exc:
-        db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="subcategory_exists") from exc
-    db.refresh(sub)
     return Subcategory.model_validate(sub)
 
 
@@ -213,5 +202,4 @@ def delete_subcategory(
     sub_repo = SubcategoryRepository(db)
     sub = sub_repo.get_or_404(subcategory_id)
     sub_repo.clear_devices_subcategory(subcategory_id)
-    db.delete(sub)
-    db.commit()
+    sub_repo.delete(sub)

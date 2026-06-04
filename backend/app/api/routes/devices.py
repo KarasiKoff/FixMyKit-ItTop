@@ -122,11 +122,9 @@ def create_device(payload: DeviceCreate, db: Session = Depends(get_db)) -> Devic
         subcategory_id=data.get("subcategory_id"),
     )
     device = DeviceModel(**data)
-    db.add(device)
     try:
-        db.commit()
+        DeviceRepository(db).save_new(device)
     except IntegrityError as exc:
-        db.rollback()
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="inventory_number_exists") from exc
     refreshed = device_base_query(db).filter(DeviceModel.id == device.id).first()
     if refreshed is None:

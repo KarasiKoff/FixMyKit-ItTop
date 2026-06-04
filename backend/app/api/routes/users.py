@@ -57,9 +57,7 @@ def create_user(
         full_name=user_data.full_name,
         is_active=True,
     )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
+    new_user = UserRepository(db).create(new_user)
 
     return UserResponse.model_validate(new_user)
 
