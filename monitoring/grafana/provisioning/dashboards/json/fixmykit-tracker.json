@@ -344,10 +344,6 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           },
@@ -550,7 +546,7 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COALESCE(NULLIF(BTRIM(tracker_status_label), ''), '—') AS label, COUNT(*)::double precision AS count FROM repair_requests GROUP BY 1 ORDER BY count DESC LIMIT 12",
+          "rawSql": "SELECT COALESCE(NULLIF(BTRIM(tracker_status_label), ''), CASE status::text WHEN 'OPEN' THEN 'Открыт' WHEN 'IN_PROGRESS' THEN 'В работе' WHEN 'NEEDS_INFO' THEN 'Требуется информация' WHEN 'CLOSED' THEN 'Закрыт' ELSE status::text END) AS label, COUNT(*)::double precision AS count FROM repair_requests GROUP BY 1 ORDER BY count DESC LIMIT 12",
           "refId": "A"
         }
       ],
@@ -744,5 +740,5 @@
   "timezone": "browser",
   "title": "Fix My Kit — Трекер",
   "uid": "fixmykit-tracker",
-  "version": 2
+  "version": 3
 }

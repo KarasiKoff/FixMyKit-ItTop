@@ -9,7 +9,7 @@ from uuid import UUID
 from fastapi import HTTPException, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
-from backend.app.models.enums import RepairStatus
+from backend.app.models.enums import RepairStatus, RequestStatus
 from backend.app.repositories.device_repository import DeviceRepository
 from backend.app.models.repair_request import RepairRequest
 from backend.app.models.user import User
@@ -30,6 +30,7 @@ from backend.app.services.repair_request_attachment_service import (
 )
 from backend.app.services.repair_request_form_parser import parse_repair_request_form
 from backend.app.services.repair_request_target import ensure_no_active_request, ensure_target_exists
+from backend.app.services.repair_request_tracker_outbound import REQUEST_STATUS_TRACKER_LABEL
 from backend.app.services.repair_request_tracker_sync import try_tracker_sync
 from backend.app.services.tracker_service import issue_ref_for
 
@@ -93,6 +94,7 @@ def _persist_new_request(db: Session, fields: RepairRequestCreateFields) -> Repa
         applicant_name=fields.applicant_name,
         author_user_id=fields.author_user_id,
     )
+    repair_request.tracker_status_label = REQUEST_STATUS_TRACKER_LABEL[RequestStatus.OPEN]
     _record_request_created(db, repair_request)
     db.commit()
     db.refresh(repair_request)

@@ -347,9 +347,28 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
+          "editorMode": "code",
           "format": "table",
+          "rawQuery": true,
           "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE status::text IN ('OPEN', 'IN_PROGRESS', 'NEEDS_INFO')",
-          "refId": "A"
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Активных сейчас",
@@ -406,9 +425,28 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
+          "editorMode": "code",
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM devices WHERE repair_status::text = 'IN_REPAIR'",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::double precision AS \"Активных\" FROM repair_requests WHERE status::text IN ('IN_PROGRESS', 'NEEDS_INFO')",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "В ремонте",
@@ -951,5 +989,5 @@
   "timezone": "browser",
   "title": "Fix My Kit — Еженедельный отчёт",
   "uid": "fixmykit-weekly",
-  "version": 2
+  "version": 3
 }

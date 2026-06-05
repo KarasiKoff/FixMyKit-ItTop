@@ -271,7 +271,7 @@
           "refId": "A"
         }
       ],
-      "title": "NEEDS_INFO",
+      "title": "Требуется информация",
       "type": "stat"
     },
     {
@@ -330,7 +330,7 @@
           "refId": "A"
         }
       ],
-      "title": "NEEDS_INFO > 7д",
+      "title": "Требуется информация > 7д",
       "type": "stat"
     },
     {
@@ -839,5 +839,5 @@
   "timezone": "browser",
   "title": "Fix My Kit — Качество закрытия",
   "uid": "fixmykit-quality",
-  "version": 1
+  "version": 2
 }

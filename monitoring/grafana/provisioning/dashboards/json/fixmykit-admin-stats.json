@@ -67,6 +67,10 @@
       },
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "fixedColor": "#56a8a2",
+            "mode": "fixed"
+          },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -74,10 +78,6 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -136,7 +136,7 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 20
               }
             ]
           }
@@ -175,7 +175,7 @@
           "refId": "A"
         }
       ],
-      "title": "OPEN",
+      "title": "Открыто",
       "type": "stat"
     },
     {
@@ -195,7 +195,7 @@
               },
               {
                 "color": "red",
-                "value": 80
+                "value": 20
               }
             ]
           }
@@ -251,10 +251,6 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -310,10 +306,6 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -369,10 +361,6 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -441,10 +429,6 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -500,10 +484,6 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -559,10 +539,6 @@
               {
                 "color": "green",
                 "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
               }
             ]
           }
@@ -631,7 +607,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 8,
         "w": 8,
         "x": 0,
         "y": 12
@@ -875,5 +851,5 @@
   "timezone": "browser",
   "title": "Fix My Kit — Админ-статистика",
   "uid": "fixmykit-admin-stats",
-  "version": 1
+  "version": 2
 }

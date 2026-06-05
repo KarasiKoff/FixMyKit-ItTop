@@ -212,7 +212,7 @@
           "refId": "A"
         }
       ],
-      "title": "OPEN > 7 дней",
+      "title": "Открыто > 7 дней",
       "type": "stat"
     },
     {
@@ -629,5 +629,5 @@
   "timezone": "browser",
   "title": "Fix My Kit — SLA заявок",
   "uid": "fixmykit-sla",
-  "version": 2
+  "version": 3
 }

@@ -287,9 +287,28 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
+          "editorMode": "code",
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS \"В ремонте\" FROM devices WHERE repair_status::text = 'IN_REPAIR'",
-          "refId": "A"
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::double precision AS \"Активных\" FROM repair_requests WHERE status::text IN ('IN_PROGRESS', 'NEEDS_INFO')",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
         }
       ],
       "title": "Устройств в ремонте",
@@ -1131,5 +1150,5 @@
   "timezone": "browser",
   "title": "Fix My Kit — Операции",
   "uid": "fixmykit-operations",
-  "version": 3
+  "version": 4
 }

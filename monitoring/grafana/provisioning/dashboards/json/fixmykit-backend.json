@@ -143,10 +143,10 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "http_requests_total{job=~\"$job\", handler!=\"/metrics\"}",
-          "instant": false,
+          "expr": "sum by (method, handler) (increase(http_requests_total{job=~\"$job\", handler!=\"/metrics\"}[24h]))",
+          "instant": true,
           "legendFormat": "{{method}} {{handler}}",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -221,10 +221,10 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "http_request_duration_seconds_sum{job=~\"$job\"} / http_request_duration_seconds_count{job=~\"$job\"}",
-          "instant": false,
+          "expr": "(\n  sum by (method, handler) (\n    increase(http_request_duration_seconds_sum{job=~\"$job\", handler!~\"/metrics|/api/events/stream\"}[$__range])\n  )\n  /\n  sum by (method, handler) (\n    increase(http_request_duration_seconds_count{job=~\"$job\", handler!~\"/metrics|/api/events/stream\"}[$__range])\n  )\n)\nand on (method, handler)\n  sum by (method, handler) (\n    increase(http_request_duration_seconds_count{job=~\"$job\", handler!~\"/metrics|/api/events/stream\"}[$__range])\n  ) >= 1",
+          "instant": true,
           "legendFormat": "{{handler}} - {{method}}",
-          "range": true,
+          "range": false,
           "refId": "A"
         }
       ],
@@ -590,7 +590,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=~\"$job\", handler!=\"/metrics\"}[1m])) by (handler, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=~\"$job\", handler!~\"/metrics|/api/events/stream\"}[5m])) by (handler, le))",
           "instant": false,
           "legendFormat": "{{handler}}",
           "range": true,
@@ -689,7 +689,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "http_requests_total{job=~\"$job\", handler!=\"/metrics\"}",
+          "expr": "sum by (handler) (rate(http_requests_total{job=~\"$job\", handler!=\"/metrics\"}[5m]))",
           "instant": false,
           "legendFormat": "{{handler}}",
           "range": true,
