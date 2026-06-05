@@ -54,6 +54,28 @@ def test_workflow_needs_info_then_in_progress(client, admin_headers, audience) -
     assert body["tracker_status_sync_pending"] is False
 
 
+def test_workflow_in_progress_then_open(client, admin_headers, audience) -> None:
+    request_id = _create_request(client, admin_headers, str(audience.id))
+
+    in_progress = client.patch(
+        f"/api/repair-requests/{request_id}/workflow",
+        headers=admin_headers,
+        json={"workflow": "in_progress"},
+    )
+    assert in_progress.status_code == 200, in_progress.text
+    assert in_progress.json()["status"] == RequestStatus.IN_PROGRESS.value
+
+    reopen = client.patch(
+        f"/api/repair-requests/{request_id}/workflow",
+        headers=admin_headers,
+        json={"workflow": "open"},
+    )
+    assert reopen.status_code == 200, reopen.text
+    body = reopen.json()
+    assert body["status"] == RequestStatus.OPEN.value
+    assert body["tracker_status_label"] == "Открыт"
+
+
 def test_workflow_closed_requires_resolution(client, admin_headers, audience) -> None:
     request_id = _create_request(client, admin_headers, str(audience.id))
     response = client.patch(
