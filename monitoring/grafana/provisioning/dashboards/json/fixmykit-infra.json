@@ -544,32 +544,6 @@
       "type": "row"
     },
     {
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 2,
-        "w": 24,
-        "x": 0,
-        "y": 13
-      },
-      "id": 523,
-      "options": {
-        "code": {
-          "language": "markdown",
-          "showLineNumbers": false,
-          "showMiniMap": false
-        },
-        "content": "На **Docker Desktop (Windows)** cAdvisor обычно не видит отдельные контейнеры — только суммарный cgroup `/docker`. На **Linux prod** появятся линии по сервисам (`fixmykit-*`, `fmk-*`).",
-        "mode": "markdown"
-      },
-      "pluginVersion": "12.3.1",
-      "title": "",
-      "transparent": true,
-      "type": "text"
-    },
-    {
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -635,7 +609,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 15
+        "y": 13
       },
       "id": 521,
       "options": {
@@ -733,7 +707,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 15
+        "y": 13
       },
       "id": 522,
       "options": {
@@ -802,5 +776,5 @@
   "timezone": "browser",
   "title": "Fix My Kit — Инфраструктура",
   "uid": "fixmykit-infra",
-  "version": 2
+  "version": 3
 }

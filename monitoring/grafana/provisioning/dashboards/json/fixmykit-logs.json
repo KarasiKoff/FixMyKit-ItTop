@@ -85,11 +85,11 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(count_over_time({service=\"backend\", level=\"ERROR\"}[$__range]))",
+          "expr": "sum(count_over_time({service=\"backend\", level=\"ERROR\"}[7d]))",
           "refId": "A"
         }
       ],
-      "title": "ERROR за период",
+      "title": "ERROR (7д)",
       "type": "stat"
     },
     {
@@ -143,11 +143,11 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(count_over_time({service=\"backend\", level=\"WARNING\"}[$__range]))",
+          "expr": "sum(count_over_time({service=\"backend\", level=\"WARNING\"}[7d]))",
           "refId": "A"
         }
       ],
-      "title": "WARNING за период",
+      "title": "WARNING (7д)",
       "type": "stat"
     },
     {
@@ -201,11 +201,11 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(count_over_time({service=\"backend\"} |~ \"tracker\" [$__range]))",
+          "expr": "sum(count_over_time({service=\"backend\"} |~ \"tracker\" [7d]))",
           "refId": "A"
         }
       ],
-      "title": "События Tracker",
+      "title": "События Tracker (7д)",
       "type": "stat"
     },
     {
@@ -259,11 +259,11 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(count_over_time({service=\"backend\"} |~ \"http_exception|http_request_failed\" [$__range]))",
+          "expr": "sum(count_over_time({service=\"backend\"} |~ \"http_exception|http_request_failed\" [7d]))",
           "refId": "A"
         }
       ],
-      "title": "HTTP ошибки",
+      "title": "HTTP ошибки (7д)",
       "type": "stat"
     },
     {
@@ -501,5 +501,5 @@
   "timezone": "browser",
   "title": "Fix My Kit — Логи",
   "uid": "fixmykit-logs",
-  "version": 1
+  "version": 3
 }

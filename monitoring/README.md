@@ -96,6 +96,15 @@ docker compose -p fmk-monitoring \
 | **Fix My Kit — SLA заявок** | PostgreSQL (`fixmykit-sla.json`) — время закрытия, застрявшие заявки, динамика |
 | **Fix My Kit — Инфраструктура** | Prometheus (`fixmykit-infra.json`) — API/БД up, postgres-exporter, cAdvisor |
 | **Fix My Kit — Логи** | Loki (`fixmykit-logs.json`) — ERROR/WARNING, Трекер, HTTP 4xx/5xx |
+| **Fix My Kit — Оборудование** | PostgreSQL (`fixmykit-equipment.json`) — хроники, % в ремонте, неполный каталог |
+| **Fix My Kit — Качество закрытия** | PostgreSQL (`fixmykit-quality.json`) — «Решен» / «Не будет исправлено», NEEDS_INFO |
+| **Fix My Kit — Алерты и SLO** | Prometheus (`fixmykit-alerts.json`) — uptime, firing alerts, HTTP error rate |
+| **Fix My Kit — Пользователи** | PostgreSQL + Loki (`fixmykit-users.json`) — роли, закрытия, комментарии, входы |
+| **Fix My Kit — API детализация** | Prometheus (`fixmykit-api-detail.json`) — latency/RPS/ошибки по handler |
+| **Fix My Kit — Трекер (техн.)** | PostgreSQL + Loki (`fixmykit-tracker-tech.json`) — sync, вложения, webhook |
+| **Fix My Kit — Админ-статистика** | PostgreSQL (`fixmykit-admin-stats.json`) — как `/api/admin/stats` с периодом |
+| **Fix My Kit — Объявления** | PostgreSQL (`fixmykit-announcements.json`) — слоты, severity, активность |
+| **Fix My Kit — Еженедельный отчёт** | PostgreSQL + Prometheus + Loki (`fixmykit-weekly.json`) — сводка за 7 дней |
 
 Для дашборда **Операции** в `.env.monitoring`:
 
@@ -144,6 +153,8 @@ sum(rate(http_requests_total{job="fmk-backend", status="5xx"}[5m]))
 | Prod (link / bundle) | volume `fixmykit-logs-prod` (тот же, что у бэкенда) |
 
 Проверка: Grafana → **Explore** → Loki → `{service="backend"}`.
+
+**Лимит Loki:** хранение логов **7 дней** (`retention_period: 168h`). Stat-панели с Loki используют окно `[7d]`, не `$__range` — иначе при широком периоде Grafana ошибка `query time range exceeds the limit (30d)`.
 
 На дашборде **Backend**: **Log service** = `backend`, **Log filter** — подстрока.  
 Отдельный дашборд **Логи** — агрегаты по `level`, потоки ERROR / Трекер / HTTP.
