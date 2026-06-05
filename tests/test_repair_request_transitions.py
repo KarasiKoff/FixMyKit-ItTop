@@ -12,6 +12,20 @@ class TestApiTransitions:
             TransitionSource.API,
         )
 
+    def test_in_progress_can_go_open_via_api(self) -> None:
+        assert can_transition(
+            RequestStatus.IN_PROGRESS,
+            RequestStatus.OPEN,
+            TransitionSource.API,
+        )
+
+    def test_needs_info_can_go_open_via_api(self) -> None:
+        assert can_transition(
+            RequestStatus.NEEDS_INFO,
+            RequestStatus.OPEN,
+            TransitionSource.API,
+        )
+
     def test_closed_cannot_reopen_via_api(self) -> None:
         assert not can_transition(
             RequestStatus.CLOSED,

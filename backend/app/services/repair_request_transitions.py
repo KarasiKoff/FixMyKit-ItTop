@@ -25,6 +25,7 @@ _API_TRANSITIONS: dict[RequestStatus, frozenset[RequestStatus]] = {
     ),
     RequestStatus.IN_PROGRESS: frozenset(
         {
+            RequestStatus.OPEN,
             RequestStatus.IN_PROGRESS,
             RequestStatus.NEEDS_INFO,
             RequestStatus.CLOSED,
@@ -32,6 +33,7 @@ _API_TRANSITIONS: dict[RequestStatus, frozenset[RequestStatus]] = {
     ),
     RequestStatus.NEEDS_INFO: frozenset(
         {
+            RequestStatus.OPEN,
             RequestStatus.NEEDS_INFO,
             RequestStatus.IN_PROGRESS,
             RequestStatus.CLOSED,
