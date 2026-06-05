@@ -36,3 +36,11 @@ scrape_configs:
         labels:
           service: database
           component: postgres
+
+  - job_name: fmk-cadvisor
+    static_configs:
+      - targets:
+          - cadvisor:8080
+        labels:
+          service: infrastructure
+          component: cadvisor

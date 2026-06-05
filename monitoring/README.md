@@ -90,8 +90,12 @@ docker compose -p fmk-monitoring \
 
 | Дашборд | Источник |
 |---------|----------|
-| **Fix My Kit — Backend** | Prometheus (`fixmykit-backend.json`) |
-| **Fix My Kit — Операции** | PostgreSQL (`fixmykit-operations.json`) — заявки, категории, аудитории, «в ремонте» |
+| **Fix My Kit — Backend** | Prometheus (`fixmykit-backend.json`) — HTTP, latency, логи (встроенная панель) |
+| **Fix My Kit — Операции** | PostgreSQL (`fixmykit-operations.json`) — заявки, категории, аудитории |
+| **Fix My Kit — Трекер** | PostgreSQL (`fixmykit-tracker.json`) — задачи Яндекс Трекера, sync вложений |
+| **Fix My Kit — SLA заявок** | PostgreSQL (`fixmykit-sla.json`) — время закрытия, застрявшие заявки, динамика |
+| **Fix My Kit — Инфраструктура** | Prometheus (`fixmykit-infra.json`) — API/БД up, postgres-exporter, cAdvisor |
+| **Fix My Kit — Логи** | Loki (`fixmykit-logs.json`) — ERROR/WARNING, Трекер, HTTP 4xx/5xx |
 
 Для дашборда **Операции** в `.env.monitoring`:
 
@@ -141,7 +145,41 @@ sum(rate(http_requests_total{job="fmk-backend", status="5xx"}[5m]))
 
 Проверка: Grafana → **Explore** → Loki → `{service="backend"}`.
 
-На дашборде: **Log service** = `backend`, **Log filter** — подстрока (пустое поле = все строки).
+На дашборде **Backend**: **Log service** = `backend`, **Log filter** — подстрока.  
+Отдельный дашборд **Логи** — агрегаты по `level`, потоки ERROR / Трекер / HTTP.
+
+## Инфраструктура (cAdvisor)
+
+В стеке есть **cAdvisor** (`fmk-cadvisor`, порт `CADVISOR_PORT`, по умолчанию **8089**). Prometheus job `fmk-cadvisor` — метрики CPU/RAM контейнеров `fixmykit-*` и `fmk-*` на дашборде **Инфраструктура**.
+
+На **Docker Desktop (Windows)** cAdvisor часто **не видит отдельные контейнеры** (в логах `fmk-cadvisor`: `failed to identify the read-write layer ID`). Это ограничение Docker Desktop, не баг приложения. На дашборде **Инфраструктура** в таком случае видна только линия **«Docker всего»** (`id=/docker`). На **Linux prod** обычно появляются метрики по каждому `fixmykit-*` / `fmk-*`.
+
+## Устранение неполадок
+
+### Prometheus: API «лежит», хотя бэкенд работает
+
+В **Targets** ошибка `lookup backend: no such host` — контейнер `fmk-prometheus` **не в сети** `fixmykit-dev`.
+
+Частая причина: мониторинг пересоздали **без** overlay для локалки:
+
+```bash
+# неверно (только базовый compose)
+docker compose -p fmk-monitoring -f docker-compose.monitoring.yml ...
+
+# верно для сценария 1
+docker compose -p fmk-monitoring \
+  -f docker-compose.monitoring.yml \
+  -f docker-compose.monitoring.local.yml \
+  --env-file .env.monitoring up -d
+```
+
+Проверка: http://localhost:9090/targets → job `fmk-backend` должен быть **UP**.
+
+**Альтернатива без общей Docker-сети** (если API проброшен на хост `:8000`):
+
+```env
+BACKEND_METRICS_TARGET=host.docker.internal:8000
+```
 
 ## Безопасность
 
