@@ -1,44 +1,142 @@
 groups:
-  - name: fixmykit
+  - name: fixmykit_alerts
+    interval: 10s
     rules:
-      - alert: BackendDown
+
+      - alert: ServiceDown
         expr: up{job="fmk-backend"} == 0
-        for: 2m
+        for: 15s
         labels:
           severity: critical
         annotations:
-          summary: "API Fix My Kit недоступен"
-          description: "Prometheus не получает метрики с бэкенда (job fmk-backend) более 2 минут."
+          summary: "🔥 Backend упал и не встаёт!"
+          description: "😱 Сервис fmk-backend недоступен уже 15 секунд!\n\nPrometheus не может собрать метрики.\nВероятно, контейнер fixmykit-backend лёг или сеть мониторинга отвалилась.\n\nПроверь: docker ps, docker logs fixmykit-backend, Targets в Prometheus."
+          resolved_description: "🎉 Backend вернулся в строй! Система снова в деле!\n\nМетрики текут, API отвечает. Можно выдохнуть. Чайку попей 🫖"
+
+      - alert: DatabaseDown
+        expr: pg_up{job="fmk-db"} == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "🚨 Критический сбой: база данных упала!"
+          description: "😱 Сердце системы остановилось. Индикатор жизнеспособности PostgreSQL (pg_up) стабильно показывает ноль в течение 15 секунд.\n\nПроверь: fixmykit-postgres, fmk-postgres-exporter, сеть fixmykit-dev."
+          resolved_description: "🎉 Сердце вновь забилось! Пристегнитесь, мы взлетаем! База данных восстановлена."
 
       - alert: PostgresExporterDown
         expr: up{job="fmk-db"} == 0
-        for: 2m
+        for: 15s
         labels:
           severity: critical
         annotations:
-          summary: "postgres-exporter недоступен"
-          description: "Нет scrape postgres-exporter:9187 — проверьте контейнер и доступ к PostgreSQL."
+          summary: "🔥 fmk-postgres-exporter упал и не встаёт!"
+          description: "😱 Система мониторинга ослепла. fmk-postgres-exporter перестал отвечать на запросы Prometheus.\n\nБД может быть жива, но мы её не видим."
+          resolved_description: "Наш брат снова прозрел 👁\n\nfmk-postgres-exporter восстановлен и снова следит за БД как ястреб 🦅"
 
-      - alert: HighHttp5xxRate
+      - alert: High5xxErrorRate
         expr: |
           (
             sum(rate(http_requests_total{job="fmk-backend", status="5xx"}[5m]))
             /
             sum(rate(http_requests_total{job="fmk-backend"}[5m]))
           ) > 0.05
-          and sum(rate(http_requests_total{job="fmk-backend"}[5m])) > 0.1
-        for: 5m
+          and
+          sum(rate(http_requests_total{job="fmk-backend"}[5m])) > 0.1
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "💥 Высокий уровень ошибок 5XX в API!\nСервер плюётся ошибками 5XX!"
+          description: "🚨 Более 5% запросов возвращают 5xx уже 30 секунд!\n\nПроверь логи backend (fixmykit-error.log), БД и /api/debug/test-500 только на dev.\n\nМетки статуса в Prometheus: 5xx, не 500."
+          resolved_description: "🥳 Ура! Сервер перестал плеваться, всё работает как часы ⚙️"
+
+      - alert: High4xxErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="fmk-backend", status="4xx"}[5m]))
+            /
+            sum(rate(http_requests_total{job="fmk-backend"}[5m]))
+          ) > 0.10
+          and
+          sum(rate(http_requests_total{job="fmk-backend"}[5m])) > 0.1
+        for: 1m
         labels:
           severity: warning
         annotations:
-          summary: "Высокая доля HTTP 5xx на API"
-          description: "Более 5% ответов API — 5xx за последние 5 минут."
+          summary: "⚠️ Повышенный уровень ошибок 4XX в API!\nКлиенты не могут попасть куда нужно"
+          description: "🤔 Более 10% запросов возвращают 4xx уже минуту.\n\nВозможные причины: битые запросы, 401/403, устаревшие эндпоинты, валидация.\n\nМетки статуса в Prometheus: 4xx, не 404."
+          resolved_description: "👍 Клиенты снова находят дорогу! Уровень 4xx ошибок нормализовался.\n\nПути API снова ясны и понятны для всех 🗺"
+
+      - alert: SlowAPIResponse
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="fmk-backend", handler!="/metrics"}[5m]))
+            by (le)
+          ) > 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Высокая задержка обработки запросов!\n🐌 API работает как улитка"
+          description: "⏱️ 95-й перцентиль времени ответа fmk-backend превышает 1 секунду в течение минуты.\n\nПроверь PostgreSQL, тяжёлые эндпоинты на дашборде «API детализация»."
+          resolved_description: "⚡️ Улитку заменил гепард! Задержки вернулись в норму!\n\nAPI снова быстрый и отзывчивый 😎"
 
       - alert: PostgresConnectionsHigh
-        expr: pg_stat_database_numbackends{datname!~"template.*"} > 80
+        expr: pg_stat_database_numbackends{datname="fixmykit"} > 80
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "Много подключений к PostgreSQL"
-          description: "Число активных подключений к БД {{ $labels.datname }} превышает 80."
+          summary: "⚠️ Много подключений к PostgreSQL"
+          description: "🔌 К БД fixmykit подключено больше 80 сессий уже 10 минут.\n\nВозможны утечки соединений или всплеск нагрузки."
+          resolved_description: "✅ Подключения к PostgreSQL вернулись в норму.\n\nПул дышит спокойно 🧘"
+
+  - name: fixmykit_business_alerts
+    interval: 10s
+    rules:
+
+      - alert: HighRepairRequest4xxRate
+        expr: |
+          (
+            sum(rate(http_requests_total{job="fmk-backend", status="4xx", handler=~".*repair-requests.*"}[5m]))
+            /
+            sum(rate(http_requests_total{job="fmk-backend", handler=~".*repair-requests.*"}[5m]))
+          ) > 0.15
+          and
+          sum(rate(http_requests_total{job="fmk-backend", handler=~".*repair-requests.*"}[5m])) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "⚠️ Много 4XX на заявках (repair-requests)"
+          description: "🚨 Более 15% запросов к /api/repair-requests возвращают 4xx уже 5 минут.\n\nПользователи не могут нормально создавать или смотреть заявки.\n\nПроверь авторизацию, валидацию и логи fixmykit.http."
+          resolved_description: "✅ Заявки снова проходят! 4xx на repair-requests в норме 🎉"
+
+      - alert: SlowRepairRequestApi
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum(rate(http_request_duration_seconds_bucket{job="fmk-backend", handler=~".*repair-requests.*"}[5m]))
+            by (le)
+          ) > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🐌 Заявки обрабатываются медленно"
+          description: "⏱️ p95 latency по repair-requests выше 2 секунд уже 2 минуты.\n\nПроверь PostgreSQL, тяжёлые списки и вложения."
+          resolved_description: "⚡️ Заявки снова летят! Latency repair-requests в норме 😎"
+
+      - alert: TrackerWebhookFailures
+        expr: |
+          sum(rate(http_requests_total{job="fmk-backend", status="5xx", handler=~".*webhooks.*"}[5m])) > 0
+          or
+          sum(rate(http_requests_total{job="fmk-backend", status="5xx", handler=~".*yandex-tracker.*"}[5m])) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "💥 Ошибки webhook Яндекс Трекера"
+          description: "🚨 Эндпоинты /api/webhooks/yandex-tracker отдают 5xx.\n\nСтатусы из Трекера могут не доходить до Fix My Kit.\n\nПроверь логи tracker_webhook и секрет TRACKER_WEBHOOK_SECRET."
+          resolved_description: "✅ Webhook Трекера снова принимает события! Синхронизация жива 🔗"
