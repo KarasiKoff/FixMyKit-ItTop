@@ -222,6 +222,8 @@ __marimo__/
 
 node_modules/
 package-lock.json
+!frontend/package-lock.json
+!e2e/package-lock.json
 
 .vite/
 
