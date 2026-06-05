@@ -1,0 +1,105 @@
+# CI для Fix My Kit (аналог .github/workflows/ci.yml)
+# PostgreSQL в GitLab: хост сервиса — postgres (не localhost)
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == "main"
+    - if: $CI_COMMIT_BRANCH == "master"
+
+stages:
+  - test
+  - e2e
+
+variables:
+  POSTGRES_HOST: postgres
+  POSTGRES_PORT: "5432"
+  POSTGRES_DB: fixmykit_test
+  POSTGRES_USER: fixmykit
+  POSTGRES_PASSWORD: fixmykit
+  JWT_SECRET_KEY: ci-jwt-secret
+  TRACKER_WEBHOOK_SECRET: ci-webhook-secret
+  TRACKER_WEBHOOK_ACTOR_LOGIN: tracker_webhook
+  UV_CACHE_DIR: $CI_PROJECT_DIR/.cache/uv
+  PIP_CACHE_DIR: $CI_PROJECT_DIR/.cache/pip
+  PLAYWRIGHT_API_BASE_URL: http://127.0.0.1:8000
+
+.default_uv:
+  image: ghcr.io/astral-sh/uv:python3.14-bookworm-slim
+  cache:
+    key: uv-$CI_COMMIT_REF_SLUG
+    paths:
+      - .venv/
+      - .cache/uv
+  before_script:
+    - uv sync --group dev
+
+.postgres_service:
+  services:
+    - name: postgres:16-alpine
+      alias: postgres
+      variables:
+        POSTGRES_DB: fixmykit_test
+        POSTGRES_USER: fixmykit
+        POSTGRES_PASSWORD: fixmykit
+
+frontend:
+  stage: test
+  image: node:20-bookworm-slim
+  interruptible: true
+  cache:
+    key: npm-frontend-$CI_COMMIT_REF_SLUG
+    paths:
+      - frontend/node_modules/
+  before_script:
+    - cd frontend
+    - npm ci
+  script:
+    - npm run lint
+    - npm run format:check
+    - npm run build
+    - npm run test
+
+backend-unit:
+  stage: test
+  extends: .default_uv
+  interruptible: true
+  script:
+    - uv run python -m compileall backend/app main.py
+    - uv run pytest tests/ --ignore=tests/api -q
+
+backend-integration:
+  stage: test
+  extends:
+    - .default_uv
+    - .postgres_service
+  interruptible: true
+  script:
+    - uv run pytest tests/api -m integration -q
+
+e2e-api-smoke:
+  stage: e2e
+  extends:
+    - .default_uv
+    - .postgres_service
+  needs:
+    - backend-integration
+  before_script:
+    - apt-get update -qq
+    - apt-get install -y -qq curl ca-certificates gnupg
+    - curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    - apt-get install -y -qq nodejs
+    - uv sync --group dev
+    - uv run alembic -c backend/alembic.ini upgrade head
+  script:
+    - |
+      uv run uvicorn main:app --host 127.0.0.1 --port 8000 &
+      for i in $(seq 1 30); do
+        if curl -sf http://127.0.0.1:8000/health; then break; fi
+        sleep 1
+      done
+      curl -sf http://127.0.0.1:8000/health
+    - cd e2e
+    - npm ci
+    - npx playwright install chromium --with-deps
+    - npm test -- --project=api
