@@ -7,7 +7,7 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import Query, Session, defer, joinedload
+from sqlalchemy.orm import Query, Session, joinedload
 
 from backend.app.models.category import Category
 from backend.app.models.device import Device
@@ -90,13 +90,19 @@ class DeviceRepository:
         return device
 
     def delete_with_related(self, device_id: UUID) -> None:
-        self._db.query(RepairHistory).filter(RepairHistory.device_id == device_id).delete(
+        self._db.query(RepairHistory).filter(
+            RepairHistory.device_id == device_id
+        ).delete(
             synchronize_session=False,
         )
-        self._db.query(RepairRequest).filter(RepairRequest.device_id == device_id).delete(
+        self._db.query(RepairRequest).filter(
+            RepairRequest.device_id == device_id
+        ).delete(
             synchronize_session=False,
         )
-        self._db.query(Device).filter(Device.id == device_id).delete(synchronize_session=False)
+        self._db.query(Device).filter(Device.id == device_id).delete(
+            synchronize_session=False
+        )
 
 
 def device_base_query(db: Session) -> Query[Device]:

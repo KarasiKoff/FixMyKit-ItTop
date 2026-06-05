@@ -5,7 +5,12 @@ from fastapi import APIRouter, Depends, Query
 from backend.app.api.deps import get_current_admin
 from backend.app.core.config import settings
 from backend.app.models.user import User
-from backend.app.schemas.admin_logs import AdminLogsResponse, LogEntry, LogLevelFilter, LogSource
+from backend.app.schemas.admin_logs import (
+    AdminLogsResponse,
+    LogEntry,
+    LogLevelFilter,
+    LogSource,
+)
 from backend.app.services.admin_logs_service import log_sources_status, tail_log_entries
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -13,7 +18,9 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 @router.get("/logs", response_model=AdminLogsResponse)
 def get_admin_logs(
-    source: LogSource = Query("app", description="app — все штатные события; error — только ERROR/CRITICAL"),
+    source: LogSource = Query(
+        "app", description="app — все штатные события; error — только ERROR/CRITICAL"
+    ),
     level: LogLevelFilter = Query("ALL"),
     search: str | None = Query(None, max_length=200),
     limit: int = Query(200, ge=1, le=1000),

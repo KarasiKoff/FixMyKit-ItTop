@@ -57,7 +57,9 @@ class TestSyncTrackerLabelWithPending:
         assert rr.tracker_status_sync_pending is False
         db.commit.assert_called()
 
-    def test_sets_pending_on_tracker_unavailable(self, monkeypatch: pytest.MonkeyPatch) -> None:
+    def test_sets_pending_on_tracker_unavailable(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         def _fail(*args, **kwargs) -> None:
             raise TrackerUnavailableError("down")
 

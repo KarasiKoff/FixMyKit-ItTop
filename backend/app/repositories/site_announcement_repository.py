@@ -56,8 +56,13 @@ class SiteAnnouncementRepository:
             .filter(
                 SiteAnnouncement.is_enabled.is_(True),
                 SiteAnnouncement.message != "",
-                or_(SiteAnnouncement.starts_at.is_(None), SiteAnnouncement.starts_at <= now),
-                or_(SiteAnnouncement.ends_at.is_(None), SiteAnnouncement.ends_at >= now),
+                or_(
+                    SiteAnnouncement.starts_at.is_(None),
+                    SiteAnnouncement.starts_at <= now,
+                ),
+                or_(
+                    SiteAnnouncement.ends_at.is_(None), SiteAnnouncement.ends_at >= now
+                ),
             )
             .all()
         )

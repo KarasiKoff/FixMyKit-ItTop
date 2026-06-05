@@ -26,7 +26,9 @@ class TestMapTrackerStatus:
         assert TRACKER_STATUS_ALIASES[raw] == expected
 
     def test_strips_whitespace(self) -> None:
-        assert _map_tracker_status_to_request("  В работе  ") == RequestStatus.IN_PROGRESS
+        assert (
+            _map_tracker_status_to_request("  В работе  ") == RequestStatus.IN_PROGRESS
+        )
 
     @pytest.mark.parametrize("raw", ["", "   ", None])
     def test_empty_returns_none(self, raw: str | None) -> None:

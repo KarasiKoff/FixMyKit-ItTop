@@ -13,11 +13,16 @@ from backend.app.schemas.repair_request_comment import (
     RepairRequestCommentResponse,
 )
 from backend.app.services.realtime_notify import notify_repair_request_updated
-from backend.app.services.repair_request_comment_service import create_comment, list_comments
+from backend.app.services.repair_request_comment_service import (
+    create_comment,
+    list_comments,
+)
 from backend.app.repositories.repair_request_repository import get_repair_request_or_404
 
 
-def list_repair_request_comments(db: Session, request_id: UUID) -> RepairRequestCommentList:
+def list_repair_request_comments(
+    db: Session, request_id: UUID
+) -> RepairRequestCommentList:
     get_repair_request_or_404(db, request_id)
     return RepairRequestCommentList(items=list_comments(db, request_id))
 

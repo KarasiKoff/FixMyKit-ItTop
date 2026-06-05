@@ -35,7 +35,11 @@ def validate_device_subcategory(
                 detail="subcategory_category_mismatch",
             )
 
-    if category_id is not None and count_active_subcategories(db, category_id) > 0 and subcategory_id is None:
+    if (
+        category_id is not None
+        and count_active_subcategories(db, category_id) > 0
+        and subcategory_id is None
+    ):
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="subcategory_required",

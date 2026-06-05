@@ -6,7 +6,9 @@ from uuid import UUID
 
 from backend.app.core.database import SessionLocal
 from backend.app.repositories.repair_request_repository import RepairRequestRepository
-from backend.app.services.repair_request_attachment_service import sync_tracker_issue_and_attachments
+from backend.app.services.repair_request_attachment_service import (
+    sync_tracker_issue_and_attachments,
+)
 
 
 def try_tracker_sync(request_id: UUID) -> bool:

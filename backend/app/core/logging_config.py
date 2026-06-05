@@ -93,8 +93,10 @@ def setup_logging(
     log_path = Path(log_dir)
     log_path.mkdir(parents=True, exist_ok=True)
 
-    fmt = JsonLineFormatter() if log_json else ConsoleFormatter(
-        "%(asctime)s %(levelname)s %(name)s: %(message)s"
+    fmt = (
+        JsonLineFormatter()
+        if log_json
+        else ConsoleFormatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
     )
     ctx_filter = RequestContextFilter()
 
@@ -102,7 +104,9 @@ def setup_logging(
     console.setLevel(level)
     console.addFilter(ctx_filter)
     console.setFormatter(
-        fmt if log_json else ConsoleFormatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
+        fmt
+        if log_json
+        else ConsoleFormatter("%(asctime)s %(levelname)s %(name)s: %(message)s")
     )
 
     app_file = RotatingFileHandler(

@@ -20,4 +20,6 @@ def test_sync_repair_request_creates_issue_via_fake_client() -> None:
 
     assert result.ticket_key == "FIX-UNIT-1"
     assert result.ticket_id == "42"
-    assert any(call[0] == "POST" and call[1].endswith("/issues/") for call in client.calls)
+    assert any(
+        call[0] == "POST" and call[1].endswith("/issues/") for call in client.calls
+    )

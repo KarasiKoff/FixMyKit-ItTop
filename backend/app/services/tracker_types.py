@@ -29,7 +29,9 @@ class TrackerAttachmentMeta:
 
 
 def issue_ref_for(repair_request: RepairRequest) -> str | None:
-    ref = (repair_request.tracker_ticket_key or repair_request.tracker_ticket_id or "").strip()
+    ref = (
+        repair_request.tracker_ticket_key or repair_request.tracker_ticket_id or ""
+    ).strip()
     return ref or None
 
 

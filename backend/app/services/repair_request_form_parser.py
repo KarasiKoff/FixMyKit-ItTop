@@ -30,19 +30,28 @@ async def parse_repair_request_form(
     audience_raw = form.get("audience_id")
     device_id = UUID(str(device_raw)) if device_raw is not None else None
     audience_id = UUID(str(audience_raw)) if audience_raw is not None else None
-    device_id, audience_id = parse_repair_target(device_id=device_id, audience_id=audience_id)
+    device_id, audience_id = parse_repair_target(
+        device_id=device_id, audience_id=audience_id
+    )
 
     description = str(form.get("description") or "").strip()
     if not description:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="description_required")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="description_required"
+        )
 
     applicant_raw = form.get("applicant_name")
     if require_applicant:
         if applicant_raw is None or not str(applicant_raw).strip():
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="applicant_name_required")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="applicant_name_required",
+            )
         applicant_name = str(applicant_raw).strip()
     else:
-        applicant_name = str(applicant_raw).strip() if applicant_raw is not None else None
+        applicant_name = (
+            str(applicant_raw).strip() if applicant_raw is not None else None
+        )
 
     sync_to_tracker = True
     if allow_sync_to_tracker:

@@ -17,7 +17,12 @@ depends_on = None
 def upgrade() -> None:
     op.add_column(
         "audience",
-        sa.Column("map_door_edge", sa.String(length=8), nullable=False, server_default="bottom"),
+        sa.Column(
+            "map_door_edge",
+            sa.String(length=8),
+            nullable=False,
+            server_default="bottom",
+        ),
     )
     op.alter_column("audience", "map_door_edge", server_default=None)
 

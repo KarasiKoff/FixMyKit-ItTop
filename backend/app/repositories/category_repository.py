@@ -37,7 +37,8 @@ class CategoryRepository:
 
     def exists(self, category_id: UUID) -> bool:
         return (
-            self._db.query(Category.id).filter(Category.id == category_id).first() is not None
+            self._db.query(Category.id).filter(Category.id == category_id).first()
+            is not None
         )
 
     def get_or_404(self, category_id: UUID) -> Category:

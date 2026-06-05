@@ -9,7 +9,11 @@ from urllib.parse import quote
 from urllib.parse import quote as urlquote
 from uuid import uuid4
 
-from backend.app.clients.tracker_client import TrackerCredentials, TrackerUnavailableError, get_tracker_client
+from backend.app.clients.tracker_client import (
+    TrackerCredentials,
+    TrackerUnavailableError,
+    get_tracker_client,
+)
 from backend.app.clients.tracker_protocol import TrackerHttpClient
 from backend.app.core.config import settings
 from backend.app.models.repair_request import RepairRequest
@@ -62,19 +66,27 @@ class TrackerIssueService:
     def sync_repair_request(self, repair_request: RepairRequest) -> TrackerIssueResult:
         """Создаёт задачу в Tracker или подтверждает существующую по ключу/id в БД."""
         creds = self.credentials()
-        issue_ref = repair_request.tracker_ticket_key or repair_request.tracker_ticket_id
+        issue_ref = (
+            repair_request.tracker_ticket_key or repair_request.tracker_ticket_id
+        )
         if issue_ref:
             return self._fetch_issue(creds, issue_ref)
         return self._create_issue(repair_request, creds)
 
-    def list_attachments(self, repair_request: RepairRequest) -> list[TrackerAttachmentMeta]:
+    def list_attachments(
+        self, repair_request: RepairRequest
+    ) -> list[TrackerAttachmentMeta]:
         ref = issue_ref_for(repair_request)
         if not ref:
             return []
         creds = self.credentials()
         url = f"{creds.base_url}/issues/{quote(ref, safe='')}/attachments"
         items = self._client.request_json_list("GET", url)
-        return [parse_attachment(row) for row in items if isinstance(row, dict) and row.get("id")]
+        return [
+            parse_attachment(row)
+            for row in items
+            if isinstance(row, dict) and row.get("id")
+        ]
 
     def upload_attachment(
         self,
@@ -129,7 +141,9 @@ class TrackerIssueService:
             url = f"{creds.base_url.rstrip('/')}/{url.lstrip('/')}"
         return self._client.request_bytes("GET", url)
 
-    def post_comment(self, issue_ref: str, text: str, *, markup_md: bool = True) -> None:
+    def post_comment(
+        self, issue_ref: str, text: str, *, markup_md: bool = True
+    ) -> None:
         ref = (issue_ref or "").strip()
         if not ref:
             raise TrackerUnavailableError("tracker_issue_ref_missing")
@@ -188,15 +202,23 @@ class TrackerIssueService:
         self.post_comment(issue_ref, text)
 
     def push_sysadmin_taken_comment(self, issue_ref: str, *, taken: bool) -> None:
-        text = SYSADMIN_TAKEN_TRACKER_COMMENT if taken else SYSADMIN_RETURNED_TRACKER_COMMENT
+        text = (
+            SYSADMIN_TAKEN_TRACKER_COMMENT
+            if taken
+            else SYSADMIN_RETURNED_TRACKER_COMMENT
+        )
         self.post_comment(issue_ref, text)
 
-    def _fetch_issue(self, creds: TrackerCredentials, issue_ref: str) -> TrackerIssueResult:
+    def _fetch_issue(
+        self, creds: TrackerCredentials, issue_ref: str
+    ) -> TrackerIssueResult:
         url = f"{creds.base_url}/issues/{quote(str(issue_ref), safe='')}/"
         body = self._client.request_json("GET", url)
         return parse_issue_response(body)
 
-    def _create_issue(self, repair_request: RepairRequest, creds: TrackerCredentials) -> TrackerIssueResult:
+    def _create_issue(
+        self, repair_request: RepairRequest, creds: TrackerCredentials
+    ) -> TrackerIssueResult:
         payload = self._build_issue_payload(repair_request, creds.queue)
         url = f"{creds.base_url}/issues/"
         body = self._client.request_json("POST", url, data=payload)
@@ -205,7 +227,9 @@ class TrackerIssueService:
     @staticmethod
     def _requester_line(repair_request: RepairRequest) -> str:
         if repair_request.author_user_id is None:
-            return (repair_request.applicant_name or "не указано").strip() or "не указано"
+            return (
+                repair_request.applicant_name or "не указано"
+            ).strip() or "не указано"
         author = repair_request.author
         if author is None:
             return "не указано"
@@ -246,7 +270,9 @@ class TrackerIssueService:
             ]
         else:
             device = repair_request.device
-            device_name = device.name if device is not None else "устройство (нет данных)"
+            device_name = (
+                device.name if device is not None else "устройство (нет данных)"
+            )
             room_name = (
                 device.audience.name
                 if device is not None and device.audience is not None
@@ -258,9 +284,7 @@ class TrackerIssueService:
             )
             inv_display = inv if inv else "—"
             audience_part = (
-                f", кабинет {room_name}"
-                if room_name and str(room_name).strip()
-                else ""
+                f", кабинет {room_name}" if room_name and str(room_name).strip() else ""
             )
             summary = f"Ремонт: {device_name}{audience_part}"[:255]
             lines = [
@@ -353,7 +377,9 @@ class TrackerIssueService:
         """Сравнение отображаемых названий статусов Трекера"""
         return current.strip().casefold() == target.strip().casefold()
 
-    def _list_transitions(self, creds: TrackerCredentials, issue_ref: str) -> list[dict]:
+    def _list_transitions(
+        self, creds: TrackerCredentials, issue_ref: str
+    ) -> list[dict]:
         url = f"{creds.base_url}/issues/{quote(issue_ref, safe='')}/transitions"
         raw = self._client.request_json_list("GET", url)
         return [row for row in raw if isinstance(row, dict)]

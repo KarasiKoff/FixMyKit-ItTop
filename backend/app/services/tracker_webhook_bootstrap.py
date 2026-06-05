@@ -18,7 +18,9 @@ def ensure_tracker_webhook_actor() -> None:
     if not secret:
         return
 
-    login = (settings.server.tracker_webhook_actor_login or "tracker_webhook").strip() or "tracker_webhook"
+    login = (
+        settings.server.tracker_webhook_actor_login or "tracker_webhook"
+    ).strip() or "tracker_webhook"
     db: Session = SessionLocal()
     try:
         if UserRepository(db).exists_by_login(login):

@@ -13,11 +13,23 @@ from backend.app.core.config import settings
 from backend.app.models.device import Device as DeviceModel
 from backend.app.models.enums import RepairStatus
 from backend.app.queries.device_list_query import DeviceSortBy, fetch_devices_page
-from backend.app.repositories.device_repository import DeviceRepository, device_base_query
+from backend.app.repositories.device_repository import (
+    DeviceRepository,
+    device_base_query,
+)
 from backend.app.repositories.repair_history_repository import RepairHistoryRepository
-from backend.app.schemas.device import Device, DeviceCreate, DeviceHistoryResponse, DeviceListResponse, DeviceQrResponse, DeviceUpdate
+from backend.app.schemas.device import (
+    Device,
+    DeviceCreate,
+    DeviceHistoryResponse,
+    DeviceListResponse,
+    DeviceQrResponse,
+    DeviceUpdate,
+)
 from backend.app.schemas.repair_history import RepairHistoryResponse
-from backend.app.services.device_subcategory_validation import validate_device_subcategory
+from backend.app.services.device_subcategory_validation import (
+    validate_device_subcategory,
+)
 from backend.app.services.repair_history_service import add_repair_history
 
 DEVICE_SORT_FIELDS: set[str] = {
@@ -29,7 +41,13 @@ DEVICE_SORT_FIELDS: set[str] = {
     "responsible_name",
     "repair_status",
 }
-DEVICE_SUGGEST_FIELDS: set[str] = {"inventory_number", "name", "category", "room", "responsible"}
+DEVICE_SUGGEST_FIELDS: set[str] = {
+    "inventory_number",
+    "name",
+    "category",
+    "room",
+    "responsible",
+}
 
 
 def normalize_note(value: str | None) -> str | None:
@@ -43,12 +61,16 @@ def resolved_category_subcategory(
     device: DeviceModel,
     patch_data: dict,
 ) -> tuple[UUID | None, UUID | None]:
-    category_id = patch_data["category_id"] if "category_id" in patch_data else device.category_id
+    category_id = (
+        patch_data["category_id"] if "category_id" in patch_data else device.category_id
+    )
     if category_id is None:
         return None, None
     if "subcategory_id" in patch_data:
         subcategory_id = patch_data["subcategory_id"]
-    elif "category_id" in patch_data and patch_data["category_id"] != device.category_id:
+    elif (
+        "category_id" in patch_data and patch_data["category_id"] != device.category_id
+    ):
         subcategory_id = None
     else:
         subcategory_id = device.subcategory_id
@@ -70,7 +92,9 @@ def list_devices(
     offset: int,
 ) -> DeviceListResponse:
     if sort_by not in DEVICE_SORT_FIELDS:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_sort_by")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_sort_by"
+        )
 
     items, total = fetch_devices_page(
         db,
@@ -85,7 +109,9 @@ def list_devices(
         limit=limit,
         offset=offset,
     )
-    return DeviceListResponse(items=[Device.model_validate(item) for item in items], total=total)
+    return DeviceListResponse(
+        items=[Device.model_validate(item) for item in items], total=total
+    )
 
 
 def create_device(db: Session, payload: DeviceCreate) -> Device:
@@ -101,17 +127,23 @@ def create_device(db: Session, payload: DeviceCreate) -> Device:
     try:
         repo.save_new(device)
     except IntegrityError as exc:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="inventory_number_exists") from exc
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="inventory_number_exists"
+        ) from exc
     refreshed = repo.get_with_relations(device.id)
     if refreshed is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found"
+        )
     return Device.model_validate(refreshed)
 
 
 def get_device(db: Session, device_id: UUID) -> Device:
     device = DeviceRepository(db).get_with_relations(device_id)
     if device is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found"
+        )
     return Device.model_validate(device)
 
 
@@ -119,14 +151,18 @@ def patch_device(db: Session, device_id: UUID, payload: DeviceUpdate) -> Device:
     repo = DeviceRepository(db)
     device = repo.get_by_id(device_id)
     if device is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found"
+        )
 
     patch_data = payload.model_dump(exclude_unset=True)
     if "note" in patch_data:
         patch_data["note"] = normalize_note(patch_data["note"])
 
     category_id, subcategory_id = resolved_category_subcategory(device, patch_data)
-    validate_device_subcategory(db, category_id=category_id, subcategory_id=subcategory_id)
+    validate_device_subcategory(
+        db, category_id=category_id, subcategory_id=subcategory_id
+    )
 
     old_repair_status = device.repair_status
     for field, value in patch_data.items():
@@ -134,7 +170,10 @@ def patch_device(db: Session, device_id: UUID, payload: DeviceUpdate) -> Device:
     if "category_id" in patch_data:
         if patch_data["category_id"] is None:
             device.subcategory_id = None
-        elif "subcategory_id" not in patch_data and patch_data["category_id"] != device.category_id:
+        elif (
+            "subcategory_id" not in patch_data
+            and patch_data["category_id"] != device.category_id
+        ):
             device.subcategory_id = None
 
     if "repair_status" in patch_data and device.repair_status != old_repair_status:
@@ -151,11 +190,15 @@ def patch_device(db: Session, device_id: UUID, payload: DeviceUpdate) -> Device:
         db.commit()
     except IntegrityError as exc:
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="inventory_number_exists") from exc
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="inventory_number_exists"
+        ) from exc
 
     refreshed = device_base_query(db).filter(DeviceModel.id == device_id).first()
     if refreshed is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found"
+        )
     return Device.model_validate(refreshed)
 
 
@@ -169,7 +212,9 @@ def delete_device(db: Session, device_id: UUID) -> None:
 def device_qr(db: Session, device_id: UUID) -> DeviceQrResponse:
     DeviceRepository(db).get_or_404(device_id)
     base = settings.server.public_frontend_base_url.rstrip("/")
-    return DeviceQrResponse(device_id=device_id, url=f"{base}/device/{device_id}/public")
+    return DeviceQrResponse(
+        device_id=device_id, url=f"{base}/device/{device_id}/public"
+    )
 
 
 def device_history(db: Session, device_id: UUID) -> DeviceHistoryResponse:
@@ -184,8 +229,12 @@ def device_history(db: Session, device_id: UUID) -> DeviceHistoryResponse:
             new_status=row.new_status,
             note=row.note,
             created_at=row.created_at,
-            tracker_ticket_key=row.repair_request.tracker_ticket_key if row.repair_request else None,
-            tracker_ticket_url=row.repair_request.tracker_ticket_url if row.repair_request else None,
+            tracker_ticket_key=row.repair_request.tracker_ticket_key
+            if row.repair_request
+            else None,
+            tracker_ticket_url=row.repair_request.tracker_ticket_url
+            if row.repair_request
+            else None,
         )
         for row in rows
     ]

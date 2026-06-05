@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import timedelta
 from uuid import UUID
 
 from fastapi import HTTPException, UploadFile, status
@@ -34,7 +34,6 @@ from backend.app.services.attachment_validation import (
 from backend.app.services.tracker_service import (
     TrackerUnavailableError,
     issue_ref_for,
-    list_issue_attachments,
     sync_repair_request_to_tracker,
     upload_issue_attachment,
 )

@@ -15,12 +15,16 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("site_announcements", sa.Column("emoji", sa.String(length=16), nullable=True))
+    op.add_column(
+        "site_announcements", sa.Column("emoji", sa.String(length=16), nullable=True)
+    )
     op.add_column(
         "site_announcements",
         sa.Column("dismiss_version", sa.Integer(), nullable=False, server_default="1"),
     )
-    op.add_column("site_announcements", sa.Column("updated_by_user_id", sa.Uuid(), nullable=True))
+    op.add_column(
+        "site_announcements", sa.Column("updated_by_user_id", sa.Uuid(), nullable=True)
+    )
     op.create_foreign_key(
         "site_announcements_updated_by_user_id_fkey",
         "site_announcements",
@@ -32,7 +36,11 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_constraint("site_announcements_updated_by_user_id_fkey", "site_announcements", type_="foreignkey")
+    op.drop_constraint(
+        "site_announcements_updated_by_user_id_fkey",
+        "site_announcements",
+        type_="foreignkey",
+    )
     op.drop_column("site_announcements", "updated_by_user_id")
     op.drop_column("site_announcements", "dismiss_version")
     op.drop_column("site_announcements", "emoji")

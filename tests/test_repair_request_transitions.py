@@ -1,7 +1,10 @@
 """Правила переходов статуса: API vs вебхук Tracker."""
 
 from backend.app.models.enums import RequestStatus
-from backend.app.services.repair_request_transitions import TransitionSource, can_transition
+from backend.app.services.repair_request_transitions import (
+    TransitionSource,
+    can_transition,
+)
 
 
 class TestApiTransitions:

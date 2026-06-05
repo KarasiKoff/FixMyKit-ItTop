@@ -4,10 +4,14 @@ from __future__ import annotations
 
 from backend.app.models.enums import RequestStatus
 from backend.app.models.repair_request import RepairRequest
-from backend.app.services.repair_request_webhook_service import TRACKER_WEBHOOK_SECRET_HEADER
+from backend.app.services.repair_request_webhook_service import (
+    TRACKER_WEBHOOK_SECRET_HEADER,
+)
 
 
-def _seed_request(db, audience, *, status: RequestStatus, label: str, key: str) -> RepairRequest:
+def _seed_request(
+    db, audience, *, status: RequestStatus, label: str, key: str
+) -> RepairRequest:
     row = RepairRequest(
         audience_id=audience.id,
         description="webhook test",
@@ -68,7 +72,9 @@ def test_webhook_invalid_secret(client, audience, db) -> None:
     assert response.status_code == 401
 
 
-def test_webhook_noop_when_status_missing(client, webhook_headers, audience, db) -> None:
+def test_webhook_noop_when_status_missing(
+    client, webhook_headers, audience, db
+) -> None:
     repair_request = _seed_request(
         db,
         audience,

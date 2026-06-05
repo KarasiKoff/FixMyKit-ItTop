@@ -9,7 +9,9 @@ from sqlalchemy.orm import Session
 
 from backend.app.core.config import settings
 from backend.app.repositories.device_repository import DeviceRepository
-from backend.app.repositories.repair_request_repository import find_repair_request_for_tracker
+from backend.app.repositories.repair_request_repository import (
+    find_repair_request_for_tracker,
+)
 from backend.app.repositories.user_repository import UserRepository
 from backend.app.models.enums import RepairStatus, RequestStatus
 from backend.app.models.repair_request import RepairRequest
@@ -22,13 +24,20 @@ from backend.app.schemas.tracker_webhook import (
     YandexTrackerWebhookResponse,
 )
 from backend.app.services.repair_history_service import add_repair_history
-from backend.app.services.repair_request_closure_service import record_repair_request_closed
+from backend.app.services.repair_request_closure_service import (
+    record_repair_request_closed,
+)
 from backend.app.services.repair_request_sysadmin_taken_service import (
     record_sysadmin_returned,
     record_sysadmin_taken,
 )
-from backend.app.services.repair_request_tracker_comment_inbound import create_comment_from_tracker
-from backend.app.services.repair_request_transitions import TransitionSource, assert_can_transition
+from backend.app.services.repair_request_tracker_comment_inbound import (
+    create_comment_from_tracker,
+)
+from backend.app.services.repair_request_transitions import (
+    TransitionSource,
+    assert_can_transition,
+)
 from backend.app.services.realtime_notify import notify_repair_request_updated
 from backend.app.services.tracker_service import (
     TrackerUnavailableError,
@@ -79,7 +88,9 @@ def _map_tracker_status_to_request(raw: str) -> RequestStatus | None:
     return TRACKER_STATUS_ALIASES.get(raw.strip())
 
 
-def _resolve_tracker_actor(db: Session, tracker_user_raw: str | None, fallback: User) -> User:
+def _resolve_tracker_actor(
+    db: Session, tracker_user_raw: str | None, fallback: User
+) -> User:
     return UserRepository(db).resolve_tracker_actor(tracker_user_raw, fallback)
 
 
@@ -93,7 +104,9 @@ def _post_tracker_comment(
     *,
     log_event: str,
 ) -> None:
-    issue_ref = (repair_request.tracker_ticket_key or repair_request.tracker_ticket_id or "").strip()
+    issue_ref = (
+        repair_request.tracker_ticket_key or repair_request.tracker_ticket_id or ""
+    ).strip()
     if not issue_ref:
         return
     try:
@@ -119,7 +132,9 @@ def _reopen_from_closed(db: Session, repair_request: RepairRequest) -> None:
         device.repair_status = RepairStatus.IN_REPAIR
 
 
-def _apply_publish_flag(db: Session, repair_request: RepairRequest, is_published: bool) -> bool:
+def _apply_publish_flag(
+    db: Session, repair_request: RepairRequest, is_published: bool
+) -> bool:
     if repair_request.is_published == is_published:
         return False
     repair_request.is_published = is_published
@@ -163,7 +178,9 @@ def handle_tracker_status_webhook(
     db: Session,
     payload: YandexTrackerWebhookPayload,
 ) -> YandexTrackerWebhookResponse:
-    repair_request = find_repair_request_for_tracker(db, payload.issue_key, payload.issue_id)
+    repair_request = find_repair_request_for_tracker(
+        db, payload.issue_key, payload.issue_id
+    )
 
     key = (payload.issue_key or "").strip()
     iid = (payload.issue_id or "").strip()
@@ -187,7 +204,9 @@ def handle_tracker_status_webhook(
 
     mapped = _map_tracker_status_to_request(raw_status)
     if mapped is None:
-        logger.warning("tracker_webhook_unmapped_status issue=%s raw=%r", key or iid, raw_status)
+        logger.warning(
+            "tracker_webhook_unmapped_status issue=%s raw=%r", key or iid, raw_status
+        )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"code": "unmapped_tracker_status", "value": raw_status},
@@ -294,26 +313,34 @@ def handle_tracker_publish_webhook(
     db: Session,
     payload: YandexTrackerPublishPayload,
 ) -> YandexTrackerWebhookResponse:
-    repair_request = find_repair_request_for_tracker(db, payload.issue_key, payload.issue_id)
+    repair_request = find_repair_request_for_tracker(
+        db, payload.issue_key, payload.issue_id
+    )
     rid = str(repair_request.id)
     if repair_request.is_published == payload.is_published:
         return YandexTrackerWebhookResponse(
             status="noop",
             repair_request_id=rid,
-            detail="already_published" if payload.is_published else "already_unpublished",
+            detail="already_published"
+            if payload.is_published
+            else "already_unpublished",
             request_status=repair_request.status.value,
             closed_by_login=None,
             is_published=repair_request.is_published,
         )
     _apply_publish_flag(db, repair_request, payload.is_published)
-    return _commit_publish_webhook(db, repair_request, is_published=payload.is_published)
+    return _commit_publish_webhook(
+        db, repair_request, is_published=payload.is_published
+    )
 
 
 def handle_tracker_comment_webhook(
     db: Session,
     payload: YandexTrackerCommentPayload,
 ) -> YandexTrackerWebhookResponse:
-    repair_request = find_repair_request_for_tracker(db, payload.issue_key, payload.issue_id)
+    repair_request = find_repair_request_for_tracker(
+        db, payload.issue_key, payload.issue_id
+    )
     text = (payload.comment_text or "").strip()
     if not text:
         return YandexTrackerWebhookResponse(
@@ -357,7 +384,9 @@ def handle_tracker_sysadmin_taken_webhook(
     db: Session,
     payload: YandexTrackerSysadminTakenPayload,
 ) -> YandexTrackerWebhookResponse:
-    repair_request = find_repair_request_for_tracker(db, payload.issue_key, payload.issue_id)
+    repair_request = find_repair_request_for_tracker(
+        db, payload.issue_key, payload.issue_id
+    )
 
     if repair_request.status == RequestStatus.CLOSED:
         raise HTTPException(

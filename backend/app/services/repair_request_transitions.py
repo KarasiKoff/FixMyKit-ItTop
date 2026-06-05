@@ -82,8 +82,12 @@ class TransitionSource(str, Enum):
     WEBHOOK = "webhook"
 
 
-def allowed_targets(from_status: RequestStatus, source: TransitionSource) -> frozenset[RequestStatus]:
-    table = _WEBHOOK_TRANSITIONS if source is TransitionSource.WEBHOOK else _API_TRANSITIONS
+def allowed_targets(
+    from_status: RequestStatus, source: TransitionSource
+) -> frozenset[RequestStatus]:
+    table = (
+        _WEBHOOK_TRANSITIONS if source is TransitionSource.WEBHOOK else _API_TRANSITIONS
+    )
     return table[from_status]
 
 

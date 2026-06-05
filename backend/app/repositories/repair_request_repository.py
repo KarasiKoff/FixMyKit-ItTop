@@ -11,14 +11,16 @@ from sqlalchemy.orm import Session, joinedload
 from backend.app.models.device import Device
 from backend.app.models.enums import RequestStatus
 from backend.app.models.repair_request import RepairRequest
+from backend.app.schemas.repair_request import RepairRequestDetail
+from backend.app.services.repair_request_presenters import (
+    repair_request_to_list_response,
+)
 
 ACTIVE_REQUEST_STATUSES = (
     RequestStatus.OPEN,
     RequestStatus.IN_PROGRESS,
     RequestStatus.NEEDS_INFO,
 )
-from backend.app.schemas.repair_request import RepairRequestDetail
-from backend.app.services.repair_request_presenters import repair_request_to_list_response
 
 
 class RepairRequestRepository:
@@ -29,7 +31,9 @@ class RepairRequestRepository:
         return {row[0] for row in self._db.query(RepairRequest.id).all()}
 
     def get_optional(self, request_id: UUID) -> RepairRequest | None:
-        return self._db.query(RepairRequest).filter(RepairRequest.id == request_id).first()
+        return (
+            self._db.query(RepairRequest).filter(RepairRequest.id == request_id).first()
+        )
 
     def add_new(
         self,
@@ -122,8 +126,14 @@ class RepairRequestRepository:
             self._db.query(RepairRequest.id)
             .filter(
                 and_(
-                    or_(RepairRequest.tracker_ticket_id.is_(None), RepairRequest.tracker_ticket_id == ""),
-                    or_(RepairRequest.tracker_ticket_key.is_(None), RepairRequest.tracker_ticket_key == ""),
+                    or_(
+                        RepairRequest.tracker_ticket_id.is_(None),
+                        RepairRequest.tracker_ticket_id == "",
+                    ),
+                    or_(
+                        RepairRequest.tracker_ticket_key.is_(None),
+                        RepairRequest.tracker_ticket_key == "",
+                    ),
                 )
             )
             .order_by(RepairRequest.created_at.asc())
@@ -134,7 +144,9 @@ class RepairRequestRepository:
     def load_detail(self, request_id: UUID) -> RepairRequestDetail:
         repair_request = (
             self._db.query(RepairRequest)
-            .options(joinedload(RepairRequest.device), joinedload(RepairRequest.audience))
+            .options(
+                joinedload(RepairRequest.device), joinedload(RepairRequest.audience)
+            )
             .filter(RepairRequest.id == request_id)
             .first()
         )

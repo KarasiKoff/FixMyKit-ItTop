@@ -1,9 +1,7 @@
-from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict
 
-from backend.app.models.enums import RequestStatus
 from backend.app.schemas.public_device import PublicRepairRequestItem
 
 

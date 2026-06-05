@@ -90,20 +90,28 @@ def db(session_factory) -> Generator[Session, None, None]:
 @pytest.fixture()
 def fake_tracker_client(monkeypatch: pytest.MonkeyPatch):
     """FakeTrackerClient + подмена get_tracker_issue_service."""
-    from tests.support.fake_tracker_client import patch_tracker_issue_service, tracker_create_issue_client
+    from tests.support.fake_tracker_client import (
+        patch_tracker_issue_service,
+        tracker_create_issue_client,
+    )
 
     return patch_tracker_issue_service(monkeypatch, tracker_create_issue_client())
 
 
 @pytest.fixture()
 def failing_tracker_client(monkeypatch: pytest.MonkeyPatch):
-    from tests.support.fake_tracker_client import patch_tracker_issue_service, tracker_failing_client
+    from tests.support.fake_tracker_client import (
+        patch_tracker_issue_service,
+        tracker_failing_client,
+    )
 
     return patch_tracker_issue_service(monkeypatch, tracker_failing_client())
 
 
 @pytest.fixture(autouse=True)
-def _mock_tracker_outbound(monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest) -> None:
+def _mock_tracker_outbound(
+    monkeypatch: pytest.MonkeyPatch, request: pytest.FixtureRequest
+) -> None:
     """Исходящие вызовы Tracker: noop, кроме тестов с marker tracker_http."""
     from backend.app.models.repair_request import RepairRequest
 
@@ -111,16 +119,17 @@ def _mock_tracker_outbound(monkeypatch: pytest.MonkeyPatch, request: pytest.Fixt
 
     def _allow_workflow_without_ticket(repair_request: RepairRequest) -> str:
         return (
-            (repair_request.tracker_ticket_key or repair_request.tracker_ticket_id or "").strip()
-            or "FIXMYKIT-TEST"
-        )
+            repair_request.tracker_ticket_key or repair_request.tracker_ticket_id or ""
+        ).strip() or "FIXMYKIT-TEST"
 
     monkeypatch.setattr(
         "backend.app.services.repair_request_actions_service.require_tracker_ticket",
         _allow_workflow_without_ticket,
     )
 
-    def _noop_sync_label(db: Session, repair_request: RepairRequest, label: str, **kwargs) -> None:
+    def _noop_sync_label(
+        db: Session, repair_request: RepairRequest, label: str, **kwargs
+    ) -> None:
         repair_request.tracker_status_label = label
         repair_request.tracker_status_sync_pending = False
         db.commit()

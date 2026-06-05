@@ -19,7 +19,9 @@ class RepairHistory(Base):
     old_status = Column(SQLEnum(RepairStatus, name="repair_status"), nullable=True)
     new_status = Column(SQLEnum(RepairStatus, name="repair_status"), nullable=True)
     note = Column(Text, nullable=True)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    created_at = Column(
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
+    )
 
     # Relationships
     device = relationship("Device", backref="repair_history")

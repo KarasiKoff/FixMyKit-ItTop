@@ -14,7 +14,9 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.drop_index("ix_device_comments_device_id", table_name="device_comments", if_exists=True)
+    op.drop_index(
+        "ix_device_comments_device_id", table_name="device_comments", if_exists=True
+    )
     op.drop_table("device_comments", if_exists=True)
 
 

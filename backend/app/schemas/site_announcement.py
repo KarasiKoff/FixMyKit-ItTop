@@ -85,7 +85,9 @@ class AdminAnnouncementsUpdateRequest(BaseModel):
 
     @field_validator("slots")
     @classmethod
-    def validate_slots(cls, slots: list[SiteAnnouncementSlot]) -> list[SiteAnnouncementSlot]:
+    def validate_slots(
+        cls, slots: list[SiteAnnouncementSlot]
+    ) -> list[SiteAnnouncementSlot]:
         seen = {s.slot for s in slots}
         if len(seen) != len(slots):
             raise ValueError("duplicate_slot")
