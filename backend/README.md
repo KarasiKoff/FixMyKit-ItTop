@@ -68,6 +68,10 @@ docker compose up --build
 
 - `GET /health` — liveness.
 - `GET /health/ready` — проверка подключения к PostgreSQL (`SELECT 1`).
+- `GET /metrics` — метрики Prometheus (HTTP latency, счётчики запросов).
+- `GET /api/debug/test-400` — намеренный 400 (`status="4xx"` в Prometheus).
+- `GET /api/debug/test-500` — намеренный 500 (`status="5xx"` в Prometheus).
+  Оба только при `API_DOCS_ENABLED=true`.
 
 ## Локальный запуск через uv
 

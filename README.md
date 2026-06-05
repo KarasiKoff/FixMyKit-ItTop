@@ -15,6 +15,7 @@
 - [Запуск для разработки](#запуск-для-разработки)
 - [Локальный запуск без Docker](#локальный-запуск-без-docker)
 - [Продакшен](#продакшен)
+- [Мониторинг](#мониторинг)
 - [Конфигурация приложения](#конфигурация-приложения)
 - [Переменные окружения](#переменные-окружения)
 - [Интеграция с Яндекс Трекером](#интеграция-с-яндекс-трекером)
@@ -134,6 +135,11 @@ fix-my-kit/
 ├── pyproject.toml          # Зависимости Python (uv)
 ├── docker-compose.yml      # Dev: Postgres + backend + Vite
 ├── docker-compose.prod.yml # Prod: Postgres + API + nginx-фронт
+├── docker-compose.monitoring.yml # Prometheus, Grafana, Loki, алерты
+├── .env.monitoring.example # Указатель на шаблоны мониторинга по сценарию
+├── docker-compose.monitoring.local.yml      # overlay: локалка
+├── docker-compose.monitoring.prod-bundle.yml # overlay: prod+мониторинг
+├── docker-compose.monitoring.prod-link.yml   # overlay: prod отдельно
 ├── Dockerfile              # Dev-образы
 ├── Dockerfile.prod         # Prod-образы
 ├── .env.example            # Шаблон переменных (разработка)
@@ -416,6 +422,18 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 
 Каталог `UPLOAD_DIR` монтируется в volume `uploads_data_prod`, чтобы файлы переживали перезапуск контейнера.
 
+### Мониторинг
+
+Три режима (команды и env-шаблоны): [`monitoring/README.md`](monitoring/README.md).
+
+| Режим | Шаблон env | Суть |
+|-------|------------|------|
+| Локалка | `.env.monitoring.local.example` | Dev compose + мониторинг (`-p fmk-monitoring` + `monitoring.local.yml`) |
+| Prod вместе | `.env.monitoring.prod.example` | `prod.yml` + `monitoring.yml` + `prod-bundle.yml` |
+| Prod отдельно | `.env.monitoring.prod-standalone.example` | Сначала prod, потом мониторинг + `prod-link.yml` |
+
+API отдаёт `GET /metrics`. Grafana: **Backend** (Prometheus) и **Операции** (PostgreSQL — заявки, категории, ремонт по аудиториям). Конфиги — в [`monitoring/`](monitoring/).
+
 ---
 
 ## Конфигурация приложения
@@ -476,7 +494,7 @@ settings.database.database_url      # PostgreSQL (SQLAlchemy + Alembic)
 | `ATTACHMENT_ORPHAN_MAX_AGE_DAYS` | Возраст «сирот» для автоочистки |
 | `TRACKER_ATTACHMENT_TIMEOUT_SECONDS` | Таймаут загрузки в Трекер (большие файлы) |
 
-Полный список — в [`.env.example`](.env.example) и [`.env.production.example`](.env.production.example).
+Полный список — в [`.env.example`](.env.example), [`.env.production.example`](.env.production.example), [`.env.monitoring.example`](.env.monitoring.example) и шаблонах `.env.monitoring.*.example` по сценарию.
 
 ---
 

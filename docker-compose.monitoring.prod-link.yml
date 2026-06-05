@@ -1,0 +1,44 @@
+# Сценарий 3: prod отдельно, мониторинг отдельно (подключение к сети fixmykit-prod).
+# Сначала: docker compose -f docker-compose.prod.yml --env-file .env.production up -d
+#
+# docker compose -p fmk-monitoring \
+#   -f docker-compose.monitoring.yml \
+#   -f docker-compose.monitoring.prod-link.yml \
+#   --env-file .env.monitoring up -d --build
+
+services:
+  grafana:
+    networks:
+      - fmk_monitoring
+      - fixmykit_prod
+    environment:
+      GRAFANA_POSTGRES_URL: postgres:5432
+
+  promtail:
+    volumes:
+      - fixmykit_logs_prod:/var/log/fixmykit:ro
+
+  prometheus:
+    networks:
+      - fmk_monitoring
+      - fixmykit_prod
+    environment:
+      BACKEND_METRICS_TARGET: ${BACKEND_METRICS_TARGET:-backend:8000}
+      MONITORING_ENVIRONMENT: ${MONITORING_ENVIRONMENT:-production}
+
+  postgres-exporter:
+    networks:
+      - fmk_monitoring
+      - fixmykit_prod
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB}?sslmode=disable
+
+volumes:
+  fixmykit_logs_prod:
+    external: true
+    name: fixmykit-logs-prod
+
+networks:
+  fixmykit_prod:
+    external: true
+    name: fixmykit-prod

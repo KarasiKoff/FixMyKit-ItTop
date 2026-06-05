@@ -1,0 +1,165 @@
+# Базовый стек мониторинга. Три сценария — см. monitoring/README.md и overlay-файлы:
+#   local:       -f docker-compose.monitoring.local.yml
+#   prod-bundle: -f docker-compose.monitoring.prod-bundle.yml (+ docker-compose.prod.yml)
+#   prod-link:   -f docker-compose.monitoring.prod-link.yml
+#
+# Отдельный проект: docker compose -p fmk-monitoring -f docker-compose.monitoring.yml ...
+x-env: &env
+  env_file:
+    - ${ENV_FILE:-.env.monitoring}
+
+services:
+  loki:
+    image: grafana/loki:3.6.3
+    container_name: fmk-loki
+    restart: unless-stopped
+    user: "0:0"
+    ports:
+      - "${LOKI_PORT:-3100}:3100"
+    volumes:
+      - ./monitoring/loki/loki-config.yaml:/etc/loki/local-config.yaml:ro
+      - loki-data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - fmk_monitoring
+
+  promtail:
+    image: grafana/promtail:3.6.3
+    container_name: fmk-promtail
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/promtail/promtail-config.yaml:/etc/promtail/config.yml:ro
+      - ${PROMTAIL_LOG_DIR:-./data/logs}:/var/log/fixmykit:ro
+    command: -config.file=/etc/promtail/config.yml
+    depends_on:
+      - loki
+    networks:
+      - fmk_monitoring
+
+  prometheus:
+    image: prom/prometheus:v3.9.1
+    container_name: fmk-prometheus
+    restart: unless-stopped
+    <<: *env
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml.template:ro
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus-data:/prometheus
+    environment:
+      BACKEND_METRICS_TARGET: ${BACKEND_METRICS_TARGET:-host.docker.internal:8001}
+      MONITORING_ENVIRONMENT: ${MONITORING_ENVIRONMENT:-local}
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        sed -e "s|__BACKEND_METRICS_TARGET__|$$BACKEND_METRICS_TARGET|g" \
+            -e "s|environment: \"local\"|environment: \"$$MONITORING_ENVIRONMENT\"|g" \
+            /etc/prometheus/prometheus.yml.template > /tmp/prometheus.yml
+        exec /bin/prometheus \
+          --config.file=/tmp/prometheus.yml \
+          --storage.tsdb.path=/prometheus \
+          --web.enable-lifecycle \
+          --storage.tsdb.retention.time=30d
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - fmk_monitoring
+
+  grafana:
+    image: grafana/grafana:12.3.1
+    container_name: fmk-grafana
+    restart: unless-stopped
+    <<: *env
+    ports:
+      - "${GRAFANA_PORT:-3000}:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3000}
+      # host:port одной строкой (не дублируйте порт в host)
+      GRAFANA_POSTGRES_URL: ${GRAFANA_POSTGRES_URL:-host.docker.internal:5432}
+      POSTGRES_USER: ${POSTGRES_USER:-fixmykit}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+      POSTGRES_DB: ${POSTGRES_DB:-fixmykit}
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+    networks:
+      - fmk_monitoring
+
+  alertmanager:
+    image: prom/alertmanager:v0.30.1
+    container_name: fmk-alertmanager
+    restart: unless-stopped
+    ports:
+      - "${ALERTMANAGER_PORT:-9093}:9093"
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    depends_on:
+      - prometheus
+    networks:
+      - fmk_monitoring
+
+  alertserver:
+    container_name: fmk-alertserver
+    restart: unless-stopped
+    build: ./monitoring/alertserver
+    <<: *env
+    environment:
+      TG_BOT_ALERT_TOKEN: ${TG_BOT_ALERT_TOKEN:-}
+      TG_ALERT_CHAT_ID: ${TG_ALERT_CHAT_ID:-}
+    networks:
+      - fmk_monitoring
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.49.1
+    container_name: fmk-cadvisor
+    restart: unless-stopped
+    ports:
+      - "${CADVISOR_PORT:-8089}:8080"
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    networks:
+      - fmk_monitoring
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.18.1
+    container_name: fmk-postgres-exporter
+    restart: unless-stopped
+    <<: *env
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_EXPORTER_HOST:-host.docker.internal}:${POSTGRES_PORT:-5432}/${POSTGRES_DB}?sslmode=disable
+    ports:
+      - "${POSTGRES_EXPORTER_PORT:-9187}:9187"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - fmk_monitoring
+
+volumes:
+  loki-data:
+    name: fmk-loki-data
+  prometheus-data:
+    name: fmk-prometheus-data
+  grafana-data:
+    name: fmk-grafana-data
+  alertmanager-data:
+    name: fmk-alertmanager-data
+
+networks:
+  fmk_monitoring:
+    name: fmk-monitoring
+    driver: bridge

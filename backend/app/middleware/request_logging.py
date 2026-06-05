@@ -23,7 +23,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         token = set_request_id(rid)
 
         path = request.url.path
-        skip_body_paths = {"/health", "/health/ready"}
+        skip_body_paths = {"/health", "/health/ready", "/metrics"}
         started = time.perf_counter()
         status_code = 500
         try:

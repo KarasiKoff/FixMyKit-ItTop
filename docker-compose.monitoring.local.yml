@@ -1,0 +1,38 @@
+# Сценарий 1: локальная разработка (docker-compose.yml уже запущен).
+#
+# docker compose -p fmk-monitoring \
+#   -f docker-compose.monitoring.yml \
+#   -f docker-compose.monitoring.local.yml \
+#   --env-file .env.monitoring up -d --build
+
+services:
+  grafana:
+    networks:
+      - fmk_monitoring
+      - fixmykit_dev
+    environment:
+      GRAFANA_POSTGRES_URL: postgres:5432
+
+  promtail:
+    volumes:
+      - ${PROMTAIL_LOG_DIR:-./data/logs}:/var/log/fixmykit:ro
+
+  prometheus:
+    networks:
+      - fmk_monitoring
+      - fixmykit_dev
+    environment:
+      BACKEND_METRICS_TARGET: ${BACKEND_METRICS_TARGET:-backend:8000}
+      MONITORING_ENVIRONMENT: ${MONITORING_ENVIRONMENT:-development}
+
+  postgres-exporter:
+    networks:
+      - fmk_monitoring
+      - fixmykit_dev
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:${POSTGRES_PORT:-5432}/${POSTGRES_DB}?sslmode=disable
+
+networks:
+  fixmykit_dev:
+    external: true
+    name: fixmykit-dev

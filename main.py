@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from backend.app.core.config import settings
 from backend.app.core.logging_config import setup_logging
+from backend.app.core.metrics import setup_metrics
 
 from backend.app.api.router import api_router
 from backend.app.middleware.request_logging import RequestLoggingMiddleware
@@ -122,6 +123,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 
 app.include_router(api_router)
+setup_metrics(app)
 
 
 @app.get("/health", tags=["health"])
