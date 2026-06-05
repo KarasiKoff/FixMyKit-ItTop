@@ -20,6 +20,8 @@ dependencies = [
 dev = [
     "pytest>=8.3",
     "httpx>=0.28",
+    "ruff>=0.15.16",
+    "pre-commit>=4.6.0",
 ]
 
 [tool.pytest.ini_options]
@@ -29,6 +31,9 @@ markers = [
     "integration: требует PostgreSQL (API-тесты)",
     "tracker_http: FakeTrackerClient и реальный try_tracker_sync / sync endpoint",
 ]
+
+[tool.ruff]
+target-version = "py314"
 
 [tool.uv]
 package = false
