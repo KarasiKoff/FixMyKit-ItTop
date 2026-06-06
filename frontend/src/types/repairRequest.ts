@@ -47,7 +47,6 @@ export type PublicRepairRequestItem = {
     createdAt: string;
     closedAt?: string | null;
     resolutionNote?: string | null;
-    applicantName?: string | null;
 };
 
 export type PublicDeviceInfo = {

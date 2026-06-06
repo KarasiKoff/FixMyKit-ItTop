@@ -31,7 +31,6 @@ class PublicRepairRequestItem(BaseModel):
     created_at: datetime
     closed_at: datetime | None = None
     resolution_note: str | None = None
-    applicant_name: str | None = None
 
 
 class PublicRepairSummaryResponse(BaseModel):

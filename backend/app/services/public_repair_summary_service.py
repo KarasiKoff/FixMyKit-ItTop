@@ -28,7 +28,6 @@ def summarize_public_repair_requests(
                     created_at=rr.created_at,
                     closed_at=rr.closed_at,
                     resolution_note=rr.resolution_note,
-                    applicant_name=rr.applicant_name,
                 )
             else:
                 has_unpublished_active = True
@@ -41,7 +40,6 @@ def summarize_public_repair_requests(
                     created_at=rr.created_at,
                     closed_at=rr.closed_at,
                     resolution_note=rr.resolution_note,
-                    applicant_name=rr.applicant_name,
                 )
             )
 

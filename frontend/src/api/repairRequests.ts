@@ -54,7 +54,6 @@ type PublicRepairSummaryApi = {
         created_at: string;
         closed_at?: string | null;
         resolution_note?: string | null;
-        applicant_name?: string | null;
     } | null;
     has_unpublished_active: boolean;
     history: Array<{
@@ -64,7 +63,6 @@ type PublicRepairSummaryApi = {
         created_at: string;
         closed_at?: string | null;
         resolution_note?: string | null;
-        applicant_name?: string | null;
     }>;
 };
 
@@ -161,28 +159,28 @@ export async function createRepairRequest(payload: CreateRepairRequestPayload) {
     if (token) {
         const init = hasFiles
             ? {
-                  method: 'POST' as const,
-                  body: buildRepairRequestFormData(payload),
-              }
+                method: 'POST' as const,
+                body: buildRepairRequestFormData(payload),
+            }
             : {
-                  method: 'POST' as const,
-                  body: buildRepairRequestJsonBody(payload, payload.syncToTracker ?? true),
-              };
+                method: 'POST' as const,
+                body: buildRepairRequestJsonBody(payload, payload.syncToTracker ?? true),
+            };
         const response = await apiRequest<RepairRequestApi>('/api/repair-requests', init);
         return mapRepairRequest(response);
     }
 
     const pubInit = hasFiles
         ? {
-              method: 'POST' as const,
-              body: buildRepairRequestFormData(payload),
-              skipAuth: true as const,
-          }
+            method: 'POST' as const,
+            body: buildRepairRequestFormData(payload),
+            skipAuth: true as const,
+        }
         : {
-              method: 'POST' as const,
-              body: buildRepairRequestJsonBody(payload),
-              skipAuth: true as const,
-          };
+            method: 'POST' as const,
+            body: buildRepairRequestJsonBody(payload),
+            skipAuth: true as const,
+        };
     const pub = await apiRequest<{
         id: string;
         status: string;
@@ -415,14 +413,13 @@ export async function fetchPublicAudienceRepairSummary(audienceId: string): Prom
         audience: { id: data.audience.id, name: data.audience.name },
         activeRequest: data.active_request
             ? {
-                  id: data.active_request.id,
-                  description: data.active_request.description,
-                  status: data.active_request.status as 'open' | 'in_progress' | 'needs_info' | 'closed',
-                  createdAt: data.active_request.created_at,
-                  closedAt: data.active_request.closed_at,
-                  resolutionNote: data.active_request.resolution_note,
-                  applicantName: data.active_request.applicant_name,
-              }
+                id: data.active_request.id,
+                description: data.active_request.description,
+                status: data.active_request.status as 'open' | 'in_progress' | 'needs_info' | 'closed',
+                createdAt: data.active_request.created_at,
+                closedAt: data.active_request.closed_at,
+                resolutionNote: data.active_request.resolution_note,
+            }
             : null,
         hasUnpublishedActive: data.has_unpublished_active,
         history: data.history.map((h) => ({
@@ -432,7 +429,6 @@ export async function fetchPublicAudienceRepairSummary(audienceId: string): Prom
             createdAt: h.created_at,
             closedAt: h.closed_at,
             resolutionNote: h.resolution_note,
-            applicantName: h.applicant_name,
         })),
     };
 }
@@ -455,14 +451,13 @@ export async function fetchPublicRepairSummary(deviceId: string): Promise<Public
         },
         activeRequest: data.active_request
             ? {
-                  id: data.active_request.id,
-                  description: data.active_request.description,
-                  status: data.active_request.status as 'open' | 'in_progress' | 'needs_info' | 'closed',
-                  createdAt: data.active_request.created_at,
-                  closedAt: data.active_request.closed_at,
-                  resolutionNote: data.active_request.resolution_note,
-                  applicantName: data.active_request.applicant_name,
-              }
+                id: data.active_request.id,
+                description: data.active_request.description,
+                status: data.active_request.status as 'open' | 'in_progress' | 'needs_info' | 'closed',
+                createdAt: data.active_request.created_at,
+                closedAt: data.active_request.closed_at,
+                resolutionNote: data.active_request.resolution_note,
+            }
             : null,
         hasUnpublishedActive: data.has_unpublished_active,
         history: data.history.map((h) => ({
@@ -472,7 +467,6 @@ export async function fetchPublicRepairSummary(deviceId: string): Promise<Public
             createdAt: h.created_at,
             closedAt: h.closed_at,
             resolutionNote: h.resolution_note,
-            applicantName: h.applicant_name,
         })),
     };
 }
