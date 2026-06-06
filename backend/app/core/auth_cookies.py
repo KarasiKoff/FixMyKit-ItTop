@@ -15,7 +15,7 @@ def _cookie_kwargs() -> dict:
         "max_age": server.access_token_expire_minutes * 60,
         "path": "/",
         "secure": server.auth_cookie_secure,
-        "samesite": server.auth_cookie_samesite,
+        "samesite": server.auth_cookie_samesite.lower(),
     }
     domain = (server.auth_cookie_domain or "").strip()
     if domain:
@@ -31,11 +31,10 @@ def clear_auth_cookie(response: Response) -> None:
     server = settings.server
     kwargs: dict = {
         "key": server.auth_cookie_name,
-        "httponly": True,
-        "max_age": 0,
         "path": "/",
+        "httponly": True,
         "secure": server.auth_cookie_secure,
-        "samesite": server.auth_cookie_samesite,
+        "samesite": server.auth_cookie_samesite.lower(),
     }
     domain = (server.auth_cookie_domain or "").strip()
     if domain:
