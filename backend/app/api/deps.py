@@ -2,11 +2,12 @@ import logging
 from collections.abc import Generator
 from uuid import UUID
 
-from fastapi import Depends, HTTPException, Query, status
+from fastapi import Depends, HTTPException, Query, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from jwt import InvalidTokenError
 from sqlalchemy.orm import Session
 
+from backend.app.core.config import settings
 from backend.app.core.database import SessionLocal
 from backend.app.core.security import decode_access_token
 from backend.app.models.enums import UserRole
@@ -67,21 +68,43 @@ def _user_from_access_token(token: str, db: Session) -> User:
     return user
 
 
+def _resolve_access_token(
+    request: Request,
+    bearer: str | None = Depends(oauth2_scheme_optional),
+) -> str:
+    if bearer and bearer.strip():
+        return bearer.strip()
+    cookie = request.cookies.get(settings.server.auth_cookie_name)
+    if cookie and cookie.strip():
+        return cookie.strip()
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token"
+    )
+
+
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    token: str = Depends(_resolve_access_token),
     db: Session = Depends(get_db),
 ) -> User:
     return _user_from_access_token(token, db)
 
 
 def get_optional_user(
-    token: str | None = Depends(oauth2_scheme_optional),
+    request: Request,
+    bearer: str | None = Depends(oauth2_scheme_optional),
     db: Session = Depends(get_db),
 ) -> User | None:
-    if not token or not token.strip():
+    token: str | None = None
+    if bearer and bearer.strip():
+        token = bearer.strip()
+    else:
+        cookie = request.cookies.get(settings.server.auth_cookie_name)
+        if cookie and cookie.strip():
+            token = cookie.strip()
+    if not token:
         return None
     try:
-        return _user_from_access_token(token.strip(), db)
+        return _user_from_access_token(token, db)
     except HTTPException:
         return None
 

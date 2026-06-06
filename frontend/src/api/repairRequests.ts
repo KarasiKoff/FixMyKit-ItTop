@@ -1,4 +1,3 @@
-import { getStoredAuthToken } from './auth';
 import { apiRequest } from './client';
 import {
     PublicAudienceRepairSummary,
@@ -153,10 +152,12 @@ function buildRepairRequestJsonBody(payload: CreateRepairRequestPayload, syncToT
     return JSON.stringify(body);
 }
 
-export async function createRepairRequest(payload: CreateRepairRequestPayload) {
-    const token = getStoredAuthToken();
+export async function createRepairRequest(
+    payload: CreateRepairRequestPayload,
+    options?: { staff?: boolean },
+) {
     const hasFiles = (payload.files?.length ?? 0) > 0;
-    if (token) {
+    if (options?.staff) {
         const init = hasFiles
             ? {
                 method: 'POST' as const,

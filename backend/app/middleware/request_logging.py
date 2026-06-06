@@ -9,6 +9,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import Response
 
+from backend.app.core.log_sanitize import sanitize_request_uri
 from backend.app.core.request_context import (
     new_request_id,
     reset_request_id,
@@ -27,6 +28,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
         token = set_request_id(rid)
 
         path = request.url.path
+        log_uri = sanitize_request_uri(path, request.url.query)
         skip_body_paths = {"/health", "/health/ready", "/metrics"}
         started = time.perf_counter()
         status_code = 500
@@ -41,6 +43,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                 extra={
                     "method": request.method,
                     "path": path,
+                    "uri": log_uri,
                     "client": request.client.host if request.client else None,
                 },
             )
@@ -59,6 +62,7 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
                     extra={
                         "method": request.method,
                         "path": path,
+                        "uri": log_uri,
                         "status": status_code,
                         "duration_ms": elapsed_ms,
                         "client": request.client.host if request.client else None,

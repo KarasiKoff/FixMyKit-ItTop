@@ -126,6 +126,22 @@ class ServerConfig(BaseSettings):
         alias="SSE_TICKET_TTL_SECONDS",
         description="TTL одноразового SSE-токена; продлевается при подключении к /stream.",
     )
+    auth_cookie_name: str = Field(default="fmk_access_token", alias="AUTH_COOKIE_NAME")
+    auth_cookie_secure: bool = Field(
+        default=False,
+        alias="AUTH_COOKIE_SECURE",
+        description="Secure cookie (true на HTTPS в prod).",
+    )
+    auth_cookie_samesite: str = Field(
+        default="lax",
+        alias="AUTH_COOKIE_SAMESITE",
+        description="lax | strict | none (none для app+api на разных поддоменах).",
+    )
+    auth_cookie_domain: str = Field(
+        default="",
+        alias="AUTH_COOKIE_DOMAIN",
+        description="Например .fixmykit.example.com для api+app; пусто — хост API.",
+    )
 
     def resolved_realtime_backend(self) -> str:
         mode = (self.realtime_backend or "auto").strip().lower()

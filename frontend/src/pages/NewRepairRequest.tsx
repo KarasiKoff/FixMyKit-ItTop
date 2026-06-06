@@ -303,13 +303,16 @@ export function NewRepairRequest() {
     async function submitDevice(data: { deviceId: string; name: string; description: string }) {
         const files = draftsToFiles(attachmentDrafts);
         if (isAuthenticated) {
-            const created = await submitRepairRequest({
-                deviceId: data.deviceId,
-                requesterName: user?.name ?? user?.login ?? '',
-                description: data.description,
-                syncToTracker: sendToTracker,
-                files,
-            });
+            const created = await submitRepairRequest(
+                {
+                    deviceId: data.deviceId,
+                    requesterName: user?.name ?? user?.login ?? '',
+                    description: data.description,
+                    syncToTracker: sendToTracker,
+                    files,
+                },
+                { staff: true },
+            );
             if (showSuccessScreenAfterSubmit) {
                 completeSubmit({
                     targetKind: 'device',
@@ -342,13 +345,16 @@ export function NewRepairRequest() {
     async function submitCabinet(data: { audienceId: string; name: string; description: string }) {
         const files = draftsToFiles(attachmentDrafts);
         if (isAuthenticated) {
-            const created = await submitRepairRequest({
-                audienceId: data.audienceId,
-                requesterName: user?.name ?? user?.login ?? '',
-                description: data.description,
-                syncToTracker: sendToTracker,
-                files,
-            });
+            const created = await submitRepairRequest(
+                {
+                    audienceId: data.audienceId,
+                    requesterName: user?.name ?? user?.login ?? '',
+                    description: data.description,
+                    syncToTracker: sendToTracker,
+                    files,
+                },
+                { staff: true },
+            );
             if (showSuccessScreenAfterSubmit) {
                 completeSubmit({
                     targetKind: 'cabinet',

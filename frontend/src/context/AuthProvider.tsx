@@ -1,27 +1,16 @@
 import React, { useEffect, useState, ReactNode } from 'react';
 import { ApiError } from '../api/client';
-import {
-    clearStoredAuthToken,
-    getCurrentUser,
-    getStoredAuthToken,
-    login as loginApi,
-    setStoredAuthToken,
-} from '../api/auth';
+import { clearLegacyAuthToken, getCurrentUser, login as loginApi, logout as logoutApi } from '../api/auth';
 import { AuthContext, type AuthContextValue } from './auth-context';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AuthContextValue['user']>(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(() => getStoredAuthToken() !== null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        const token = getStoredAuthToken();
-        if (!token) {
-            setIsLoading(false);
-            return;
-        }
-
-        getCurrentUser(token)
+        clearLegacyAuthToken();
+        getCurrentUser()
             .then((currentUser) => {
                 setIsAuthenticated(true);
                 setUser({
@@ -33,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             })
             .catch((err) => {
                 if (err instanceof ApiError && err.status === 401) {
-                    clearStoredAuthToken();
+                    clearLegacyAuthToken();
                 }
                 setIsAuthenticated(false);
                 setUser(null);
@@ -42,10 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }, []);
 
     async function signIn(username: string, password: string) {
-        const result = await loginApi({ login: username, password });
-        setStoredAuthToken(result.access_token);
+        await loginApi({ login: username, password });
+        const currentUser = await getCurrentUser();
         setIsAuthenticated(true);
-        const currentUser = await getCurrentUser(result.access_token);
         setUser({
             id: currentUser.id,
             name: currentUser.full_name ?? currentUser.login,
@@ -54,8 +42,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         });
     }
 
-    function signOut() {
-        clearStoredAuthToken();
+    async function signOut() {
+        try {
+            await logoutApi();
+        } catch {
+            /* ignore */
+        }
+        clearLegacyAuthToken();
         setIsAuthenticated(false);
         setUser(null);
     }

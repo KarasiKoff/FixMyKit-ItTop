@@ -5,8 +5,7 @@ type LoginCredentials = {
     password: string;
 };
 
-type TokenResponse = {
-    access_token: string;
+type LoginResponse = {
     token_type: string;
 };
 
@@ -17,13 +16,23 @@ export type UserResponse = {
     full_name: string | null;
 };
 
-const AUTH_TOKEN_KEY = 'fix-my-kit-auth-token';
+const LEGACY_AUTH_TOKEN_KEY = 'fix-my-kit-auth-token';
 
-export async function login(credentials: LoginCredentials): Promise<TokenResponse> {
-    return apiRequest<TokenResponse>('/api/auth/login', {
+/** Удаляет устаревший JWT из localStorage  */
+export function clearLegacyAuthToken() {
+    localStorage.removeItem(LEGACY_AUTH_TOKEN_KEY);
+}
+
+export async function login(credentials: LoginCredentials): Promise<LoginResponse> {
+    return apiRequest<LoginResponse>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify(credentials),
+        skipAuth: true,
     });
+}
+
+export async function logout() {
+    await apiRequest<void>('/api/auth/logout', { method: 'POST' });
 }
 
 export async function changeOwnPassword(currentPassword: string, newPassword: string) {
@@ -33,26 +42,6 @@ export async function changeOwnPassword(currentPassword: string, newPassword: st
     });
 }
 
-export async function getCurrentUser(token: string): Promise<UserResponse> {
-    return apiRequest<UserResponse>('/api/auth/me', {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
-}
-
-export function getStoredAuthToken(): string | null {
-    return localStorage.getItem(AUTH_TOKEN_KEY);
-}
-
-export function hasStoredAuthToken(): boolean {
-    return getStoredAuthToken() !== null;
-}
-
-export function setStoredAuthToken(token: string) {
-    localStorage.setItem(AUTH_TOKEN_KEY, token);
-}
-
-export function clearStoredAuthToken() {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
+export async function getCurrentUser(): Promise<UserResponse> {
+    return apiRequest<UserResponse>('/api/auth/me');
 }

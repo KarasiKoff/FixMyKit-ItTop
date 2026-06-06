@@ -1,4 +1,4 @@
-import { clearStoredAuthToken, getStoredAuthToken } from './auth';
+import { clearLegacyAuthToken, logout } from './auth';
 
 export class ApiError extends Error {
     status: number;
@@ -38,17 +38,11 @@ export async function apiRequest<T>(path: string, init: ApiRequestOptions = {}):
         headers.set('Content-Type', 'application/json');
     }
 
-    if (!skipAuth && !headers.has('Authorization')) {
-        const token = getStoredAuthToken();
-        if (token) {
-            headers.set('Authorization', `Bearer ${token}`);
-        }
-    }
-
     const response = await fetch(resolveApiUrl(path), {
         ...rest,
         method,
         headers,
+        credentials: skipAuth ? 'same-origin' : 'include',
     });
 
     if (response.status === 204) {
@@ -60,7 +54,12 @@ export async function apiRequest<T>(path: string, init: ApiRequestOptions = {}):
 
     if (!response.ok) {
         if (response.status === 401 && !skipAuth) {
-            clearStoredAuthToken();
+            clearLegacyAuthToken();
+            try {
+                await logout();
+            } catch {
+                /* cookie already invalid */
+            }
         }
         throw new ApiError(
             response.status,

@@ -1,4 +1,3 @@
-import { getStoredAuthToken } from './auth';
 import { apiRequest, resolveApiUrl } from './client';
 import type { TrackerAttachment } from '../types/repairRequest';
 
@@ -46,11 +45,3 @@ export async function runAttachmentCleanup() {
     }>('/api/admin/attachments/cleanup', { method: 'POST' });
 }
 
-/** Заголовок Authorization для URL превью (img/video src не шлёт Bearer). */
-export function attachmentPreviewHeaders(): HeadersInit | undefined {
-    const token = getStoredAuthToken();
-    if (!token) {
-        return undefined;
-    }
-    return { Authorization: `Bearer ${token}` };
-}

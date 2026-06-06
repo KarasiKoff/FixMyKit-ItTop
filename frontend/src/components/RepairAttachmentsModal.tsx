@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchRepairRequestAttachments, repairAttachmentContentUrl } from '../api/repairRequestAttachments';
-import { getStoredAuthToken } from '../api/auth';
 import type { TrackerAttachment } from '../types/repairRequest';
 import { formatApiError } from '../utils/formatApiError';
 
@@ -18,12 +17,7 @@ async function loadBlobUrl(
 ): Promise<string> {
     const useThumb = variant === 'thumbnail' && item.hasThumbnail && item.kind === 'image';
     const url = repairAttachmentContentUrl(requestId, item.id, useThumb ? 'thumbnail' : 'content');
-    const token = getStoredAuthToken();
-    const headers: HeadersInit = {};
-    if (token) {
-        headers.Authorization = `Bearer ${token}`;
-    }
-    const res = await fetch(url, { headers });
+    const res = await fetch(url, { credentials: 'include' });
     if (!res.ok) {
         throw new Error('load_failed');
     }
