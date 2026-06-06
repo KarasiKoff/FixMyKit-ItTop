@@ -39,12 +39,6 @@ function ActiveRequestCard({ req }: { req: PublicRepairRequestItem }) {
                 <span className={statusPillClass(req.status)}>{statusLabel(req.status)}</span>
             </div>
             <ul className="repair-detail-list">
-                {req.applicantName ? (
-                    <li>
-                        <strong>Заявитель:</strong>
-                        <span>{req.applicantName}</span>
-                    </li>
-                ) : null}
                 <li>
                     <strong>Подана:</strong>
                     <span>{formatDate(req.createdAt)}</span>
