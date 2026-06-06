@@ -53,7 +53,7 @@ export async function apiRequest<T>(path: string, init: ApiRequestOptions = {}):
     const payload = contentType.includes('application/json') ? await response.json() : await response.text();
 
     if (!response.ok) {
-        if (response.status === 401 && !skipAuth) {
+        if (response.status === 401 && !skipAuth && !path.includes('/api/auth/me')) {
             clearLegacyAuthToken();
             try {
                 await logout();
