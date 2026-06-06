@@ -107,6 +107,33 @@ class ServerConfig(BaseSettings):
         default=30,
         alias="ATTACHMENT_ORPHAN_MAX_AGE_DAYS",
     )
+    redis_url: str = Field(
+        default="",
+        alias="REDIS_URL",
+        description="Redis для SSE-тикетов и pub/sub (пусто — in-memory, только один воркер).",
+    )
+    realtime_backend: str = Field(
+        default="auto",
+        alias="REALTIME_BACKEND",
+        description="auto | redis | memory. auto: redis при заданном REDIS_URL, иначе memory.",
+    )
+    redis_sse_channel: str = Field(
+        default="fixmykit:sse",
+        alias="REDIS_SSE_CHANNEL",
+    )
+    sse_ticket_ttl_seconds: int = Field(
+        default=300,
+        alias="SSE_TICKET_TTL_SECONDS",
+        description="TTL одноразового SSE-токена; продлевается при подключении к /stream.",
+    )
+
+    def resolved_realtime_backend(self) -> str:
+        mode = (self.realtime_backend or "auto").strip().lower()
+        if mode == "auto":
+            return "redis" if (self.redis_url or "").strip() else "memory"
+        if mode in ("redis", "memory"):
+            return mode
+        return "memory"
 
 
 class DbConfig(BaseSettings):

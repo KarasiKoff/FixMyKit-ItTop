@@ -542,14 +542,13 @@ docker logs --tail 200 fixmykit-backend-prod 2>&1 | grep tracker_webhook
 
 ### Live-обновления (SSE)
 
-```
-GET /api/events/stream?access_token=<JWT>
-```
+1. `POST /api/events/ticket` с заголовком `Authorization: Bearer <JWT>` → `{ "sse_token": "...", "expires_in": 300 }`
+2. `GET /api/events/stream?sse_token=<opaque>` — поток событий
 
 Опционально: `repair_request_id=<uuid>` — только события по одной заявке.  
-Доступ: **admin** и **sysadmin**. EventSource не передаёт `Authorization`, поэтому токен передаётся в query.
+Доступ: **admin** и **sysadmin**. JWT в query не используется — только короткоживущий SSE-токен.
 
-> SSE работает в рамках **одного процесса** uvicorn (in-memory hub). Для нескольких воркеров потребуется внешний брокер (Redis и т.п.).
+> События доставляются через **Redis pub/sub** (`REDIS_URL`, `REALTIME_BACKEND=redis`). Без Redis — in-memory hub (один воркер).
 
 ---
 
@@ -611,7 +610,6 @@ GET /api/events/stream?access_token=<JWT>
 - Импорт оборудования из Excel
 - Расширенная аналитика и отчёты
 - SLA и дополнительные статусы ремонта
-- Redis для SSE при горизонтальном масштабировании
 
 ---
 

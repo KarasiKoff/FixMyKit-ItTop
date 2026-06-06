@@ -1,4 +1,4 @@
-"""In-memory SSE hub (один процесс uvicorn). Для нескольких воркеров нужен Redis pub/sub."""
+"""Локальный SSE hub: подписчики в рамках одного процесса uvicorn."""
 
 from __future__ import annotations
 
@@ -75,14 +75,10 @@ async def _publish_async(event: SseEvent) -> None:
 
 
 def publish_event(event: str, data: dict[str, Any]) -> None:
-    """Вызов из sync-кода (вебхук, API): планирует отправку в asyncio loop"""
-    if _main_loop is None:
-        return
-    payload = SseEvent(event=event, data=data)
-    try:
-        asyncio.run_coroutine_threadsafe(_publish_async(payload), _main_loop)
-    except RuntimeError:
-        logger.debug("sse publish skipped: event loop unavailable")
+    """Вызов из sync-кода (вебхук, API): memory hub или Redis pub/sub."""
+    from backend.app.services.realtime_bus import publish_to_bus
+
+    publish_to_bus(SseEvent(event=event, data=data))
 
 
 def format_sse_message(event: SseEvent) -> str:

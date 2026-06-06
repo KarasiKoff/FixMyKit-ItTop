@@ -4,16 +4,17 @@ version = "0.1.0"
 description = "Fix My Kit backend API"
 requires-python = ">=3.14"
 dependencies = [
-    "alembic",
-    "bcrypt",
-    "fastapi",
+    "alembic>=1.18.4",
+    "bcrypt>=5.0",
+    "fastapi>=0.136.1",
     "prometheus-fastapi-instrumentator>=8.0.0",
-    "psycopg[binary]",
-    "pydantic-settings",
-    "pyjwt",
-    "python-multipart",
-    "sqlalchemy",
-    "uvicorn[standard]",
+    "psycopg[binary]>=3.3.4",
+    "pydantic-settings>=2.13.4",
+    "pyjwt>=2.12.1",
+    "python-multipart>=0.0.27",
+    "redis>=7.1.0",
+    "sqlalchemy>=2.0.49",
+    "uvicorn[standard]>=0.46.0",
 ]
 
 [dependency-groups]
