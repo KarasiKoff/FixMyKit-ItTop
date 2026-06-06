@@ -11,7 +11,11 @@ export class ApiError extends Error {
     }
 }
 
-export type ApiRequestOptions = RequestInit & { skipAuth?: boolean };
+export type ApiRequestOptions = RequestInit & {
+    skipAuth?: boolean;
+    /** Не вызывать logout при 401 (проверка сессии на /auth/me). */
+    silent401?: boolean;
+};
 
 export function apiBaseUrl(): string {
     const raw = import.meta.env.VITE_API_BASE_URL;
@@ -30,7 +34,7 @@ export function resolveApiUrl(path: string): string {
 }
 
 export async function apiRequest<T>(path: string, init: ApiRequestOptions = {}): Promise<T> {
-    const { skipAuth, ...rest } = init;
+    const { skipAuth, silent401, ...rest } = init;
     const method = (rest.method ?? 'GET').toUpperCase();
     const headers = new Headers(rest.headers);
 
@@ -53,7 +57,7 @@ export async function apiRequest<T>(path: string, init: ApiRequestOptions = {}):
     const payload = contentType.includes('application/json') ? await response.json() : await response.text();
 
     if (!response.ok) {
-        if (response.status === 401 && !skipAuth && !path.includes('/api/auth/me')) {
+        if (response.status === 401 && !skipAuth && !silent401) {
             clearLegacyAuthToken();
             try {
                 await logout();

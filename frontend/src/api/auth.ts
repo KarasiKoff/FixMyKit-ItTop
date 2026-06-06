@@ -43,5 +43,5 @@ export async function changeOwnPassword(currentPassword: string, newPassword: st
 }
 
 export async function getCurrentUser(): Promise<UserResponse> {
-    return apiRequest<UserResponse>('/api/auth/me');
+    return apiRequest<UserResponse>('/api/auth/me', { silent401: true });
 }
