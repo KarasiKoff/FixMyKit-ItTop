@@ -28,7 +28,8 @@ client_max_body_size 12g;
 proxy_send_timeout 600s;
 ```
 
-Пример целиком: `deploy/nginx-fixmykit.example.conf`.
+Пример целиком: `deploy/nginx-fixmykit.example.conf`.  
+Runbook деплоя и backup: [`deploy/README.md`](README.md).
 
 Проверка и перезагрузка:
 

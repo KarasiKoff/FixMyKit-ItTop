@@ -194,4 +194,27 @@ BACKEND_METRICS_TARGET=host.docker.internal:8000
 
 ## Безопасность
 
-Не выставляйте порты 9090/3000/9093 в интернет без защиты.
+Не выставляйте порты 9090/3000/9093 в интернет без защиты (VPN, SSH-туннель, reverse proxy с auth).
+
+## Алерты в Telegram
+
+Цепочка: **Prometheus** → **Alertmanager** → **alertserver** → Telegram Bot API.
+
+В `.env.monitoring`:
+
+```env
+TG_BOT_ALERT_TOKEN=123456:ABC...   # @BotFather
+TG_ALERT_CHAT_ID=-100...           # chat id или @channel
+```
+
+Alertmanager шлёт POST на `http://alertserver:8080/alert` (сервис `fmk-alertserver` в compose).  
+Правила алертов — [`prometheus/alerts.yml`](prometheus/alerts.yml).
+
+Проверка вручную (из сети мониторинга):
+
+```bash
+curl -X POST http://localhost:9093/api/v2/alerts -H 'Content-Type: application/json' -d '[]'
+# или дождаться firing rule в Prometheus → Alertmanager → Telegram
+```
+
+Если бот получает **429 Too Many Requests** — уменьшите частоту правил или добавьте `group_wait` / `repeat_interval` в [`alertmanager/alertmanager.yml`](alertmanager/alertmanager.yml).

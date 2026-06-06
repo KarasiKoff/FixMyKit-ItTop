@@ -14,8 +14,9 @@
 - [Модель данных](#модель-данных)
 - [Запуск для разработки](#запуск-для-разработки)
 - [Локальный запуск без Docker](#локальный-запуск-без-docker)
-- [Продакшен](#продакшен)
+- [Продакшен](#продакшен) — см. также [`deploy/README.md`](deploy/README.md)
 - [Мониторинг](#мониторинг)
+- [Авторизация](#авторизация)
 - [Конфигурация приложения](#конфигурация-приложения)
 - [Переменные окружения](#переменные-окружения)
 - [Интеграция с Яндекс Трекером](#интеграция-с-яндекс-трекером)
@@ -60,7 +61,7 @@
 
 - Создание **авторизованным** пользователем (admin/sysadmin) или **гостем** (ФИО + описание + вложения).
 - Привязка к устройству по ID, QR или инвентарному номеру.
-- Статусы заявки: `open`, `in_progress`, `closed`.
+- Статусы заявки: `open`, `in_progress`, `needs_info`, `closed`.
 - Операции: смена статуса, «забрал сисадмин», закрытие с комментарием, публикация в Трекер.
 - Запрет второй активной заявки на одно устройство.
 - История изменений (`repair_history`).
@@ -90,7 +91,13 @@
 - Справочники: пользователи, категории (с иконками), кабинеты, устройства.
 - Дашборд со статистикой (открытые заявки, устройства в ремонте и т.д.).
 - Смена пароля, управление ролями.
+- Баннеры объявлений на сайте (слоты, severity, dismiss пользователем).
 - SSE-поток для live-обновления списка заявок без перезагрузки страницы.
+
+### Ссылки и QR
+
+- Публичные URL устройств строятся из `PUBLIC_FRONTEND_BASE_URL`.
+- Опциональное сокращение через [clck.ru](https://clck.ru) (`CLCK_SHORTENER_ENABLED`, `POST /api/public/shorten-url`).
 
 ### Публичный доступ
 
@@ -120,10 +127,11 @@
 | **Backend** | Python 3.14, FastAPI, SQLAlchemy, Pydantic |
 | **БД** | PostgreSQL 18 |
 | **Миграции** | Alembic |
-| **Авторизация** | JWT (Bearer), bcrypt |
-| **Интеграции** | Яндекс Tracker API v3, вебхуки |
-| **Realtime** | Server-Sent Events (in-memory hub) |
-| **Инфраструктура** | Docker Compose, uv, nginx (prod) |
+| **Авторизация** | JWT в httpOnly cookie (+ Bearer для Swagger), bcrypt |
+| **Кэш / realtime** | Redis (SSE-тикеты, pub/sub между воркерами) |
+| **Интеграции** | Яндекс Tracker API v3, вебхуки, clck.ru |
+| **Realtime** | Server-Sent Events (Redis pub/sub или in-memory) |
+| **Инфраструктура** | Docker Compose, uv, nginx (prod), GitHub/GitLab CI |
 
 ---
 
@@ -133,9 +141,10 @@
 fix-my-kit/
 ├── main.py                 # Точка входа FastAPI
 ├── pyproject.toml          # Зависимости Python (uv)
-├── docker-compose.yml      # Dev: Postgres + backend + Vite
-├── docker-compose.prod.yml # Prod: Postgres + API + nginx-фронт
+├── docker-compose.yml      # Dev: Postgres + Redis + backend + Vite
+├── docker-compose.prod.yml # Prod: Postgres + Redis + API + nginx-фронт
 ├── docker-compose.monitoring.yml # Prometheus, Grafana, Loki, алерты
+├── .gitlab-ci.yml          # CI в GitLab (зеркало .github/workflows/ci.yml)
 ├── .env.monitoring.example # Указатель на шаблоны мониторинга по сценарию
 ├── docker-compose.monitoring.local.yml      # overlay: локалка
 ├── docker-compose.monitoring.prod-bundle.yml # overlay: prod+мониторинг
@@ -160,7 +169,10 @@ fix-my-kit/
 │       ├── pages/          # Страницы и админка
 │       ├── hooks/          # React-хуки
 │       └── styles/         # CSS-модули по разделам
-├── deploy/                 # nginx, примеры вебхуков, заметки по продакшену
+├── monitoring/             # Grafana, Prometheus, Loki, Alertmanager, alertserver
+├── tests/                  # pytest (unit + tests/api integration)
+├── e2e/                    # Playwright (smoke / optional full)
+├── deploy/                 # nginx, runbook, примеры вебхуков — deploy/README.md
 └── data/uploads/           # Вложения заявок (dev, монтируется в Docker)
 ```
 
@@ -179,6 +191,7 @@ fix-my-kit/
 | `room_device_positions` | Координаты устройств на карте кабинета |
 | `repair_requests` | Заявки, статус, Трекер, вложения, публикация |
 | `repair_history` | Журнал изменений статусов и событий |
+| `site_announcements` | Баннеры объявлений (слоты, severity, dismiss) |
 
 ---
 
@@ -302,7 +315,7 @@ npm run dev
 | `repair-workflow.api.spec.ts` | `PLAYWRIGHT_E2E_FULL=1` | Полный сценарий через HTTP: логин, список кабинетов, create, workflow `needs_info` → `in_progress`. |
 | `login.ui.spec.ts` | `PLAYWRIGHT_E2E_UI=1` | Страница `/login`: заголовок «Вход в систему». |
 
-В **CI** четыре параллельных job (на PR/push в `main`/`master`):
+В **CI** четыре параллельных job (на PR/push в `main`/`master`) — конфиги в [`.github/workflows/ci.yml`](.github/workflows/ci.yml) и [`.gitlab-ci.yml`](.gitlab-ci.yml):
 
 | Job | Что делает |
 |-----|------------|
@@ -387,9 +400,11 @@ readinessProbe:
 2. Обязательно задайте:
    - `POSTGRES_PASSWORD`
    - `JWT_SECRET_KEY`, `ADMIN_LOGIN`, `ADMIN_PASSWORD`
-   - `CORS_ORIGINS` — публичный URL фронта
+   - `CORS_ORIGINS` — публичный URL фронта (без слэша в конце)
    - `PUBLIC_FRONTEND_BASE_URL` — для QR-ссылок
    - `VITE_API_BASE_URL` — полный URL API (подставляется при сборке фронта)
+   - `AUTH_COOKIE_*` — для app и api на поддоменах одного домена (см. [Авторизация](#авторизация))
+   - `REDIS_URL`, `REALTIME_BACKEND=redis` — SSE и несколько воркеров
    - `TRACKER_*` — токен, org id, очередь
 
 ### Запуск
@@ -402,7 +417,9 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 |--------|----------------|
 | API (uvicorn) | `127.0.0.1:8001` |
 | Фронт (nginx, статика) | `127.0.0.1:8080` |
-| PostgreSQL | только внутри Docker-сети |
+| PostgreSQL, Redis | только внутри Docker-сети |
+
+Пошаговый runbook, backup и чеклист nginx: [`deploy/README.md`](deploy/README.md).
 
 ### Nginx на хосте
 
@@ -416,7 +433,9 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 
 ### CORS
 
-Если `CORS_ORIGINS` не пустой, FastAPI подключает `CORSMiddleware` с перечисленными origin (без cookies; заголовок `Authorization` разрешён).
+Если `CORS_ORIGINS` не пустой, FastAPI подключает `CORSMiddleware` с перечисленными origin, **`allow_credentials=True`** (httpOnly cookie) и заголовком `Authorization` для Swagger/скриптов.
+
+Origin должен **точно совпадать** с URL фронта (схема + хост, без `/` в конце).
 
 ### Вложения на проде
 
@@ -433,6 +452,44 @@ docker compose -f docker-compose.prod.yml --env-file .env.production up -d --bui
 | Prod отдельно | `.env.monitoring.prod-standalone.example` | Сначала prod, потом мониторинг + `prod-link.yml` |
 
 API отдаёт `GET /metrics`. Grafana: **Backend** (Prometheus) и **Операции** (PostgreSQL — заявки, категории, ремонт по аудиториям). Конфиги — в [`monitoring/`](monitoring/).
+
+---
+
+## Авторизация
+
+Браузерный UI использует **httpOnly cookie** с JWT — токен **не** хранится в `localStorage`. Все запросы фронта идут с `credentials: 'include'`.
+
+| Эндпоинт | Описание |
+|----------|----------|
+| `POST /api/auth/login` | JSON `{login, password}` → cookie + `{token_type: "bearer"}` |
+| `POST /api/auth/logout` | Сброс cookie |
+| `GET /api/auth/me` | Текущий пользователь (401 до входа — норма) |
+| `POST /api/auth/me/password` | Смена пароля |
+
+Для **Swagger** и скриптов: `POST /api/auth/token` (form) возвращает `access_token` в теле и cookie.
+
+### Cookie на prod (app + api на поддоменах)
+
+```env
+AUTH_COOKIE_NAME=fmk_access_token
+AUTH_COOKIE_SECURE=true
+AUTH_COOKIE_SAMESITE=none
+AUTH_COOKIE_DOMAIN=.fixmykit.example.com
+CORS_ORIGINS=https://app.fixmykit.example.com
+```
+
+`AUTH_COOKIE_DOMAIN` — с ведущей точкой, общий родительский домен. `SameSite=None` требует `Secure=true` (HTTPS).
+
+### Локальная разработка
+
+```env
+AUTH_COOKIE_SECURE=false
+AUTH_COOKIE_SAMESITE=lax
+AUTH_COOKIE_DOMAIN=
+CORS_ORIGINS=          # пусто — CORS middleware не включается (Vite proxy)
+```
+
+Фронт на `:5173`, API на `:8000` — cookie ставится для API-хоста; прокси Vite шлёт запросы same-origin с точки зрения браузера.
 
 ---
 
@@ -474,18 +531,27 @@ settings.database.database_url      # PostgreSQL (SQLAlchemy + Alembic)
 | `API_DOCS_ENABLED` | Swagger/ReDoc (`true` в dev, `false` в prod) |
 | `LOG_LEVEL` | Уровень логов (`INFO`, `WARNING`, `ERROR`…) |
 | `LOG_DIR` | Каталог файлов `fixmykit.log` / `fixmykit-error.log` |
+| `LOG_MAX_BYTES` / `LOG_BACKUP_COUNT` | Ротация файлов логов |
 | `LOG_JSON` | JSON-строки в логах (`true` рекомендуется) |
-| `JWT_SECRET_KEY` | Секрет подписи JWT |
+| `JWT_SECRET_KEY` / `JWT_ALGORITHM` | Секрет и алгоритм JWT |
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | Время жизни токена |
 | `ADMIN_LOGIN` / `ADMIN_PASSWORD` | Bootstrap admin при старте |
+| `AUTH_COOKIE_*` | httpOnly cookie: имя, Secure, SameSite, Domain |
 | `POSTGRES_*` | Подключение к БД |
+| `REDIS_URL` | Redis для SSE-тикетов и pub/sub |
+| `REALTIME_BACKEND` | `auto` \| `redis` \| `memory` |
+| `REDIS_SSE_CHANNEL` / `SSE_TICKET_TTL_SECONDS` | Канал pub/sub и TTL SSE-токена |
 | `PUBLIC_FRONTEND_BASE_URL` | Базовый URL для QR (`/device/{id}/public`) |
+| `CLCK_SHORTENER_ENABLED` | Сокращение URL через clck.ru |
 | `CORS_ORIGINS` | Разрешённые origin через запятую (prod) |
 | `VITE_API_BASE_URL` | URL API при prod-сборке фронта |
+| `VITE_PROXY_TARGET` | Цель прокси Vite в dev (`docker-compose.yml`) |
+| `VITE_PUBLIC_FRONTEND_BASE_URL` | База для QR на фронте при сборке |
 | `TRACKER_BASE_URL` | API Трекера (по умолчанию v3) |
 | `TRACKER_TOKEN` | OAuth-токен |
 | `TRACKER_ORG_ID` | ID организации |
 | `TRACKER_QUEUE` | Ключ очереди задач |
+| `TRACKER_TIMEOUT_SECONDS` | Таймаут обычных вызовов Tracker API |
 | `TRACKER_WEBHOOK_SECRET` | Секрет заголовка `X-Tracker-Webhook-Secret` |
 | `TRACKER_WEBHOOK_ACTOR_LOGIN` | Технический пользователь для вебхуков |
 | `UPLOAD_DIR` | Каталог временных вложений |
@@ -542,13 +608,13 @@ docker logs --tail 200 fixmykit-backend-prod 2>&1 | grep tracker_webhook
 
 ### Live-обновления (SSE)
 
-1. `POST /api/events/ticket` с заголовком `Authorization: Bearer <JWT>` → `{ "sse_token": "...", "expires_in": 300 }`
-2. `GET /api/events/stream?sse_token=<opaque>` — поток событий
+1. `POST /api/events/ticket` с **cookie сессии** (или `Authorization: Bearer` для Swagger) → `{ "sse_token": "...", "expires_in": 300 }`
+2. `GET /api/events/stream?sse_token=<opaque>` — поток событий (`EventSource`, без заголовков авторизации)
 
 Опционально: `repair_request_id=<uuid>` — только события по одной заявке.  
-Доступ: **admin** и **sysadmin**. JWT в query не используется — только короткоживущий SSE-токен.
+Доступ: **admin** и **sysadmin**. JWT в query **не** используется — только короткоживущий SSE-токен.
 
-> События доставляются через **Redis pub/sub** (`REDIS_URL`, `REALTIME_BACKEND=redis`). Без Redis — in-memory hub (один воркер).
+> События доставляются через **Redis pub/sub** (`REDIS_URL`, `REALTIME_BACKEND=redis`). Без Redis — in-memory hub (один воркер uvicorn).
 
 ---
 
@@ -558,18 +624,20 @@ docker logs --tail 200 fixmykit-backend-prod 2>&1 | grep tracker_webhook
 
 | Группа | Префикс / путь | Описание |
 |--------|----------------|----------|
-| Auth | `/api/auth` | login, `/me`, смена пароля |
+| Auth | `/api/auth` | login, logout, `/me`, смена пароля |
 | Devices | `/api/devices` | CRUD, список, история, QR-данные |
 | Categories | `/api/categories` | Справочник + иконки |
 | Audiences | `/api/audiences` | Кабинеты |
 | Room map | `/api/audiences/{id}/map` | Карта кабинета |
 | Repair requests | `/api/repair-requests` | Заявки, вложения, Tracker sync |
-| Public | `/api/public` | Устройства и лимиты для гостей |
+| Public | `/api/public` | Устройства, лимиты, `shorten-url` для гостей |
+| Announcements | `/api/announcements`, `/api/admin/announcements` | Баннеры на сайте |
 | Users | `/api/users` | Управление пользователями |
 | Admin stats | `/api/admin/stats` | Статистика дашборда |
 | Admin logs | `/api/admin/logs` | Хвост файлов логов (только admin) |
-| Events | `/api/events/stream` | SSE |
+| Events | `/api/events/*` | SSE-тикет и поток |
 | Webhooks | `/api/webhooks` | Входящие вызовы Трекера |
+| Metrics | `/metrics` | Prometheus (без префикса `/api`) |
 
 При `API_DOCS_ENABLED=true`: Swagger `/docs`, ReDoc `/redoc`.
 

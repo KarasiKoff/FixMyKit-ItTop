@@ -1,19 +1,26 @@
-# Backend scaffold
+# Backend
 
-Каркас backend-слоя на FastAPI.
+FastAPI-приложение Fix My Kit. Точка входа — корневой [`main.py`](../main.py), зависимости — [`pyproject.toml`](../pyproject.toml) (менеджер [uv](https://docs.astral.sh/uv/)).
 
-## Структура
+Полная документация: [README.md](../README.md) (запуск, тесты, env, Tracker, auth).
 
-- `app/core` — конфигурация (`Settings`) и подключение к БД.
-- `app/api` — роуты и зависимости API (тонкие делегаты).
-- `app/schemas` — Pydantic-схемы.
-- `app/models` — SQLAlchemy-модели.
-- `app/repositories` — CRUD и простые выборки по сущностям.
-- `app/queries` — сложные списки (join, фильтры, suggest).
-- `app/clients` — HTTP-клиенты (Yandex Tracker).
-- `app/services` — бизнес-логика.
+---
 
-### Репозитории (`app/repositories/`)
+## Структура `app/`
+
+| Каталог | Назначение |
+|---------|------------|
+| `core/` | `config` (`settings.server` / `settings.database`), БД, security, auth cookies, логи |
+| `api/routes/` | REST-роуты (тонкие делегаты в services) |
+| `api/deps.py` | JWT из cookie или `Authorization`, роли, SSE-токен |
+| `schemas/` | Pydantic-схемы |
+| `models/` | SQLAlchemy-модели и enums |
+| `repositories/` | CRUD и простые выборки |
+| `queries/` | Сложные списки (join, фильтры, suggest, admin stats) |
+| `clients/` | HTTP-клиент Yandex Tracker (`TrackerHttpClient`) |
+| `services/` | Бизнес-логика, workflow заявок, Tracker, SSE hub |
+
+### Репозитории
 
 | Модуль | Сущность |
 |--------|----------|
@@ -29,9 +36,10 @@
 
 ### Tracker
 
-- HTTP — `clients/tracker_client.py`
+- HTTP — `clients/tracker_client.py`, протокол — `clients/tracker_protocol.py`
 - Домен — `services/tracker_issue_service.py` + `tracker_types.py`
-- Фасад импортов — `services/tracker_service.py`
+- Фасад — `services/tracker_service.py`
+- В тестах: `FakeTrackerClient` через `set_tracker_issue_service()`
 
 ### Query-слой
 
@@ -39,54 +47,79 @@
 - `queries/repair_request_list_query.py` — список и suggest заявок
 - `queries/admin_stats_query.py` — агрегаты админ-статистики
 
+---
+
+## Авторизация
+
+- Login: `POST /api/auth/login` → httpOnly cookie (`backend/app/core/auth_cookies.py`)
+- Запросы UI: cookie; Swagger: `POST /api/auth/token` + Bearer
+- `get_current_user` в `deps.py`: cookie, затем заголовок `Authorization`
+
+---
+
+## Realtime (SSE)
+
+- `services/realtime_hub.py` — подписки клиентов
+- `services/sse_ticket_service.py` — одноразовые токены для `EventSource`
+- Redis pub/sub при `REDIS_URL` и `REALTIME_BACKEND=redis`
+
+---
+
+## Миграции (Alembic)
+
+```bash
+# из корня репозитория
+uv run alembic -c backend/alembic.ini upgrade head
+uv run alembic -c backend/alembic.ini revision --autogenerate -m "описание"
+```
+
+При старте Docker backend автоматически выполняет `upgrade head`.
+
+---
+
 ## Тесты
 
 ```bash
 uv sync --group dev
-uv run pytest
+uv run pytest tests/ --ignore=tests/api    # unit, без PostgreSQL
+uv run pytest tests/api -m integration     # API + PostgreSQL
+uv run ruff check backend/app main.py tests backend/alembic
 ```
 
-Описание слоёв (unit / API / что именно проверяется) — в корневом [README.md](../README.md#тесты), раздел **Тесты**.
+Описание слоёв — [README.md § Тесты](../README.md#тесты).
 
-## Запуск через Docker Compose
+---
 
-1. Скопируйте `.env.example` в `.env` в корне проекта.
-2. Запустите:
+## Запуск
+
+### Docker Compose (dev)
 
 ```bash
+cp .env.example .env
 docker compose up --build
 ```
 
-Используется корневой **`Dockerfile`** (dev) с target-стадиями:
+Образы: корневой `Dockerfile` (targets `backend`, `frontend`). Prod: `Dockerfile.prod` + `docker-compose.prod.yml`.
 
-- `backend` — Python/FastAPI
-- `frontend` — Node/Vite
-
-Продакшен-сборка: **`Dockerfile.prod`** и `docker-compose.prod.yml` (стадии `backend`, `frontend-prod`).
-
-## Проверка
-
-- `GET /health` — liveness.
-- `GET /health/ready` — проверка подключения к PostgreSQL (`SELECT 1`).
-- `GET /metrics` — метрики Prometheus (HTTP latency, счётчики запросов).
-- `GET /api/debug/test-400` — намеренный 400 (`status="4xx"` в Prometheus).
-- `GET /api/debug/test-500` — намеренный 500 (`status="5xx"` в Prometheus).
-  Оба только при `API_DOCS_ENABLED=true`.
-
-## Локальный запуск через uv
-
-Из корня репозитория:
+### Локально (uv)
 
 ```bash
 uv sync
-uv run uvicorn main:app --reload
+uv run alembic -c backend/alembic.ini upgrade head
+uv run uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Python entrypoint находится в корневом `main.py`, а `pyproject.toml` и `uv.lock` должны храниться в корне проекта.
+---
 
-## Alembic (каркас готов)
+## Health и метрики
 
-В репозитории уже подготовлены:
-- `alembic.ini`
-- `alembic/env.py`
-- `alembic/versions/`
+| Путь | Назначение |
+|------|------------|
+| `GET /health` | Liveness |
+| `GET /health/ready` | Readiness (PostgreSQL) |
+| `GET /metrics` | Prometheus |
+
+Debug (только `API_DOCS_ENABLED=true`):
+
+- `GET /api/debug/test-400` — счётчик `4xx`
+- `GET /api/debug/test-500` — счётчик `5xx`
