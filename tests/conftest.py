@@ -23,3 +23,5 @@ os.environ.setdefault("API_DOCS_ENABLED", "false")
 os.environ.setdefault(
     "UPLOAD_DIR", os.path.join(os.environ.get("TEMP", "/tmp"), "fixmykit-test-uploads")
 )
+os.environ.setdefault("REALTIME_BACKEND", "memory")
+os.environ.setdefault("REDIS_URL", "")

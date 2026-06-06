@@ -28,6 +28,19 @@ services:
     networks:
       - fixmykit_dev
 
+  redis:
+    image: redis:8.2.1-alpine
+    container_name: fixmykit-redis
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    networks:
+      - fixmykit_dev
+
   backend:
     <<: [*env]
     build:
@@ -39,8 +52,12 @@ services:
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
+      REDIS_URL: redis://redis:6379/0
+      REALTIME_BACKEND: redis
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "${API_PORT:-8000}:8000"

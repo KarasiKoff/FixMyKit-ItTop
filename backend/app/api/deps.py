@@ -12,6 +12,7 @@ from backend.app.core.security import decode_access_token
 from backend.app.models.enums import UserRole
 from backend.app.models.user import User
 from backend.app.repositories.user_repository import UserRepository
+from backend.app.services.sse_ticket_service import validate_sse_ticket
 
 logger = logging.getLogger("fixmykit.auth")
 
@@ -85,17 +86,35 @@ def get_optional_user(
         return None
 
 
-def get_current_user_from_query_token(
-    access_token: str = Query(
-        ..., min_length=1, description="JWT для EventSource (SSE)"
+def get_current_user_from_sse_token(
+    sse_token: str = Query(
+        ...,
+        min_length=1,
+        description="Короткоживущий SSE-токен из POST /api/events/ticket",
     ),
     db: Session = Depends(get_db),
 ) -> User:
-    return _user_from_access_token(access_token.strip(), db)
+    user_id = validate_sse_ticket(sse_token.strip())
+    if user_id is None:
+        logger.warning("sse_token_invalid")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_sse_token"
+        )
+
+    user = UserRepository(db).get_active_by_id(user_id)
+    if user is None:
+        logger.warning(
+            "sse_token_user_not_found_or_inactive", extra={"user_id": str(user_id)}
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_sse_token"
+        )
+
+    return user
 
 
-def require_admin_or_sysadmin_from_token(
-    current_user: User = Depends(get_current_user_from_query_token),
+def require_admin_or_sysadmin_from_sse_token(
+    current_user: User = Depends(get_current_user_from_sse_token),
 ) -> User:
     if current_user.role not in (UserRole.ADMIN, UserRole.SYSADMIN):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="forbidden")
@@ -126,13 +145,13 @@ get_current_admin = require_admin_only
 __all__ = [
     "get_current_admin",
     "get_current_user",
-    "get_current_user_from_query_token",
+    "get_current_user_from_sse_token",
     "get_db",
     "get_optional_user",
     "oauth2_scheme",
     "oauth2_scheme_optional",
     "require_admin_only",
     "require_admin_or_sysadmin",
-    "require_admin_or_sysadmin_from_token",
+    "require_admin_or_sysadmin_from_sse_token",
     "require_roles",
 ]

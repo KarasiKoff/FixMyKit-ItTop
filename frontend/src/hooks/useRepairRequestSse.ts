@@ -1,5 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { buildRepairRequestsSseUrl, type RepairRequestSsePayload } from '../api/sse';
+import { buildRepairRequestsSseUrl, fetchSseTicket, type RepairRequestSsePayload } from '../api/sse';
+
+const RECONNECT_DELAY_MS = 3000;
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+        window.setTimeout(resolve, ms);
+    });
+}
 
 export function useRepairRequestSse(options: {
     repairRequestId?: string;
@@ -16,12 +24,9 @@ export function useRepairRequestSse(options: {
         if (!enabled) {
             return undefined;
         }
-        const url = buildRepairRequestsSseUrl(repairRequestId ? { repairRequestId } : undefined);
-        if (!url) {
-            return undefined;
-        }
 
-        const es = new EventSource(url);
+        let es: EventSource | null = null;
+        let cancelled = false;
 
         const onRepairRequest = (event: MessageEvent<string>) => {
             try {
@@ -32,11 +37,48 @@ export function useRepairRequestSse(options: {
             }
         };
 
-        es.addEventListener('repair_request', onRepairRequest);
+        const connect = async () => {
+            while (!cancelled) {
+                try {
+                    const ticket = await fetchSseTicket();
+                    if (cancelled) {
+                        return;
+                    }
+                    const url = buildRepairRequestsSseUrl(ticket.sse_token, repairRequestId ? { repairRequestId } : undefined);
+                    es?.close();
+                    es = new EventSource(url);
+                    es.addEventListener('repair_request', onRepairRequest);
+
+                    await new Promise<void>((resolve) => {
+                        if (!es) {
+                            resolve();
+                            return;
+                        }
+                        const handleError = () => {
+                            es?.removeEventListener('error', handleError);
+                            resolve();
+                        };
+                        es.addEventListener('error', handleError);
+                    });
+                } catch {
+                    /* ticket or stream failed */
+                }
+
+                if (cancelled) {
+                    return;
+                }
+                await sleep(RECONNECT_DELAY_MS);
+            }
+        };
+
+        void connect();
 
         return () => {
-            es.removeEventListener('repair_request', onRepairRequest);
-            es.close();
+            cancelled = true;
+            if (es) {
+                es.removeEventListener('repair_request', onRepairRequest);
+                es.close();
+            }
         };
     }, [enabled, repairRequestId]);
 }

@@ -1,4 +1,4 @@
-import { getStoredAuthToken } from './auth';
+import { apiRequest } from './client';
 
 export type RepairRequestSsePayload = {
     type: 'updated';
@@ -6,6 +6,11 @@ export type RepairRequestSsePayload = {
     device_id: string;
     status: string;
     source: string;
+};
+
+type SseTicketResponse = {
+    sse_token: string;
+    expires_in: number;
 };
 
 function apiBaseUrl(): string {
@@ -16,12 +21,15 @@ function apiBaseUrl(): string {
     return String(raw).replace(/\/+$/, '');
 }
 
-export function buildRepairRequestsSseUrl(options?: { repairRequestId?: string }): string | null {
-    const token = getStoredAuthToken();
-    if (!token) {
-        return null;
-    }
-    const params = new URLSearchParams({ access_token: token });
+export async function fetchSseTicket(): Promise<SseTicketResponse> {
+    return apiRequest<SseTicketResponse>('/api/events/ticket', { method: 'POST' });
+}
+
+export function buildRepairRequestsSseUrl(
+    sseToken: string,
+    options?: { repairRequestId?: string },
+): string {
+    const params = new URLSearchParams({ sse_token: sseToken });
     const rid = options?.repairRequestId?.trim();
     if (rid) {
         params.set('repair_request_id', rid);

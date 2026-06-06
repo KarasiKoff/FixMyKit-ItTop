@@ -10,6 +10,7 @@ from backend.app.core.metrics import setup_metrics
 from backend.app.api.router import api_router
 from backend.app.middleware.request_logging import RequestLoggingMiddleware
 from backend.app.services.admin_bootstrap import ensure_admin_user
+from backend.app.services.realtime_bus import start_realtime_bus, stop_realtime_bus
 from backend.app.services.realtime_hub import (
     bind_main_event_loop,
     clear_main_event_loop,
@@ -69,9 +70,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             run_attachment_cleanup(db)
     except Exception:
         logger.exception("attachment_cleanup_startup_failed")
+    await start_realtime_bus()
     cleanup_task = asyncio.create_task(_attachment_cleanup_loop())
     yield
     cleanup_task.cancel()
+    await stop_realtime_bus()
     try:
         await cleanup_task
     except asyncio.CancelledError:
