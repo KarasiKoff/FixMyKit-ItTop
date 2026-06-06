@@ -26,7 +26,9 @@ def upgrade() -> None:
         ["audience_id"],
         ["id"],
     )
-    op.alter_column("repair_requests", "device_id", existing_type=sa.Uuid(), nullable=True)
+    op.alter_column(
+        "repair_requests", "device_id", existing_type=sa.Uuid(), nullable=True
+    )
     op.create_check_constraint(
         "ck_repair_requests_device_xor_audience",
         "repair_requests",
@@ -36,10 +38,14 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_constraint("ck_repair_requests_device_xor_audience", "repair_requests", type_="check")
-    op.execute(
-        "DELETE FROM repair_requests WHERE device_id IS NULL"
+    op.drop_constraint(
+        "ck_repair_requests_device_xor_audience", "repair_requests", type_="check"
     )
-    op.alter_column("repair_requests", "device_id", existing_type=sa.Uuid(), nullable=False)
-    op.drop_constraint("fk_repair_requests_audience_id", "repair_requests", type_="foreignkey")
+    op.execute("DELETE FROM repair_requests WHERE device_id IS NULL")
+    op.alter_column(
+        "repair_requests", "device_id", existing_type=sa.Uuid(), nullable=False
+    )
+    op.drop_constraint(
+        "fk_repair_requests_audience_id", "repair_requests", type_="foreignkey"
+    )
     op.drop_column("repair_requests", "audience_id")

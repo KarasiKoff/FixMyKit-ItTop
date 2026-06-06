@@ -39,9 +39,13 @@ def upgrade() -> None:
         WHERE r.audience_id = a.id
         """
     )
-    op.drop_constraint("fk_repair_requests_audience_id", "repair_requests", type_="foreignkey")
+    op.drop_constraint(
+        "fk_repair_requests_audience_id", "repair_requests", type_="foreignkey"
+    )
     op.drop_column("repair_requests", "audience_id")
-    op.alter_column("repair_requests", "audience_id_uuid", new_column_name="audience_id")
+    op.alter_column(
+        "repair_requests", "audience_id_uuid", new_column_name="audience_id"
+    )
 
     op.execute("ALTER TABLE room_device_positions ADD COLUMN audience_id_uuid UUID")
     op.execute(
@@ -53,12 +57,20 @@ def upgrade() -> None:
         """
     )
     op.drop_constraint(
-        "room_device_positions_audience_id_fkey", "room_device_positions", type_="foreignkey"
+        "room_device_positions_audience_id_fkey",
+        "room_device_positions",
+        type_="foreignkey",
     )
-    op.drop_index("ix_room_device_positions_audience_id", table_name="room_device_positions")
-    op.drop_constraint("uq_room_device_position", "room_device_positions", type_="unique")
+    op.drop_index(
+        "ix_room_device_positions_audience_id", table_name="room_device_positions"
+    )
+    op.drop_constraint(
+        "uq_room_device_position", "room_device_positions", type_="unique"
+    )
     op.drop_column("room_device_positions", "audience_id")
-    op.alter_column("room_device_positions", "audience_id_uuid", new_column_name="audience_id")
+    op.alter_column(
+        "room_device_positions", "audience_id_uuid", new_column_name="audience_id"
+    )
 
     op.drop_constraint("audience_pkey", "audience", type_="primary")
     op.drop_column("audience", "id")

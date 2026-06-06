@@ -18,7 +18,9 @@ from backend.app.services.repair_request_comments_route_service import (
 router = APIRouter()
 
 
-@router.get("/repair-requests/{request_id}/comments", response_model=RepairRequestCommentList)
+@router.get(
+    "/repair-requests/{request_id}/comments", response_model=RepairRequestCommentList
+)
 def get_repair_request_comments(
     request_id: UUID,
     db: Session = Depends(get_db),

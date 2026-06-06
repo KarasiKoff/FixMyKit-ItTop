@@ -6,7 +6,12 @@ from sqlalchemy.orm import Session
 from backend.app.api.deps import get_db, require_admin_only, require_admin_or_sysadmin
 from backend.app.repositories.audience_repository import AudienceRepository
 from backend.app.repositories.room_map_repository import RoomMapRepository
-from backend.app.schemas.room_map import RoomDeviceListItem, RoomDeviceListResponse, RoomMapResponse, RoomMapSaveRequest
+from backend.app.schemas.room_map import (
+    RoomDeviceListItem,
+    RoomDeviceListResponse,
+    RoomMapResponse,
+    RoomMapSaveRequest,
+)
 from backend.app.services.room_map_service import build_room_map_response, save_room_map
 
 router = APIRouter(prefix="/api/audiences", tags=["room-map"])
@@ -40,7 +45,9 @@ def get_audience_devices(
             repair_status=d.repair_status.value,
             is_on_map=d.id in placed_ids,
             category_id=d.category_id,
-            category_has_icon=bool(d.category.icon_mime) if d.category is not None else False,
+            category_has_icon=bool(d.category.icon_mime)
+            if d.category is not None
+            else False,
         )
         for d in devices
     ]

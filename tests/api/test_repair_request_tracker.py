@@ -67,7 +67,9 @@ def test_push_status_tracker_unavailable(
     repair_request.tracker_status_label = "В работе"
     db.commit()
 
-    def _failing_sync(db_sess: Session, rr: RepairRequest, label: str, **kwargs) -> None:
+    def _failing_sync(
+        db_sess: Session, rr: RepairRequest, label: str, **kwargs
+    ) -> None:
         rr.tracker_status_sync_pending = True
         db_sess.commit()
         raise HTTPException(status_code=502, detail="tracker_unavailable")
@@ -116,7 +118,9 @@ def test_tracker_sync_success(
 
 
 @pytest.mark.tracker_http
-def test_tracker_sync_unavailable(client, admin_headers, audience, failing_tracker_client) -> None:
+def test_tracker_sync_unavailable(
+    client, admin_headers, audience, failing_tracker_client
+) -> None:
     request_id = _create_request_id(client, admin_headers, str(audience.id))
     response = client.post(
         f"/api/repair-requests/{request_id}/tracker/sync",

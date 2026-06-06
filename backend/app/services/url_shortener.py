@@ -19,7 +19,9 @@ _LOCAL_HOSTS = frozenset({"localhost", "127.0.0.1"})
 
 
 def _is_app_frontend_path(path: str) -> bool:
-    return path == "/scan" or path.startswith("/device/") or path.startswith("/audience/")
+    return (
+        path == "/scan" or path.startswith("/device/") or path.startswith("/audience/")
+    )
 
 
 def shorten_via_clck(url: str) -> str:
@@ -59,7 +61,9 @@ def assert_allowed_shorten_url(url: str) -> str:
 
     parsed = urlparse(normalized)
     if not parsed.scheme or not parsed.netloc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="url_not_allowed")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="url_not_allowed"
+        )
 
     path = parsed.path or ""
 
@@ -68,7 +72,9 @@ def assert_allowed_shorten_url(url: str) -> str:
         return normalized
 
     if not _is_app_frontend_path(path):
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="url_not_allowed")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="url_not_allowed"
+        )
 
     if normalized.startswith(base):
         return normalized
@@ -76,4 +82,6 @@ def assert_allowed_shorten_url(url: str) -> str:
     if parsed.hostname in _LOCAL_HOSTS:
         return normalized
 
-    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="url_not_allowed")
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST, detail="url_not_allowed"
+    )

@@ -15,7 +15,9 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("categories", sa.Column("icon_mime", sa.String(length=128), nullable=True))
+    op.add_column(
+        "categories", sa.Column("icon_mime", sa.String(length=128), nullable=True)
+    )
     op.add_column("categories", sa.Column("icon_data", sa.LargeBinary(), nullable=True))
 
 

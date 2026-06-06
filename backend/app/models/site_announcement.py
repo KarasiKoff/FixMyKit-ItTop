@@ -1,12 +1,23 @@
-from uuid import UUID
-
-from sqlalchemy import Boolean, Column, Enum as SQLEnum, ForeignKey, Integer, SmallInteger, String, Uuid
+from sqlalchemy import (
+    Boolean,
+    Column,
+    Enum as SQLEnum,
+    ForeignKey,
+    Integer,
+    SmallInteger,
+    String,
+    Uuid,
+)
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.orm import relationship
 
 from backend.app.models.base import Base
-from backend.app.models.enums import AnnouncementAudience, AnnouncementSeverity, pg_enum_values
+from backend.app.models.enums import (
+    AnnouncementAudience,
+    AnnouncementSeverity,
+    pg_enum_values,
+)
 
 
 class SiteAnnouncement(Base):
@@ -42,7 +53,9 @@ class SiteAnnouncement(Base):
     starts_at = Column(TIMESTAMP(timezone=True), nullable=True)
     ends_at = Column(TIMESTAMP(timezone=True), nullable=True)
     dismiss_version = Column(Integer, nullable=False, default=1, server_default="1")
-    updated_by_user_id = Column(Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    updated_by_user_id = Column(
+        Uuid, ForeignKey("users.id", ondelete="SET NULL"), nullable=True
+    )
     updated_at = Column(
         TIMESTAMP(timezone=True),
         nullable=False,

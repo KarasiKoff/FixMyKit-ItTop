@@ -15,7 +15,10 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("site_announcements", sa.Column("link_url", sa.String(length=500), nullable=True))
+    op.add_column(
+        "site_announcements",
+        sa.Column("link_url", sa.String(length=500), nullable=True),
+    )
     op.add_column(
         "site_announcements",
         sa.Column("starts_at", sa.TIMESTAMP(timezone=True), nullable=True),

@@ -15,8 +15,12 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column("room_device_positions", sa.Column("grid_col", sa.Integer(), nullable=True))
-    op.add_column("room_device_positions", sa.Column("grid_row", sa.Integer(), nullable=True))
+    op.add_column(
+        "room_device_positions", sa.Column("grid_col", sa.Integer(), nullable=True)
+    )
+    op.add_column(
+        "room_device_positions", sa.Column("grid_row", sa.Integer(), nullable=True)
+    )
 
 
 def downgrade() -> None:

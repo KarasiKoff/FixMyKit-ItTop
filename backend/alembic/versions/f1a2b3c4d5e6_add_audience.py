@@ -9,26 +9,28 @@ from alembic import op
 import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
-revision = 'f1a2b3c4d5e6'
-down_revision = 'baf83bbd2dfc'
+revision = "f1a2b3c4d5e6"
+down_revision = "baf83bbd2dfc"
 branch_labels = None
 depends_on = None
 
 
 def upgrade() -> None:
     op.create_table(
-        'audience',
-        sa.Column('id', sa.Integer(), primary_key=True, autoincrement=True, nullable=False),
-        sa.Column('name', sa.String(), nullable=False),
-        sa.UniqueConstraint('name'),
+        "audience",
+        sa.Column(
+            "id", sa.Integer(), primary_key=True, autoincrement=True, nullable=False
+        ),
+        sa.Column("name", sa.String(), nullable=False),
+        sa.UniqueConstraint("name"),
     )
-    op.add_column('devices', sa.Column('audience_id', sa.Integer(), nullable=True))
+    op.add_column("devices", sa.Column("audience_id", sa.Integer(), nullable=True))
     op.create_foreign_key(
-        'devices_audience_id_fkey',
-        'devices',
-        'audience',
-        ['audience_id'],
-        ['id'],
+        "devices_audience_id_fkey",
+        "devices",
+        "audience",
+        ["audience_id"],
+        ["id"],
     )
     op.execute(
         """
@@ -47,11 +49,11 @@ def upgrade() -> None:
         WHERE TRIM(devices.cabinet) = audience.name
         """
     )
-    op.drop_column('devices', 'cabinet')
+    op.drop_column("devices", "cabinet")
 
 
 def downgrade() -> None:
-    op.add_column('devices', sa.Column('cabinet', sa.String(), nullable=True))
+    op.add_column("devices", sa.Column("cabinet", sa.String(), nullable=True))
     op.execute(
         """
         UPDATE devices
@@ -60,6 +62,6 @@ def downgrade() -> None:
         WHERE devices.audience_id = audience.id
         """
     )
-    op.drop_constraint('devices_audience_id_fkey', 'devices', type_='foreignkey')
-    op.drop_column('devices', 'audience_id')
-    op.drop_table('audience')
+    op.drop_constraint("devices_audience_id_fkey", "devices", type_="foreignkey")
+    op.drop_column("devices", "audience_id")
+    op.drop_table("audience")

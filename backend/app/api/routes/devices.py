@@ -7,7 +7,14 @@ from sqlalchemy.orm import Session
 from backend.app.api.deps import get_db, require_roles
 from backend.app.models.enums import RepairStatus, UserRole
 from backend.app.queries.device_list_query import DeviceSortBy, suggest_devices
-from backend.app.schemas.device import Device, DeviceCreate, DeviceHistoryResponse, DeviceListResponse, DeviceQrResponse, DeviceUpdate
+from backend.app.schemas.device import (
+    Device,
+    DeviceCreate,
+    DeviceHistoryResponse,
+    DeviceListResponse,
+    DeviceQrResponse,
+    DeviceUpdate,
+)
 from backend.app.schemas.suggest import SuggestResponse
 from backend.app.services import device_route_service as device_svc
 
@@ -25,7 +32,9 @@ def device_suggest(
     db: Session = Depends(get_db),
 ) -> SuggestResponse:
     if field not in device_svc.DEVICE_SUGGEST_FIELDS:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_suggest_field")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_suggest_field"
+        )
     return SuggestResponse(items=suggest_devices(db, field, q))
 
 
@@ -86,7 +95,9 @@ def get_device(device_id: UUID, db: Session = Depends(get_db)) -> Device:
     response_model=Device,
     dependencies=[Depends(require_roles(UserRole.ADMIN, UserRole.SYSADMIN))],
 )
-def patch_device(device_id: UUID, payload: DeviceUpdate, db: Session = Depends(get_db)) -> Device:
+def patch_device(
+    device_id: UUID, payload: DeviceUpdate, db: Session = Depends(get_db)
+) -> Device:
     return device_svc.patch_device(db, device_id, payload)
 
 
@@ -113,5 +124,7 @@ def get_device_qr(device_id: UUID, db: Session = Depends(get_db)) -> DeviceQrRes
     response_model=DeviceHistoryResponse,
     dependencies=[Depends(require_roles(UserRole.ADMIN, UserRole.SYSADMIN))],
 )
-def get_device_history(device_id: UUID, db: Session = Depends(get_db)) -> DeviceHistoryResponse:
+def get_device_history(
+    device_id: UUID, db: Session = Depends(get_db)
+) -> DeviceHistoryResponse:
     return device_svc.device_history(db, device_id)

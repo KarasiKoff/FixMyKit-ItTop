@@ -2,10 +2,16 @@ from datetime import datetime, timezone
 
 from sqlalchemy.orm import Session
 
-from backend.app.models.enums import AnnouncementAudience, AnnouncementSeverity, UserRole
+from backend.app.models.enums import (
+    AnnouncementAudience,
+    AnnouncementSeverity,
+    UserRole,
+)
 from backend.app.models.site_announcement import SiteAnnouncement
 from backend.app.models.user import User
-from backend.app.repositories.site_announcement_repository import SiteAnnouncementRepository
+from backend.app.repositories.site_announcement_repository import (
+    SiteAnnouncementRepository,
+)
 from backend.app.schemas.site_announcement import (
     SLOT_MAX,
     SLOT_MIN,
@@ -39,7 +45,9 @@ def _is_active_now(row: SiteAnnouncement, now: datetime) -> bool:
     return True
 
 
-def _row_to_admin_slot(row: SiteAnnouncement, now: datetime) -> SiteAnnouncementSlotAdmin:
+def _row_to_admin_slot(
+    row: SiteAnnouncement, now: datetime
+) -> SiteAnnouncementSlotAdmin:
     editor = row.updated_by
     return SiteAnnouncementSlotAdmin(
         slot=row.slot,
@@ -66,7 +74,9 @@ def list_admin_slots(db: Session) -> AdminAnnouncementsResponse:
     ensure_announcement_slots(db)
     now = _utc_now()
     rows = SiteAnnouncementRepository(db).list_admin_with_editor()
-    return AdminAnnouncementsResponse(slots=[_row_to_admin_slot(row, now) for row in rows])
+    return AdminAnnouncementsResponse(
+        slots=[_row_to_admin_slot(row, now) for row in rows]
+    )
 
 
 def update_admin_slots(
@@ -105,7 +115,9 @@ def reset_dismissals(db: Session) -> ResetDismissalsResponse:
     return ResetDismissalsResponse(dismiss_version=new_version)
 
 
-def list_active_for_viewer(db: Session, user: User | None) -> list[SiteAnnouncementSlotPublic]:
+def list_active_for_viewer(
+    db: Session, user: User | None
+) -> list[SiteAnnouncementSlotPublic]:
     is_staff = user is not None and user.role in _STAFF_ROLES
     now = _utc_now()
     rows = SiteAnnouncementRepository(db).list_active_candidates(now)

@@ -13,10 +13,14 @@ from backend.app.services.comment_body_normalize import (
     legacy_markdown_author_to_plain,
     normalize_comment_body,
 )
-from backend.app.services.repair_request_tracker_outbound import sync_user_comment_to_tracker
+from backend.app.services.repair_request_tracker_outbound import (
+    sync_user_comment_to_tracker,
+)
 
 
-def list_comments(db: Session, repair_request_id: UUID) -> list[RepairRequestCommentResponse]:
+def list_comments(
+    db: Session, repair_request_id: UUID
+) -> list[RepairRequestCommentResponse]:
     rows = RepairRequestCommentRepository(db).list_for_request(repair_request_id)
     return [_comment_response(row) for row in rows]
 
@@ -48,7 +52,8 @@ def _comment_response(row: RepairRequestComment) -> RepairRequestCommentResponse
         repair_request_id=row.repair_request_id,
         author_user_id=row.author_user_id,
         author_login=author.login if author else None,
-        author_display_name=(author.full_name if author else None) or (author.login if author else None),
+        author_display_name=(author.full_name if author else None)
+        or (author.login if author else None),
         body=body,
         tracker_synced=row.tracker_synced,
         created_at=row.created_at,

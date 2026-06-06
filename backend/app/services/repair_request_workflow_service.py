@@ -10,13 +10,18 @@ from backend.app.models.repair_request import RepairRequest
 from backend.app.models.user import User
 from backend.app.schemas.repair_request import RepairCloseResolution, RepairWorkflowKind
 from backend.app.services.repair_history_service import add_repair_history
-from backend.app.services.repair_request_closure_service import record_repair_request_closed
+from backend.app.services.repair_request_closure_service import (
+    record_repair_request_closed,
+)
 from backend.app.services.repair_request_comment_service import create_comment
 from backend.app.services.repair_request_tracker_outbound import (
     sync_resolution_comment_to_tracker,
     sync_tracker_label_with_pending,
 )
-from backend.app.services.repair_request_transitions import TransitionSource, assert_can_transition
+from backend.app.services.repair_request_transitions import (
+    TransitionSource,
+    assert_can_transition,
+)
 
 WORKFLOW_TRACKER_LABEL: dict[RepairWorkflowKind, str] = {
     "open": "Открыт",
@@ -84,13 +89,17 @@ def apply_workflow_change(
             detail="resolution_required_for_close",
         )
 
-    reopening_from_closed = repair_request.status == RequestStatus.CLOSED and workflow != "closed"
+    reopening_from_closed = (
+        repair_request.status == RequestStatus.CLOSED and workflow != "closed"
+    )
     if reopening_from_closed:
         _reopen_from_closed(db, repair_request)
 
     if workflow == "closed":
         if not reopening_from_closed:
-            assert_can_transition(repair_request.status, RequestStatus.CLOSED, TransitionSource.API)
+            assert_can_transition(
+                repair_request.status, RequestStatus.CLOSED, TransitionSource.API
+            )
         resolution_label = CLOSE_RESOLUTION_LABEL[resolution]  # type: ignore[index]
         record_repair_request_closed(
             db,
@@ -125,7 +134,9 @@ def apply_workflow_change(
         return
 
     if not reopening_from_closed:
-        assert_can_transition(repair_request.status, target_status, TransitionSource.API)
+        assert_can_transition(
+            repair_request.status, target_status, TransitionSource.API
+        )
 
     repair_request.status = target_status
     repair_request.tracker_status_label = label

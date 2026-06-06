@@ -8,7 +8,6 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from backend.app.models.repair_request import RepairRequest
 from backend.app.models.user import User
 from backend.app.schemas.repair_request import (
     RepairRequestClose,
@@ -27,7 +26,9 @@ from backend.app.services.repair_request_status_service import (
     close_repair_request as close_repair_request_impl,
     update_repair_request_status as update_repair_request_status_impl,
 )
-from backend.app.services.repair_request_sysadmin_taken_service import clear_sysadmin_taken_fields
+from backend.app.services.repair_request_sysadmin_taken_service import (
+    clear_sysadmin_taken_fields,
+)
 from backend.app.services.repair_request_tracker_outbound import (
     require_tracker_ticket,
     retry_pending_status_sync,

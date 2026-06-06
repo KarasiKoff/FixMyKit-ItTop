@@ -59,7 +59,9 @@ def sync_repair_request_to_tracker(repair_request: RepairRequest) -> TrackerIssu
     return get_tracker_issue_service().sync_repair_request(repair_request)
 
 
-def list_issue_attachments(repair_request: RepairRequest) -> list[TrackerAttachmentMeta]:
+def list_issue_attachments(
+    repair_request: RepairRequest,
+) -> list[TrackerAttachmentMeta]:
     return get_tracker_issue_service().list_attachments(repair_request)
 
 

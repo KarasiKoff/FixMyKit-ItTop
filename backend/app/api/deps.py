@@ -16,7 +16,9 @@ from backend.app.repositories.user_repository import UserRepository
 logger = logging.getLogger("fixmykit.auth")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/token")
-oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="/api/auth/token", auto_error=False)
+oauth2_scheme_optional = OAuth2PasswordBearer(
+    tokenUrl="/api/auth/token", auto_error=False
+)
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -32,23 +34,33 @@ def _user_from_access_token(token: str, db: Session) -> User:
         payload = decode_access_token(token)
     except InvalidTokenError as exc:
         logger.warning("auth_token_invalid", extra={"reason": type(exc).__name__})
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token") from exc
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token"
+        ) from exc
 
     user_id = payload.get("sub")
     if not user_id:
         logger.warning("auth_token_missing_sub")
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token"
+        )
 
     try:
         user_uuid = UUID(user_id)
     except ValueError:
         logger.warning("auth_token_invalid_sub", extra={"sub": str(user_id)[:36]})
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token"
+        )
 
     user = UserRepository(db).get_active_by_id(user_uuid)
     if user is None:
-        logger.warning("auth_user_not_found_or_inactive", extra={"user_id": str(user_uuid)})
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token")
+        logger.warning(
+            "auth_user_not_found_or_inactive", extra={"user_id": str(user_uuid)}
+        )
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="invalid_token"
+        )
 
     logger.debug("auth_token_ok", extra={"user_id": str(user.id), "login": user.login})
     return user
@@ -74,7 +86,9 @@ def get_optional_user(
 
 
 def get_current_user_from_query_token(
-    access_token: str = Query(..., min_length=1, description="JWT для EventSource (SSE)"),
+    access_token: str = Query(
+        ..., min_length=1, description="JWT для EventSource (SSE)"
+    ),
     db: Session = Depends(get_db),
 ) -> User:
     return _user_from_access_token(access_token.strip(), db)
@@ -91,7 +105,9 @@ def require_admin_or_sysadmin_from_token(
 def require_roles(*allowed_roles: UserRole):
     def _dependency(current_user: User = Depends(get_current_user)) -> User:
         if current_user.role not in allowed_roles:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="forbidden")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="forbidden"
+            )
         return current_user
 
     return _dependency

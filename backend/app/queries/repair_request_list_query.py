@@ -12,7 +12,9 @@ from backend.app.models.device import Device as DeviceModel
 from backend.app.models.enums import RequestStatus
 from backend.app.models.repair_request import RepairRequest as RepairRequestModel
 
-RepairRequestSortBy = Literal["created_at", "device_inventory_number", "applicant_name", "status"]
+RepairRequestSortBy = Literal[
+    "created_at", "device_inventory_number", "applicant_name", "status"
+]
 SortDir = Literal["asc", "desc"]
 
 SUGGEST_LIMIT = 10
@@ -57,7 +59,9 @@ def _apply_repair_request_filters(
             )
         )
     if applicant:
-        query = query.filter(RepairRequestModel.applicant_name.ilike(f"%{applicant.strip()}%"))
+        query = query.filter(
+            RepairRequestModel.applicant_name.ilike(f"%{applicant.strip()}%")
+        )
     if author_user_id is not None:
         query = query.filter(RepairRequestModel.author_user_id == author_user_id)
     if status is not None:
@@ -69,7 +73,9 @@ def _apply_repair_request_filters(
     return query
 
 
-def _apply_repair_request_sort(query: Query, sort_by: RepairRequestSortBy, sort_dir: SortDir) -> Query:
+def _apply_repair_request_sort(
+    query: Query, sort_by: RepairRequestSortBy, sort_dir: SortDir
+) -> Query:
     descending = sort_dir == "desc"
     if sort_by == "created_at":
         col = RepairRequestModel.created_at
@@ -115,7 +121,10 @@ def fetch_repair_requests_page(
         date_from=date_from,
         date_to=date_to,
     )
-    total = base.with_entities(func.count(func.distinct(RepairRequestModel.id))).scalar() or 0
+    total = (
+        base.with_entities(func.count(func.distinct(RepairRequestModel.id))).scalar()
+        or 0
+    )
     items = (
         _apply_repair_request_sort(base, sort_by, sort_dir)
         .options(

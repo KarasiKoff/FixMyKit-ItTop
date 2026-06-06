@@ -20,7 +20,9 @@ def upgrade() -> None:
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("category_id", sa.Uuid(), nullable=False),
         sa.Column("name", sa.String(), nullable=False),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
+        sa.Column(
+            "is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")
+        ),
         sa.Column(
             "created_at",
             sa.TIMESTAMP(timezone=True),
@@ -29,7 +31,9 @@ def upgrade() -> None:
         ),
         sa.ForeignKeyConstraint(["category_id"], ["categories.id"], ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("category_id", "name", name="uq_subcategories_category_name"),
+        sa.UniqueConstraint(
+            "category_id", "name", name="uq_subcategories_category_name"
+        ),
     )
     op.create_index("ix_subcategories_category_id", "subcategories", ["category_id"])
     op.add_column("devices", sa.Column("subcategory_id", sa.Uuid(), nullable=True))

@@ -20,8 +20,14 @@ RESOLUTION_WONT_FIX = "Не будет исправлено"
 RESOLUTION_RESOLVED = "Решен"
 
 
-def _date_range_bounds(date_from: date | None, date_to: date | None) -> tuple[datetime | None, datetime | None]:
-    start = datetime.combine(date_from, time.min, tzinfo=timezone.utc) if date_from else None
+def _date_range_bounds(
+    date_from: date | None, date_to: date | None
+) -> tuple[datetime | None, datetime | None]:
+    start = (
+        datetime.combine(date_from, time.min, tzinfo=timezone.utc)
+        if date_from
+        else None
+    )
     end = datetime.combine(date_to, time.max, tzinfo=timezone.utc) if date_to else None
     return start, end
 
@@ -47,7 +53,9 @@ def _sync_in_range(start: datetime | None, end: datetime | None):
     return and_(*clauses)
 
 
-def query_admin_stats(db: Session, date_from: date | None, date_to: date | None) -> AdminStatsResponse:
+def query_admin_stats(
+    db: Session, date_from: date | None, date_to: date | None
+) -> AdminStatsResponse:
     start, end = _date_range_bounds(date_from, date_to)
     created_filter = _created_in_range(start, end)
     sync_filter = _sync_in_range(start, end)
@@ -58,7 +66,9 @@ def query_admin_stats(db: Session, date_from: date | None, date_to: date | None)
         total_q = total_q.filter(created_filter)
     total = int(total_q.scalar() or 0)
 
-    open_q = db.query(func.count(RepairRequest.id)).filter(RepairRequest.status == RequestStatus.OPEN)
+    open_q = db.query(func.count(RepairRequest.id)).filter(
+        RepairRequest.status == RequestStatus.OPEN
+    )
     if created_filter is not None:
         open_q = open_q.filter(created_filter)
     open_count = int(open_q.scalar() or 0)
@@ -93,7 +103,9 @@ def query_admin_stats(db: Session, date_from: date | None, date_to: date | None)
         resolved_q = resolved_q.filter(created_filter)
     resolved = int(resolved_q.scalar() or 0)
 
-    tracker_synced = int(db.query(func.count(RepairRequest.id)).filter(sync_filter).scalar() or 0)
+    tracker_synced = int(
+        db.query(func.count(RepairRequest.id)).filter(sync_filter).scalar() or 0
+    )
 
     devices_total = int(db.query(func.count(Device.id)).scalar() or 0)
     categories_total = CategoryRepository(db).count()
@@ -112,7 +124,8 @@ def query_admin_stats(db: Session, date_from: date | None, date_to: date | None)
     )
 
     uncategorized = int(
-        db.query(func.count(Device.id)).filter(Device.category_id.is_(None)).scalar() or 0,
+        db.query(func.count(Device.id)).filter(Device.category_id.is_(None)).scalar()
+        or 0,
     )
 
     devices_by_category: list[CategoryDeviceCount] = []
@@ -130,7 +143,9 @@ def query_admin_stats(db: Session, date_from: date | None, date_to: date | None)
         )
 
     if uncategorized > 0:
-        share = round((uncategorized / devices_total) * 100, 1) if devices_total else 0.0
+        share = (
+            round((uncategorized / devices_total) * 100, 1) if devices_total else 0.0
+        )
         devices_by_category.append(
             CategoryDeviceCount(
                 category_id=None,

@@ -52,7 +52,9 @@ def put_admin_announcements(
     return update_admin_slots(db, body.slots, actor)
 
 
-@router.post("/api/admin/announcements/reset-dismissals", response_model=ResetDismissalsResponse)
+@router.post(
+    "/api/admin/announcements/reset-dismissals", response_model=ResetDismissalsResponse
+)
 def post_reset_announcement_dismissals(
     db: Session = Depends(get_db),
     _: User = Depends(get_current_admin),

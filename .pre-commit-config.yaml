@@ -1,0 +1,10 @@
+# uv run pre-commit install
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.16
+    hooks:
+      - id: ruff-check
+        args: [--fix]
+        files: ^(backend/app/|backend/alembic/|tests/|main\.py)
+      - id: ruff-format
+        files: ^(backend/app/|backend/alembic/|tests/|main\.py)

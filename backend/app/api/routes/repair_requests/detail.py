@@ -5,7 +5,9 @@ from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_db, require_admin_or_sysadmin
 from backend.app.models.user import User
-from backend.app.repositories.repair_request_repository import load_repair_request_detail
+from backend.app.repositories.repair_request_repository import (
+    load_repair_request_detail,
+)
 from backend.app.schemas.repair_request import (
     RepairRequestClose,
     RepairRequestDetail,
@@ -34,7 +36,9 @@ def get_repair_request(
     return load_repair_request_detail(db, request_id)
 
 
-@router.patch("/repair-requests/{request_id}/workflow", response_model=RepairRequestDetail)
+@router.patch(
+    "/repair-requests/{request_id}/workflow", response_model=RepairRequestDetail
+)
 def update_repair_request_workflow(
     request_id: UUID,
     payload: RepairRequestWorkflowUpdate,
@@ -44,7 +48,9 @@ def update_repair_request_workflow(
     return update_workflow(db, request_id, current_user, payload)
 
 
-@router.patch("/repair-requests/{request_id}/status", response_model=RepairRequestDetail)
+@router.patch(
+    "/repair-requests/{request_id}/status", response_model=RepairRequestDetail
+)
 def update_repair_request_status(
     request_id: UUID,
     payload: RepairRequestStatusUpdate,
@@ -74,7 +80,9 @@ def close_repair_request(
     return close_request(db, request_id, current_user, payload)
 
 
-@router.patch("/repair-requests/{request_id}/publish", response_model=RepairRequestDetail)
+@router.patch(
+    "/repair-requests/{request_id}/publish", response_model=RepairRequestDetail
+)
 def publish_repair_request(
     request_id: UUID,
     payload: RepairRequestPublish,

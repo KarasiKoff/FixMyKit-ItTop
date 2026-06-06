@@ -29,8 +29,13 @@ from backend.app.services.repair_request_attachment_service import (
     validate_and_store_uploads,
 )
 from backend.app.services.repair_request_form_parser import parse_repair_request_form
-from backend.app.services.repair_request_target import ensure_no_active_request, ensure_target_exists
-from backend.app.services.repair_request_tracker_outbound import REQUEST_STATUS_TRACKER_LABEL
+from backend.app.services.repair_request_target import (
+    ensure_no_active_request,
+    ensure_target_exists,
+)
+from backend.app.services.repair_request_tracker_outbound import (
+    REQUEST_STATUS_TRACKER_LABEL,
+)
 from backend.app.services.repair_request_tracker_sync import try_tracker_sync
 from backend.app.services.tracker_service import issue_ref_for
 
@@ -80,7 +85,9 @@ async def _store_uploads_safe(
         raise http_error_from_attachment_exc(exc) from exc
 
 
-def _persist_new_request(db: Session, fields: RepairRequestCreateFields) -> RepairRequest:
+def _persist_new_request(
+    db: Session, fields: RepairRequestCreateFields
+) -> RepairRequest:
     ensure_target_exists(db, fields.device_id, fields.audience_id)
     ensure_no_active_request(
         db,
@@ -94,7 +101,9 @@ def _persist_new_request(db: Session, fields: RepairRequestCreateFields) -> Repa
         applicant_name=fields.applicant_name,
         author_user_id=fields.author_user_id,
     )
-    repair_request.tracker_status_label = REQUEST_STATUS_TRACKER_LABEL[RequestStatus.OPEN]
+    repair_request.tracker_status_label = REQUEST_STATUS_TRACKER_LABEL[
+        RequestStatus.OPEN
+    ]
     _record_request_created(db, repair_request)
     db.commit()
     db.refresh(repair_request)
@@ -126,7 +135,9 @@ async def parse_staff_create_request(
     try:
         body = await request.json()
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_json") from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_json"
+        ) from exc
     payload = RepairRequestCreate.model_validate(body)
     return (
         RepairRequestCreateFields(
@@ -160,7 +171,9 @@ async def parse_public_create_request(
     try:
         body = await request.json()
     except Exception as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_json") from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_json"
+        ) from exc
     payload = PublicRepairRequestCreate.model_validate(body)
     return (
         RepairRequestCreateFields(
@@ -207,7 +220,9 @@ async def create_public_repair_request(
     return repair_request
 
 
-def public_create_response(repair_request: RepairRequest) -> PublicRepairRequestResponse:
+def public_create_response(
+    repair_request: RepairRequest,
+) -> PublicRepairRequestResponse:
     return PublicRepairRequestResponse(
         id=repair_request.id,
         status=repair_request.status,

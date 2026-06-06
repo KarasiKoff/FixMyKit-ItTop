@@ -10,7 +10,10 @@ from backend.app.core.metrics import setup_metrics
 from backend.app.api.router import api_router
 from backend.app.middleware.request_logging import RequestLoggingMiddleware
 from backend.app.services.admin_bootstrap import ensure_admin_user
-from backend.app.services.realtime_hub import bind_main_event_loop, clear_main_event_loop
+from backend.app.services.realtime_hub import (
+    bind_main_event_loop,
+    clear_main_event_loop,
+)
 from backend.app.services.tracker_webhook_bootstrap import ensure_tracker_webhook_actor
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,7 +33,9 @@ logger = logging.getLogger(__name__)
 
 async def _attachment_cleanup_loop() -> None:
     from backend.app.core.database import SessionLocal
-    from backend.app.services.repair_request_attachment_service import run_attachment_cleanup
+    from backend.app.services.repair_request_attachment_service import (
+        run_attachment_cleanup,
+    )
 
     while True:
         await asyncio.sleep(24 * 60 * 60)
@@ -56,7 +61,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     ensure_tracker_webhook_actor()
     try:
         from backend.app.core.database import SessionLocal
-        from backend.app.services.repair_request_attachment_service import run_attachment_cleanup
+        from backend.app.services.repair_request_attachment_service import (
+            run_attachment_cleanup,
+        )
 
         with SessionLocal() as db:
             run_attachment_cleanup(db)
@@ -96,7 +103,9 @@ if _cors_origins:
 
 
 @app.exception_handler(StarletteHTTPException)
-async def http_exception_handler(request: Request, exc: StarletteHTTPException) -> JSONResponse:
+async def http_exception_handler(
+    request: Request, exc: StarletteHTTPException
+) -> JSONResponse:
     if exc.status_code >= 500:
         logger.error(
             "http_exception",

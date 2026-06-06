@@ -20,8 +20,12 @@ from backend.app.queries.repair_request_list_query import (
 from backend.app.schemas.repair_request import RepairRequestList
 from backend.app.schemas.suggest import SuggestResponse
 from backend.app.schemas.tracker import TrackerBulkSyncResponse
-from backend.app.services.repair_request_presenters import repair_request_to_list_response
-from backend.app.services.repair_request_tracker_bulk_service import sync_unsynchronized_repair_requests
+from backend.app.services.repair_request_presenters import (
+    repair_request_to_list_response,
+)
+from backend.app.services.repair_request_tracker_bulk_service import (
+    sync_unsynchronized_repair_requests,
+)
 
 router = APIRouter()
 
@@ -34,13 +38,17 @@ def repair_request_suggest(
     _: User = Depends(require_admin_or_sysadmin),
 ) -> SuggestResponse:
     if field not in REPAIR_REQUEST_SUGGEST_FIELDS:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_suggest_field")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_suggest_field"
+        )
     return SuggestResponse(items=suggest_repair_requests(db, field, q))
 
 
 @router.get("/repair-requests", response_model=RepairRequestList)
 def list_repair_requests(
-    device: str | None = Query(default=None, description="Filter by device inventory number or name"),
+    device: str | None = Query(
+        default=None, description="Filter by device inventory number or name"
+    ),
     applicant: str | None = Query(default=None, description="Filter by applicant name"),
     status_filter: RequestStatus | None = Query(default=None, alias="status"),
     device_id: UUID | None = None,
@@ -55,7 +63,9 @@ def list_repair_requests(
     _: User = Depends(require_admin_or_sysadmin),
 ) -> RepairRequestList:
     if sort_by not in REPAIR_REQUEST_SORT_FIELDS:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_sort_by")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="invalid_sort_by"
+        )
 
     items, total = fetch_repair_requests_page(
         db,
