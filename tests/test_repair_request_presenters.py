@@ -5,7 +5,9 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from backend.app.models.enums import AttachmentsSyncStatus, RequestStatus
-from backend.app.services.repair_request_presenters import repair_request_to_list_response
+from backend.app.services.repair_request_presenters import (
+    repair_request_to_list_response,
+)
 
 
 def _repair_request_stub(**overrides: object) -> SimpleNamespace:

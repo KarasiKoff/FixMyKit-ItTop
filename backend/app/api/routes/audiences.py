@@ -8,7 +8,12 @@ from backend.app.api.deps import get_current_user, get_db
 from backend.app.models.enums import UserRole
 from backend.app.models.user import User
 from backend.app.repositories.audience_repository import AudienceRepository
-from backend.app.schemas.audience import Audience, AudienceCreate, AudienceList, AudienceUpdate
+from backend.app.schemas.audience import (
+    Audience,
+    AudienceCreate,
+    AudienceList,
+    AudienceUpdate,
+)
 
 router = APIRouter(prefix="/api/audiences", tags=["audiences"])
 
@@ -16,7 +21,9 @@ router = APIRouter(prefix="/api/audiences", tags=["audiences"])
 def require_roles(allowed_roles: set[UserRole]):
     def checker(user: User = Depends(get_current_user)) -> User:
         if user.role not in allowed_roles:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="forbidden")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="forbidden"
+            )
         return user
 
     return checker
@@ -39,7 +46,9 @@ def create_audience(
     _: User = Depends(require_roles({UserRole.ADMIN})),
 ) -> Audience:
     if AudienceRepository(db).get_by_name(payload.name) is not None:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="audience_exists")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="audience_exists"
+        )
 
     return AudienceRepository(db).create(payload.name)
 
@@ -56,14 +65,18 @@ def update_audience(
 
     if payload.name is not None and payload.name != audience.name:
         if repo.get_by_name(payload.name) is not None:
-            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="audience_exists")
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT, detail="audience_exists"
+            )
         audience.name = payload.name
 
     try:
         db.commit()
     except IntegrityError as exc:
         db.rollback()
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="audience_exists") from exc
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT, detail="audience_exists"
+        ) from exc
     db.refresh(audience)
     return audience
 

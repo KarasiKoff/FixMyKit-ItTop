@@ -19,8 +19,13 @@ from backend.app.schemas.public_device import (
     PublicRepairSummaryResponse,
 )
 from backend.app.schemas.public_shorten import ShortenUrlRequest, ShortenUrlResponse
-from backend.app.services.public_repair_summary_service import summarize_public_repair_requests
-from backend.app.services.url_shortener import assert_allowed_shorten_url, shorten_via_clck
+from backend.app.services.public_repair_summary_service import (
+    summarize_public_repair_requests,
+)
+from backend.app.services.url_shortener import (
+    assert_allowed_shorten_url,
+    shorten_via_clck,
+)
 
 router = APIRouter(prefix="/api/public", tags=["public"])
 
@@ -35,34 +40,46 @@ def get_attachment_limits() -> AttachmentLimitsResponse:
 
 @router.get("/devices/by-inventory", response_model=PublicDeviceResponse)
 def get_public_device_by_inventory(
-    number: str = Query(..., min_length=1, description="Инвентарный номер (без учёта регистра)"),
+    number: str = Query(
+        ..., min_length=1, description="Инвентарный номер (без учёта регистра)"
+    ),
     db: Session = Depends(get_db),
 ) -> PublicDeviceResponse:
     device = DeviceRepository(db).get_by_inventory_casefold(number)
     if device is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="device_not_found"
+        )
     return PublicDeviceResponse.model_validate(device)
 
 
 @router.get("/devices/{device_id}", response_model=PublicDeviceResponse)
-def get_public_device(device_id: UUID, db: Session = Depends(get_db)) -> PublicDeviceResponse:
+def get_public_device(
+    device_id: UUID, db: Session = Depends(get_db)
+) -> PublicDeviceResponse:
     device = DeviceRepository(db).get_public_or_404(device_id)
     return PublicDeviceResponse.model_validate(device)
 
 
 @router.get("/audiences/by-name", response_model=PublicAudienceResponse)
 def get_public_audience_by_name(
-    name: str = Query(..., min_length=1, description="Название кабинета (без учёта регистра)"),
+    name: str = Query(
+        ..., min_length=1, description="Название кабинета (без учёта регистра)"
+    ),
     db: Session = Depends(get_db),
 ) -> PublicAudienceResponse:
     audience = AudienceRepository(db).get_by_name_casefold(name)
     if audience is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="audience_not_found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="audience_not_found"
+        )
     return PublicAudienceResponse.model_validate(audience)
 
 
 @router.get("/audiences/{audience_id}", response_model=PublicAudienceResponse)
-def get_public_audience(audience_id: UUID, db: Session = Depends(get_db)) -> PublicAudienceResponse:
+def get_public_audience(
+    audience_id: UUID, db: Session = Depends(get_db)
+) -> PublicAudienceResponse:
     audience = AudienceRepository(db).get_or_404(audience_id)
     return PublicAudienceResponse.model_validate(audience)
 
@@ -74,11 +91,17 @@ def shorten_public_url(payload: ShortenUrlRequest) -> ShortenUrlResponse:
     return ShortenUrlResponse(url=absolute, short_url=short)
 
 
-@router.get("/devices/{device_id}/repair-summary", response_model=PublicRepairSummaryResponse)
-def get_public_repair_summary(device_id: UUID, db: Session = Depends(get_db)) -> PublicRepairSummaryResponse:
+@router.get(
+    "/devices/{device_id}/repair-summary", response_model=PublicRepairSummaryResponse
+)
+def get_public_repair_summary(
+    device_id: UUID, db: Session = Depends(get_db)
+) -> PublicRepairSummaryResponse:
     device = DeviceRepository(db).get_public_or_404(device_id)
     requests = RepairRequestRepository(db).list_for_device(device_id)
-    active_request, has_unpublished_active, history = summarize_public_repair_requests(requests)
+    active_request, has_unpublished_active, history = summarize_public_repair_requests(
+        requests
+    )
     return PublicRepairSummaryResponse(
         device=PublicDeviceResponse.model_validate(device),
         active_request=active_request,
@@ -87,14 +110,19 @@ def get_public_repair_summary(device_id: UUID, db: Session = Depends(get_db)) ->
     )
 
 
-@router.get("/audiences/{audience_id}/repair-summary", response_model=PublicAudienceRepairSummaryResponse)
+@router.get(
+    "/audiences/{audience_id}/repair-summary",
+    response_model=PublicAudienceRepairSummaryResponse,
+)
 def get_public_audience_repair_summary(
     audience_id: UUID,
     db: Session = Depends(get_db),
 ) -> PublicAudienceRepairSummaryResponse:
     audience = AudienceRepository(db).get_or_404(audience_id)
     requests = RepairRequestRepository(db).list_for_audience(audience_id)
-    active_request, has_unpublished_active, history = summarize_public_repair_requests(requests)
+    active_request, has_unpublished_active, history = summarize_public_repair_requests(
+        requests
+    )
     return PublicAudienceRepairSummaryResponse(
         audience=PublicAudienceResponse.model_validate(audience),
         active_request=active_request,

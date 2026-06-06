@@ -1,6 +1,8 @@
 from fastapi import APIRouter
 
-from backend.app.api.routes.repair_requests.attachments import router as attachments_router
+from backend.app.api.routes.repair_requests.attachments import (
+    router as attachments_router,
+)
 from backend.app.api.routes.repair_requests.comments import router as comments_router
 from backend.app.api.routes.repair_requests.create import router as create_router
 from backend.app.api.routes.repair_requests.detail import router as detail_router

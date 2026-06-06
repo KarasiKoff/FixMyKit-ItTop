@@ -26,7 +26,9 @@ def upgrade() -> None:
     attachments_sync_status.create(op.get_bind(), checkfirst=True)
     op.add_column(
         "repair_requests",
-        sa.Column("has_attachments", sa.Boolean(), nullable=False, server_default="false"),
+        sa.Column(
+            "has_attachments", sa.Boolean(), nullable=False, server_default="false"
+        ),
     )
     op.add_column(
         "repair_requests",
@@ -39,11 +41,15 @@ def upgrade() -> None:
     )
     op.add_column(
         "repair_requests",
-        sa.Column("attachments_count", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column(
+            "attachments_count", sa.Integer(), nullable=False, server_default="0"
+        ),
     )
     op.add_column(
         "repair_requests",
-        sa.Column("attachments_synced_count", sa.Integer(), nullable=False, server_default="0"),
+        sa.Column(
+            "attachments_synced_count", sa.Integer(), nullable=False, server_default="0"
+        ),
     )
 
 

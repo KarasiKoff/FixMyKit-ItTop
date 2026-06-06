@@ -6,7 +6,11 @@ from dataclasses import dataclass, field
 
 import pytest
 
-from backend.app.clients.tracker_client import TrackerClient, TrackerCredentials, TrackerUnavailableError
+from backend.app.clients.tracker_client import (
+    TrackerClient,
+    TrackerCredentials,
+    TrackerUnavailableError,
+)
 from backend.app.services.tracker_issue_service import TrackerIssueService
 
 TRACKER_TEST_BASE = "https://tracker.test"
@@ -18,7 +22,9 @@ class FakeTrackerClient(TrackerClient):
 
     json_responses: dict[tuple[str, str], dict] = field(default_factory=dict)
     list_responses: dict[tuple[str, str], list] = field(default_factory=dict)
-    bytes_responses: dict[tuple[str, str], tuple[bytes, str | None]] = field(default_factory=dict)
+    bytes_responses: dict[tuple[str, str], tuple[bytes, str | None]] = field(
+        default_factory=dict
+    )
     calls: list[tuple[str, str, dict | None]] = field(default_factory=list)
     fail_on_request_json: bool = False
 

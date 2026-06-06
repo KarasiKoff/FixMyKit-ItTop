@@ -10,11 +10,15 @@ from sqlalchemy.orm import Session
 
 from backend.app.schemas.tracker import TrackerSyncResponse
 from backend.app.services.realtime_notify import notify_repair_request_updated
-from backend.app.services.repair_request_attachment_service import sync_tracker_issue_and_attachments
+from backend.app.services.repair_request_attachment_service import (
+    sync_tracker_issue_and_attachments,
+)
 from backend.app.repositories.repair_request_repository import get_repair_request_or_404
 
 
-def sync_repair_request_with_tracker(db: Session, request_id: UUID) -> TrackerSyncResponse:
+def sync_repair_request_with_tracker(
+    db: Session, request_id: UUID
+) -> TrackerSyncResponse:
     repair_request = get_repair_request_or_404(db, request_id, for_tracker=True)
     if not sync_tracker_issue_and_attachments(db, repair_request):
         raise HTTPException(

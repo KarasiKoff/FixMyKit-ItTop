@@ -9,7 +9,9 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from backend.app.schemas.attachments import TrackerAttachmentItem, TrackerAttachmentList
-from backend.app.services.repair_request_attachment_service import tracker_attachment_kind
+from backend.app.services.repair_request_attachment_service import (
+    tracker_attachment_kind,
+)
 from backend.app.repositories.repair_request_repository import get_repair_request_or_404
 from backend.app.services.tracker_service import (
     TrackerUnavailableError,

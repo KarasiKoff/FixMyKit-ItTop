@@ -1,13 +1,22 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_current_user, get_db, require_roles
 from backend.app.models.enums import UserRole
 from backend.app.models.user import User
-from backend.app.schemas.category import Category, CategoryCreate, CategoryList, CategoryUpdate
-from backend.app.schemas.subcategory import Subcategory, SubcategoryCreate, SubcategoryUpdate
+from backend.app.schemas.category import (
+    Category,
+    CategoryCreate,
+    CategoryList,
+    CategoryUpdate,
+)
+from backend.app.schemas.subcategory import (
+    Subcategory,
+    SubcategoryCreate,
+    SubcategoryUpdate,
+)
 from backend.app.services import category_route_service as category_svc
 
 router = APIRouter(prefix="/api/categories", tags=["categories"])
@@ -102,7 +111,9 @@ def update_subcategory(
     return category_svc.update_subcategory(db, subcategory_id, payload)
 
 
-@router.delete("/subcategories/{subcategory_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/subcategories/{subcategory_id}", status_code=status.HTTP_204_NO_CONTENT
+)
 def delete_subcategory(
     subcategory_id: UUID,
     db: Session = Depends(get_db),

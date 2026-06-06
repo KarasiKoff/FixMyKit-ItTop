@@ -26,7 +26,11 @@ class RepairRequest(Base):
     taken_by_sysadmin_by_user_id = Column(Uuid, ForeignKey("users.id"), nullable=True)
     applicant_name = Column(String, nullable=True)
     description = Column(Text, nullable=False)
-    status = Column(SQLEnum(RequestStatus, name="request_status"), nullable=False, default=RequestStatus.OPEN)
+    status = Column(
+        SQLEnum(RequestStatus, name="request_status"),
+        nullable=False,
+        default=RequestStatus.OPEN,
+    )
     taken_by_sysadmin_at = Column(TIMESTAMP(timezone=True), nullable=True)
     resolution_note = Column(Text, nullable=True)
     resolution_desc = Column(Text, nullable=True)
@@ -39,8 +43,12 @@ class RepairRequest(Base):
         Boolean, nullable=False, default=False, server_default="false"
     )
     last_sync_at = Column(TIMESTAMP(timezone=True), nullable=True)
-    is_published = Column(Boolean, nullable=False, default=False, server_default="false")
-    has_attachments = Column(Boolean, nullable=False, default=False, server_default="false")
+    is_published = Column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    has_attachments = Column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
     attachments_sync_status = Column(
         SQLEnum(
             AttachmentsSyncStatus,
@@ -52,8 +60,12 @@ class RepairRequest(Base):
         server_default="none",
     )
     attachments_count = Column(Integer, nullable=False, default=0, server_default="0")
-    attachments_synced_count = Column(Integer, nullable=False, default=0, server_default="0")
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    attachments_synced_count = Column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    created_at = Column(
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
+    )
     updated_at = Column(
         TIMESTAMP(timezone=True),
         nullable=False,
@@ -64,6 +76,14 @@ class RepairRequest(Base):
     # Relationships
     device = relationship("Device", backref="repair_requests")
     audience = relationship("Audience", backref="repair_requests")
-    author = relationship("User", foreign_keys=[author_user_id], backref="repair_requests_created")
-    closed_by = relationship("User", foreign_keys=[closed_by_user_id], backref="repair_requests_closed")
-    taken_by_sysadmin = relationship("User", foreign_keys=[taken_by_sysadmin_by_user_id], backref="repair_requests_taken")
+    author = relationship(
+        "User", foreign_keys=[author_user_id], backref="repair_requests_created"
+    )
+    closed_by = relationship(
+        "User", foreign_keys=[closed_by_user_id], backref="repair_requests_closed"
+    )
+    taken_by_sysadmin = relationship(
+        "User",
+        foreign_keys=[taken_by_sysadmin_by_user_id],
+        backref="repair_requests_taken",
+    )

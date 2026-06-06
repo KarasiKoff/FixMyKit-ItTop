@@ -146,7 +146,9 @@ def sync_resolution_comment_to_tracker(
         raise _tracker_http_error(exc) from exc
 
 
-def sync_user_comment_to_tracker(repair_request: RepairRequest, user: User, body: str) -> None:
+def sync_user_comment_to_tracker(
+    repair_request: RepairRequest, user: User, body: str
+) -> None:
     ref = require_tracker_ticket(repair_request)
     try:
         post_site_user_comment(ref, user, body)
@@ -162,7 +164,9 @@ def sync_publish_to_tracker(repair_request: RepairRequest, is_published: bool) -
         raise _tracker_http_error(exc) from exc
 
 
-def sync_sysadmin_taken_to_tracker(repair_request: RepairRequest, *, taken: bool) -> None:
+def sync_sysadmin_taken_to_tracker(
+    repair_request: RepairRequest, *, taken: bool
+) -> None:
     ref = require_tracker_ticket(repair_request)
     try:
         push_sysadmin_taken_comment(ref, taken=taken)

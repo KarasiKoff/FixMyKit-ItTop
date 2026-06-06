@@ -23,6 +23,7 @@ variables:
   UV_CACHE_DIR: $CI_PROJECT_DIR/.cache/uv
   PIP_CACHE_DIR: $CI_PROJECT_DIR/.cache/pip
   PLAYWRIGHT_API_BASE_URL: http://127.0.0.1:8000
+  RUFF_PATHS: backend/app main.py tests backend/alembic
 
 .default_uv:
   image: ghcr.io/astral-sh/uv:python3.14-bookworm-slim
@@ -65,7 +66,8 @@ backend-unit:
   extends: .default_uv
   interruptible: true
   script:
-    - uv run python -m compileall backend/app main.py
+    - uv run ruff check $RUFF_PATHS
+    - uv run ruff format --check $RUFF_PATHS
     - uv run pytest tests/ --ignore=tests/api -q
 
 backend-integration:

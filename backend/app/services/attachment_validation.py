@@ -29,7 +29,20 @@ ALLOWED_VIDEO_MIMES = frozenset(
         "video/ogg",
     }
 )
-ALLOWED_IMAGE_EXT = frozenset({".jpg", ".jpeg", ".png", ".webp", ".gif", ".heic", ".heif", ".bmp", ".tif", ".tiff"})
+ALLOWED_IMAGE_EXT = frozenset(
+    {
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".webp",
+        ".gif",
+        ".heic",
+        ".heif",
+        ".bmp",
+        ".tif",
+        ".tiff",
+    }
+)
 ALLOWED_VIDEO_EXT = frozenset({".mp4", ".webm", ".mov", ".avi", ".mkv", ".ogv"})
 
 
@@ -61,6 +74,10 @@ def effective_max_attachment_bytes() -> int:
 def attachment_kind(filename: str, content_type: str | None) -> str:
     mime = (content_type or "").split(";")[0].strip().lower()
     ext = _ext(filename)
-    if mime in ALLOWED_VIDEO_MIMES or ext in ALLOWED_VIDEO_EXT or mime.startswith("video/"):
+    if (
+        mime in ALLOWED_VIDEO_MIMES
+        or ext in ALLOWED_VIDEO_EXT
+        or mime.startswith("video/")
+    ):
         return "video"
     return "image"

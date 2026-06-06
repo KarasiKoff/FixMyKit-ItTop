@@ -11,7 +11,9 @@ class Subcategory(Base):
     __tablename__ = "subcategories"
 
     id = Column(Uuid, primary_key=True, default=uuid4)
-    category_id = Column(Uuid, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
+    category_id = Column(
+        Uuid, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False
+    )
     name = Column(String, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(

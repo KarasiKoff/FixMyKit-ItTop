@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Literal
 
 from sqlalchemy import and_, case, func, or_
-from sqlalchemy.orm import Query, Session, defer, joinedload
+from sqlalchemy.orm import Query, Session, joinedload
 
 from backend.app.models.audience import Audience as AudienceModel
 from backend.app.models.category import Category as CategoryModel
@@ -46,7 +46,9 @@ def _contains_pattern(value: str) -> str:
     return f"%{value.strip()}%"
 
 
-def _category_taxonomy_label(category_name: str | None, subcategory_name: str | None) -> str | None:
+def _category_taxonomy_label(
+    category_name: str | None, subcategory_name: str | None
+) -> str | None:
     cat = (category_name or "").strip()
     sub = (subcategory_name or "").strip()
     if cat and sub:
@@ -232,7 +234,9 @@ def suggest_devices(db: Session, field: str, q: str) -> list[str]:
             db.query(CategoryModel.name, SubcategoryModel.name)
             .select_from(DeviceModel)
             .outerjoin(CategoryModel, DeviceModel.category_id == CategoryModel.id)
-            .outerjoin(SubcategoryModel, DeviceModel.subcategory_id == SubcategoryModel.id)
+            .outerjoin(
+                SubcategoryModel, DeviceModel.subcategory_id == SubcategoryModel.id
+            )
             .filter(
                 or_(
                     CategoryModel.name.ilike(pattern),

@@ -37,17 +37,27 @@ def _create_enum_if_missing(bind, name: str, labels: tuple[str, ...]) -> None:
 def upgrade() -> None:
     bind = op.get_bind()
     _create_enum_if_missing(bind, "announcement_audience", ("all", "admins_only"))
-    _create_enum_if_missing(bind, "announcement_severity", ("info", "warning", "danger"))
+    _create_enum_if_missing(
+        bind, "announcement_severity", ("info", "warning", "danger")
+    )
 
     inspector = sa.inspect(bind)
     if "site_announcements" not in inspector.get_table_names():
         op.create_table(
             "site_announcements",
             sa.Column("slot", sa.SmallInteger(), nullable=False),
-            sa.Column("is_enabled", sa.Boolean(), nullable=False, server_default=sa.false()),
-            sa.Column("message", sa.String(length=500), nullable=False, server_default=""),
-            sa.Column("audience", announcement_audience, nullable=False, server_default="all"),
-            sa.Column("severity", announcement_severity, nullable=False, server_default="info"),
+            sa.Column(
+                "is_enabled", sa.Boolean(), nullable=False, server_default=sa.false()
+            ),
+            sa.Column(
+                "message", sa.String(length=500), nullable=False, server_default=""
+            ),
+            sa.Column(
+                "audience", announcement_audience, nullable=False, server_default="all"
+            ),
+            sa.Column(
+                "severity", announcement_severity, nullable=False, server_default="info"
+            ),
             sa.Column(
                 "updated_at",
                 sa.TIMESTAMP(timezone=True),
@@ -55,7 +65,9 @@ def upgrade() -> None:
                 server_default=sa.func.now(),
             ),
             sa.PrimaryKeyConstraint("slot"),
-            sa.CheckConstraint("slot >= 1 AND slot <= 2", name="ck_site_announcements_slot"),
+            sa.CheckConstraint(
+                "slot >= 1 AND slot <= 2", name="ck_site_announcements_slot"
+            ),
         )
 
     op.execute(

@@ -21,14 +21,18 @@ def upgrade() -> None:
         sa.Column("repair_request_id", sa.Uuid(), nullable=False),
         sa.Column("author_user_id", sa.Uuid(), nullable=False),
         sa.Column("body", sa.Text(), nullable=False),
-        sa.Column("tracker_synced", sa.Boolean(), nullable=False, server_default="true"),
+        sa.Column(
+            "tracker_synced", sa.Boolean(), nullable=False, server_default="true"
+        ),
         sa.Column(
             "created_at",
             sa.TIMESTAMP(timezone=True),
             nullable=False,
             server_default=sa.text("now()"),
         ),
-        sa.ForeignKeyConstraint(["repair_request_id"], ["repair_requests.id"], ondelete="CASCADE"),
+        sa.ForeignKeyConstraint(
+            ["repair_request_id"], ["repair_requests.id"], ondelete="CASCADE"
+        ),
         sa.ForeignKeyConstraint(["author_user_id"], ["users.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -40,5 +44,7 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_repair_request_comments_request_id", table_name="repair_request_comments")
+    op.drop_index(
+        "ix_repair_request_comments_request_id", table_name="repair_request_comments"
+    )
     op.drop_table("repair_request_comments")

@@ -1,6 +1,9 @@
 """Контракт TrackerHttpClient: FakeTrackerClient подходит для TrackerIssueService."""
 
-from tests.support.fake_tracker_client import FakeTrackerClient, tracker_create_issue_client
+from tests.support.fake_tracker_client import (
+    FakeTrackerClient,
+    tracker_create_issue_client,
+)
 from backend.app.services.tracker_issue_service import TrackerIssueService
 
 

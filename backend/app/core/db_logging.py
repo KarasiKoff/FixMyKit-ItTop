@@ -14,7 +14,9 @@ logger = logging.getLogger("fixmykit.db")
 def install_db_logging(engine: Engine) -> None:
     @event.listens_for(engine, "connect")
     def on_connect(dbapi_connection, connection_record) -> None:
-        logger.debug("db_connect", extra={"driver": dbapi_connection.__class__.__module__})
+        logger.debug(
+            "db_connect", extra={"driver": dbapi_connection.__class__.__module__}
+        )
 
     @event.listens_for(engine, "checkout")
     def on_checkout(dbapi_connection, connection_record, connection_proxy) -> None:

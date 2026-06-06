@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from uuid import UUID
 
-from sqlalchemy.orm import Session, defer, joinedload, load_only
+from sqlalchemy.orm import Session, defer, joinedload
 
 from backend.app.models.category import Category
 from backend.app.models.device import Device
@@ -54,7 +54,9 @@ class RoomMapRepository:
         )
         return {row[0] for row in rows}
 
-    def count_devices_in_audience(self, device_ids: set[UUID], audience_id: UUID) -> int:
+    def count_devices_in_audience(
+        self, device_ids: set[UUID], audience_id: UUID
+    ) -> int:
         if not device_ids:
             return 0
         return (

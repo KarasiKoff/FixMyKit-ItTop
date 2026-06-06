@@ -1,7 +1,7 @@
 from uuid import uuid4
 
 from sqlalchemy import Column, Enum as SQLEnum
-from sqlalchemy import ForeignKey, Integer, String, Text, Uuid
+from sqlalchemy import ForeignKey, String, Text, Uuid
 from sqlalchemy import func
 from sqlalchemy.dialects.postgresql import TIMESTAMP
 from sqlalchemy.orm import relationship
@@ -21,9 +21,15 @@ class Device(Base):
     serial_number = Column(String, nullable=True)
     audience_id = Column(Uuid, ForeignKey("audience.id"), nullable=True)
     responsible_id = Column(Uuid, ForeignKey("users.id"), nullable=True)
-    repair_status = Column(SQLEnum(RepairStatus, name="repair_status"), nullable=False, default=RepairStatus.NOT_IN_REPAIR)
+    repair_status = Column(
+        SQLEnum(RepairStatus, name="repair_status"),
+        nullable=False,
+        default=RepairStatus.NOT_IN_REPAIR,
+    )
     note = Column(Text, nullable=True)
-    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=func.now())
+    created_at = Column(
+        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
+    )
     updated_at = Column(
         TIMESTAMP(timezone=True),
         nullable=False,
@@ -35,4 +41,6 @@ class Device(Base):
     audience = relationship("Audience", backref="devices")
     category = relationship("Category", backref="devices")
     subcategory = relationship("Subcategory", backref="devices")
-    responsible = relationship("User", foreign_keys=[responsible_id], backref="responsible_for_devices")
+    responsible = relationship(
+        "User", foreign_keys=[responsible_id], backref="responsible_for_devices"
+    )

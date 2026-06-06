@@ -39,7 +39,8 @@ class AudienceRepository:
 
     def exists(self, audience_id: UUID) -> bool:
         return (
-            self._db.query(Audience.id).filter(Audience.id == audience_id).first() is not None
+            self._db.query(Audience.id).filter(Audience.id == audience_id).first()
+            is not None
         )
 
     def get_or_404(self, audience_id: UUID) -> Audience:
@@ -52,9 +53,7 @@ class AudienceRepository:
         return audience
 
     def list_device_ids(self, audience_id: UUID) -> list[UUID]:
-        rows = (
-            self._db.query(Device.id).filter(Device.audience_id == audience_id).all()
-        )
+        rows = self._db.query(Device.id).filter(Device.audience_id == audience_id).all()
         return [row[0] for row in rows]
 
     def delete_devices_for_audience(self, audience_id: UUID) -> None:

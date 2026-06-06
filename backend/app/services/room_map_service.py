@@ -10,7 +10,11 @@ from sqlalchemy.orm import Session
 from backend.app.models.room_device_position import RoomDevicePosition
 from backend.app.repositories.audience_repository import AudienceRepository
 from backend.app.repositories.room_map_repository import RoomMapRepository
-from backend.app.schemas.room_map import DeviceOnMap, RoomMapResponse, RoomMapSaveRequest
+from backend.app.schemas.room_map import (
+    DeviceOnMap,
+    RoomMapResponse,
+    RoomMapSaveRequest,
+)
 
 
 def build_room_map_response(db: Session, audience_id: UUID) -> RoomMapResponse:
@@ -31,7 +35,11 @@ def build_room_map_response(db: Session, audience_id: UUID) -> RoomMapResponse:
         )
         for pos, dev, cat in rows
     ]
-    door_edge = audience.map_door_edge if audience.map_door_edge in ("top", "bottom") else "bottom"
+    door_edge = (
+        audience.map_door_edge
+        if audience.map_door_edge in ("top", "bottom")
+        else "bottom"
+    )
     return RoomMapResponse(
         audience_id=audience_id,
         grid_cols=audience.map_grid_cols,
@@ -41,7 +49,9 @@ def build_room_map_response(db: Session, audience_id: UUID) -> RoomMapResponse:
     )
 
 
-def save_room_map(db: Session, audience_id: UUID, payload: RoomMapSaveRequest) -> RoomMapResponse:
+def save_room_map(
+    db: Session, audience_id: UUID, payload: RoomMapSaveRequest
+) -> RoomMapResponse:
     audience_repo = AudienceRepository(db)
     map_repo = RoomMapRepository(db)
     audience = audience_repo.get_or_404(audience_id)

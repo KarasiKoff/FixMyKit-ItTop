@@ -73,7 +73,9 @@ class TrackerClient:
             url,
             data=payload,
             method=method,
-            headers=self._headers(creds.token, creds.org_id, json_body=data is not None),
+            headers=self._headers(
+                creds.token, creds.org_id, json_body=data is not None
+            ),
         )
         timeout = self._server.tracker_timeout_seconds
         started = time.perf_counter()

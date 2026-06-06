@@ -6,7 +6,9 @@ from sqlalchemy.orm import Session
 from backend.app.api.deps import get_db, require_admin_or_sysadmin
 from backend.app.models.user import User
 from backend.app.schemas.attachments import AttachmentCleanupResponse
-from backend.app.services.repair_request_attachment_service import run_attachment_cleanup
+from backend.app.services.repair_request_attachment_service import (
+    run_attachment_cleanup,
+)
 
 router = APIRouter(prefix="/api/admin", tags=["admin-maintenance"])
 
