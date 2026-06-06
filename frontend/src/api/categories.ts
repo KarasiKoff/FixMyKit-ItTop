@@ -1,5 +1,4 @@
 import { apiRequest, resolveApiUrl, ApiError } from './client';
-import { getStoredAuthToken } from './auth';
 
 export type SubcategoryDto = {
     id: string;
@@ -86,12 +85,11 @@ export async function deleteSubcategory(id: string) {
 
 /** Загрузка или замена иконки (multipart). Только админ. */
 export async function uploadCategoryIcon(id: string, file: File) {
-    const token = getStoredAuthToken();
     const body = new FormData();
     body.append('file', file);
     const response = await fetch(resolveApiUrl(`/api/categories/${id}/icon`), {
         method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
         body,
     });
     if (!response.ok) {
@@ -113,9 +111,8 @@ export async function deleteCategoryIcon(id: string) {
 }
 
 export async function fetchCategoryIconBlob(categoryId: string): Promise<Blob | null> {
-    const token = getStoredAuthToken();
     const response = await fetch(resolveApiUrl(`/api/categories/${categoryId}/icon`), {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        credentials: 'include',
     });
     if (response.status === 404) return null;
     if (!response.ok) {
