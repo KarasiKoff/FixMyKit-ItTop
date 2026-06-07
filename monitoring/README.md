@@ -175,7 +175,37 @@ sum(rate(http_requests_total{job="fmk-backend", status="5xx"}[5m]))
 
 В стеке есть **cAdvisor** (`fmk-cadvisor`, порт `CADVISOR_PORT`, по умолчанию **8089**). Prometheus job `fmk-cadvisor` — метрики CPU/RAM контейнеров `fixmykit-*` и `fmk-*` на дашборде **Инфраструктура**.
 
-На **Docker Desktop (Windows)** cAdvisor часто **не видит отдельные контейнеры** (в логах `fmk-cadvisor`: `failed to identify the read-write layer ID`). Это ограничение Docker Desktop, не баг приложения. На дашборде **Инфраструктура** в таком случае видна только линия **«Docker всего»** (`id=/docker`). На **Linux prod** обычно появляются метрики по каждому `fixmykit-*` / `fmk-*`.
+На **Docker Desktop (Windows)** cAdvisor часто **не видит отдельные контейнеры** (в логах `fmk-cadvisor`: `failed to identify the read-write layer ID`). Это ограничение Docker Desktop, не баг приложения.
+
+На **Linux prod** дашборд **Инфраструктура** фильтрует контейнеры по `container_label_com_docker_compose_project` (`fixmykit-prod`, `fmk-monitoring`). Если панели CPU/RAM пустые — см. раздел ниже.
+
+### cAdvisor на prod: «Нет данных»
+
+1. **Панель «cAdvisor» (up)** на дашборде Инфраструктура — должна быть **1**. Если **0**:
+   ```bash
+   docker ps --filter name=fmk-cadvisor
+   docker logs fmk-cadvisor --tail 30
+   ```
+   Пересоздайте с `privileged: true` (в `docker-compose.monitoring.yml` уже так):
+   ```bash
+   docker compose -p fmk-monitoring -f docker-compose.monitoring.yml \
+     -f docker-compose.monitoring.prod-link.yml \
+     --env-file .env.monitoring up -d --force-recreate cadvisor prometheus
+   ```
+
+2. **Prometheus → Targets → `fmk-cadvisor`** — State **UP**.
+
+3. **Есть ли метрики** (на VPS):
+   ```bash
+   curl -s 'http://127.0.0.1:9090/api/v1/query?query=container_cpu_usage_seconds_total' | head -c 500
+   ```
+   Пусто → cAdvisor не видит контейнеры (права, cgroup v2).
+
+4. **Проверка labels** в Prometheus UI → Graph:
+   ```promql
+   count by (container_label_com_docker_compose_project) (container_memory_usage_bytes{image!=""})
+   ```
+   Должны быть `fixmykit-prod` и/или `fmk-monitoring`.
 
 ## Устранение неполадок
 

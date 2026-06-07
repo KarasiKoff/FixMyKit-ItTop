@@ -628,13 +628,18 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{name=~\"/(fixmykit|fmk)-.*\", image!=\"\"}[5m])) by (name)",
-          "legendFormat": "{{name}}",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_project=~\"fixmykit-prod|fmk-monitoring\", container_label_com_docker_compose_service!=\"\", image!=\"\"}[5m])) by (container_label_com_docker_compose_project, container_label_com_docker_compose_service)",
+          "legendFormat": "{{container_label_com_docker_compose_project}}/{{container_label_com_docker_compose_service}}",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{id=\"/docker\"}[5m]))",
-          "legendFormat": "Docker всего",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{name=~\"/(fixmykit|fmk)-.*\", image!=\"\"}[5m])) by (name)",
+          "legendFormat": "{{name}}",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(rate(container_cpu_usage_seconds_total{container_label_com_docker_compose_project=~\"fixmykit-prod|fmk-monitoring\", image!=\"\"}[5m]))",
+          "legendFormat": "Всего (compose)",
           "refId": "B"
         }
       ],
@@ -726,13 +731,18 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(container_memory_usage_bytes{name=~\"/(fixmykit|fmk)-.*\", image!=\"\"}) by (name)",
-          "legendFormat": "{{name}}",
+          "expr": "sum(container_memory_usage_bytes{container_label_com_docker_compose_project=~\"fixmykit-prod|fmk-monitoring\", container_label_com_docker_compose_service!=\"\", image!=\"\"}) by (container_label_com_docker_compose_project, container_label_com_docker_compose_service)",
+          "legendFormat": "{{container_label_com_docker_compose_project}}/{{container_label_com_docker_compose_service}}",
           "refId": "A"
         },
         {
-          "expr": "container_memory_usage_bytes{id=\"/docker\"}",
-          "legendFormat": "Docker всего",
+          "expr": "sum(container_memory_usage_bytes{name=~\"/(fixmykit|fmk)-.*\", image!=\"\"}) by (name)",
+          "legendFormat": "{{name}}",
+          "refId": "C"
+        },
+        {
+          "expr": "sum(container_memory_usage_bytes{container_label_com_docker_compose_project=~\"fixmykit-prod|fmk-monitoring\", image!=\"\"})",
+          "legendFormat": "Всего (compose)",
           "refId": "B"
         }
       ],
