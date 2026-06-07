@@ -8,7 +8,8 @@
 
 | Файл | Назначение |
 |------|------------|
-| [`nginx-fixmykit.example.conf`](nginx-fixmykit.example.conf) | Reverse proxy: `app.*` → `:8080`, `api.*` → `:8001`, SSE, `client_max_body_size` |
+| [`nginx-fixmykit.example.conf`](nginx-fixmykit.example.conf) | Reverse proxy: `app.*` → `:8080`, `api.*` → `:8001`, блок `/metrics` |
+| [`nginx-fixmykit-monitoring.example.conf`](nginx-fixmykit-monitoring.example.conf) | `grafana.*` → `:3000`, HTTPS + basic auth |
 | [`frontend/nginx.conf`](frontend/nginx.conf) | SPA внутри prod-контейнера frontend (`try_files` → `index.html`) |
 | [`PRODUCTION_UPLOADS.md`](PRODUCTION_UPLOADS.md) | Ошибка nginx **413** и «Нет связи с сервером» при больших вложениях |
 | `yandex-tracker-webhook*.body.example.json` | Примеры тел вебхуков для настройки триггеров в Tracker |
@@ -122,7 +123,13 @@ Volumes Docker: `fixmykit-postgres-data-prod`, `fixmykit-uploads-prod`, `fixmyki
 
 ## Мониторинг на prod
 
-Три сценария — [`monitoring/README.md`](../monitoring/README.md). Порты Grafana/Prometheus **не** публикуйте в интернет без VPN или basic auth.
+| Сценарий | Описание |
+|----------|----------|
+| **A — bundle** | Один VPS, prod + monitoring одной командой |
+| **B — link** | Один VPS, prod и monitoring разными compose (prod уже живёт) |
+| **C — remote** | Два VPS |
+
+Runbook, nginx Grafana, `/metrics`: [`monitoring/PRODUCTION.md`](../monitoring/PRODUCTION.md).
 
 ---
 
