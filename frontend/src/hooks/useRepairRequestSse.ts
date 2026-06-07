@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { ApiError } from '../api/client';
 import { buildRepairRequestsSseUrl, fetchSseTicket, type RepairRequestSsePayload } from '../api/sse';
 
 const RECONNECT_DELAY_MS = 3000;
@@ -60,8 +61,10 @@ export function useRepairRequestSse(options: {
                         };
                         es.addEventListener('error', handleError);
                     });
-                } catch {
-                    /* ticket or stream failed */
+                } catch (err) {
+                    if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+                        return;
+                    }
                 }
 
                 if (cancelled) {

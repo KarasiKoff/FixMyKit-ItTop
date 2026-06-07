@@ -56,7 +56,8 @@ def _format_alert(alert: Alert) -> str:
 
 
 async def _send_telegram(token: str, chat_id: str, text: str) -> None:
-    async with httpx.AsyncClient(timeout=10) as client:
+    proxy = os.getenv("TELEGRAM_HTTP_PROXY") or None
+    async with httpx.AsyncClient(timeout=10, proxy=proxy) as client:
         try:
             resp = await client.post(
                 _telegram_url(token),

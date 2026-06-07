@@ -118,6 +118,24 @@ services:
     environment:
       TG_BOT_ALERT_TOKEN: ${TG_BOT_ALERT_TOKEN:-}
       TG_ALERT_CHAT_ID: ${TG_ALERT_CHAT_ID:-}
+      # Исходящий прокси до api.telegram.org (sing-box, profile telegram-vpn)
+      TELEGRAM_HTTP_PROXY: ${TELEGRAM_HTTP_PROXY:-}
+    depends_on:
+      sing-box:
+        condition: service_started
+        required: false
+    networks:
+      - fmk_monitoring
+
+  # VPN для alertserver → Telegram. Профиль telegram-vpn, конфиг: monitoring/vpn/sing-box.json
+  sing-box:
+    profiles: [telegram-vpn]
+    image: ghcr.io/sagernet/sing-box:latest
+    container_name: fmk-sing-box
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/vpn/sing-box.json:/etc/sing-box/config.json:ro
+    command: run -c /etc/sing-box/config.json -D /var/lib/sing-box
     networks:
       - fmk_monitoring
 

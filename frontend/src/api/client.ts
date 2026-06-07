@@ -1,4 +1,5 @@
 import { clearLegacyAuthToken, logout } from './auth';
+import { notifySessionExpired } from './sessionExpiry';
 
 export class ApiError extends Error {
     status: number;
@@ -64,6 +65,7 @@ export async function apiRequest<T>(path: string, init: ApiRequestOptions = {}):
             } catch {
                 /* cookie already invalid */
             }
+            notifySessionExpired();
         }
         throw new ApiError(
             response.status,
