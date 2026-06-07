@@ -46,7 +46,7 @@ export async function apiRequest<T>(path: string, init: ApiRequestOptions = {}):
         ...rest,
         method,
         headers,
-        credentials: skipAuth ? 'same-origin' : 'include',
+        credentials: 'include',
     });
 
     if (response.status === 204) {
