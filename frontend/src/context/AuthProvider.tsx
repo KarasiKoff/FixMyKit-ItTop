@@ -1,12 +1,22 @@
 import React, { useEffect, useState, ReactNode } from 'react';
 import { ApiError } from '../api/client';
 import { clearLegacyAuthToken, getCurrentUser, login as loginApi, logout as logoutApi } from '../api/auth';
+import { registerSessionExpiredHandler } from '../api/sessionExpiry';
 import { AuthContext, type AuthContextValue } from './auth-context';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<AuthContextValue['user']>(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        registerSessionExpiredHandler(() => {
+            clearLegacyAuthToken();
+            setIsAuthenticated(false);
+            setUser(null);
+        });
+        return () => registerSessionExpiredHandler(null);
+    }, []);
 
     useEffect(() => {
         clearLegacyAuthToken();
