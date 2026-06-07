@@ -1,0 +1,70 @@
+﻿{
+    "annotations":  {
+                        "list":  [
+                                     {
+                                         "builtIn":  1,
+                                         "datasource":  {
+                                                            "type":  "grafana",
+                                                            "uid":  "-- Grafana --"
+                                                        },
+                                         "enable":  true,
+                                         "hide":  true,
+                                         "iconColor":  "rgba(0, 211, 255, 1)",
+                                         "name":  "Annotations \u0026 Alerts",
+                                         "type":  "dashboard"
+                                     }
+                                 ]
+                    },
+    "editable":  true,
+    "fiscalYearStartMonth":  0,
+    "graphTooltip":  0,
+    "links":  [
+
+              ],
+    "panels":  [
+                   {
+                       "gridPos":  {
+                                       "h":  22,
+                                       "w":  24,
+                                       "x":  0,
+                                       "y":  0
+                                   },
+                       "id":  1,
+                       "options":  {
+                                       "code":  {
+                                                    "language":  "plaintext",
+                                                    "showLineNumbers":  false,
+                                                    "showMiniMap":  false
+                                                },
+                                       "content":  "## Fix My Kit — обзор для менеджеров\n\nДашборды с бизнес-метриками: заявки, SLA, оборудование, пользователи. Без технических деталей HTTP и инфраструктуры.\n\n### Основные\n\n| Дашборд | Для чего |\n|---------|----------|\n| [Операции](/d/fixmykit-operations) | Открытые заявки, в ремонте, по статусам и аудиториям |\n| [SLA заявок](/d/fixmykit-sla) | Время закрытия, застрявшие заявки, динамика |\n| [Еженедельный отчёт](/d/fixmykit-weekly) | Сводка за 7 дней для совещаний |\n| [Трекер](/d/fixmykit-tracker) | Синхронизация с Яндекс Трекером, вложения |\n\n### Аналитика\n\n| Дашборд | Для чего |\n|---------|----------|\n| [Качество закрытия](/d/fixmykit-quality) | Резолюции «Решен» / «Не будет исправлено», NEEDS_INFO |\n| [Оборудование](/d/fixmykit-equipment) | Хроники, % в ремонте, проблемные устройства |\n| [Пользователи](/d/fixmykit-users) | Активность admin/sysadmin, закрытия, комментарии |\n| [Админ-статистика](/d/fixmykit-admin-stats) | Как дашборд в админке приложения |\n| [Объявления](/d/fixmykit-announcements) | Баннеры на сайте, слоты, severity |\n\n---\n\nТехнические дашборды (API, логи, CPU) — в папке **Fix My Kit — Технические**.",
+                                       "mode":  "markdown"
+                                   },
+                       "title":  "Навигация",
+                       "type":  "text"
+                   }
+               ],
+    "preload":  false,
+    "refresh":  "",
+    "schemaVersion":  42,
+    "tags":  [
+                 "fixmykit",
+                 "managers",
+                 "home"
+             ],
+    "templating":  {
+                       "list":  [
+
+                                ]
+                   },
+    "time":  {
+                 "from":  "now-7d",
+                 "to":  "now"
+             },
+    "timepicker":  {
+
+                   },
+    "timezone":  "browser",
+    "title":  "Fix My Kit — Обзор (менеджерам)",
+    "uid":  "fixmykit-home-managers",
+    "version":  1
+}

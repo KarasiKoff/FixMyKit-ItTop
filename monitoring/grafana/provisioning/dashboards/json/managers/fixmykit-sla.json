@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 11,
+  "id": 6,
   "links": [],
   "panels": [
     {
@@ -29,9 +29,9 @@
         "x": 0,
         "y": 0
       },
-      "id": 700,
+      "id": 400,
       "panels": [],
-      "title": "Оборудование",
+      "title": "SLA",
       "type": "row"
     },
     {
@@ -41,65 +41,7 @@
       },
       "fieldConfig": {
         "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "orange",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 0,
-        "y": 1
-      },
-      "id": 701,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "value",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM (SELECT d.id FROM devices d JOIN repair_requests rr ON rr.device_id = d.id GROUP BY d.id HAVING COUNT(rr.id) >= 2) t",
-          "refId": "A"
-        }
-      ],
-      "title": "С 2+ заявками",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "postgres"
-      },
-      "fieldConfig": {
-        "defaults": {
+          "decimals": 1,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -113,17 +55,18 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "h"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 4,
+        "w": 6,
+        "x": 0,
         "y": 1
       },
-      "id": 702,
+      "id": 401,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
@@ -145,11 +88,11 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM devices WHERE repair_status::text = 'IN_REPAIR'",
+          "rawSql": "SELECT COALESCE(percentile_cont(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM (closed_at - created_at))/3600), 0)::double precision AS v FROM repair_requests WHERE closed_at IS NOT NULL",
           "refId": "A"
         }
       ],
-      "title": "Сейчас в ремонте",
+      "title": "Медиана закрытия (ч)",
       "type": "stat"
     },
     {
@@ -159,6 +102,7 @@
       },
       "fieldConfig": {
         "defaults": {
+          "decimals": 1,
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
@@ -168,21 +112,22 @@
                 "value": 0
               },
               {
-                "color": "yellow",
-                "value": 1
+                "color": "red",
+                "value": 80
               }
             ]
-          }
+          },
+          "unit": "h"
         },
         "overrides": []
       },
       "gridPos": {
         "h": 4,
-        "w": 4,
-        "x": 8,
+        "w": 6,
+        "x": 6,
         "y": 1
       },
-      "id": 703,
+      "id": 402,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
@@ -204,11 +149,11 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM devices WHERE audience_id IS NULL",
+          "rawSql": "SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (closed_at - created_at))/3600), 0)::double precision AS v FROM repair_requests WHERE closed_at IS NOT NULL",
           "refId": "A"
         }
       ],
-      "title": "Без аудитории",
+      "title": "Среднее закрытие (ч)",
       "type": "stat"
     },
     {
@@ -241,7 +186,7 @@
         "x": 12,
         "y": 1
       },
-      "id": 704,
+      "id": 403,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
@@ -263,11 +208,11 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM devices WHERE category_id IS NULL",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE status::text = 'OPEN' AND created_at < NOW() - INTERVAL '7 days'",
           "refId": "A"
         }
       ],
-      "title": "Без категории",
+      "title": "Открыто > 7 дней",
       "type": "stat"
     },
     {
@@ -286,7 +231,7 @@
                 "value": 0
               },
               {
-                "color": "yellow",
+                "color": "orange",
                 "value": 1
               }
             ]
@@ -300,7 +245,7 @@
         "x": 16,
         "y": 1
       },
-      "id": 705,
+      "id": 404,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
@@ -322,11 +267,11 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM devices WHERE responsible_id IS NULL",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE status::text IN ('IN_PROGRESS', 'NEEDS_INFO') AND created_at < NOW() - INTERVAL '7 days'",
           "refId": "A"
         }
       ],
-      "title": "Без ответственного",
+      "title": "В работе > 7 дней",
       "type": "stat"
     },
     {
@@ -359,7 +304,7 @@
         "x": 20,
         "y": 1
       },
-      "id": 706,
+      "id": 405,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
@@ -381,11 +326,11 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_history WHERE new_status::text = 'IN_REPAIR'",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE status::text IN ('OPEN', 'IN_PROGRESS', 'NEEDS_INFO')",
           "refId": "A"
         }
       ],
-      "title": "Переводов в ремонт",
+      "title": "Активных сейчас",
       "type": "stat"
     },
     {
@@ -396,9 +341,9 @@
         "x": 0,
         "y": 5
       },
-      "id": 710,
+      "id": 410,
       "panels": [],
-      "title": "Распределение",
+      "title": "Динамика",
       "type": "row"
     },
     {
@@ -417,16 +362,29 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "fillOpacity": 80,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
             "lineWidth": 1,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -455,45 +413,35 @@
         "x": 0,
         "y": 6
       },
-      "id": 711,
+      "id": 411,
       "options": {
-        "barRadius": 0,
-        "barWidth": 0.97,
-        "displayMode": "gradient",
-        "fullHighlight": false,
-        "groupWidth": 0.7,
         "legend": {
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "showValue": "auto",
-        "stacking": "none",
         "tooltip": {
           "hideZeros": false,
-          "mode": "single",
+          "mode": "multi",
           "sort": "none"
-        },
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
+        }
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "format": "table",
-          "rawSql": "SELECT COALESCE(d.inventory_number, d.name) AS label, COUNT(rr.id)::double precision AS count FROM devices d JOIN repair_requests rr ON rr.device_id = d.id GROUP BY d.id, d.inventory_number, d.name ORDER BY count DESC LIMIT 15",
+          "format": "time_series",
+          "rawSql": "SELECT date_trunc('day', created_at) AS time, COUNT(*)::double precision AS \"Создано\" FROM repair_requests WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1",
           "refId": "A"
+        },
+        {
+          "format": "time_series",
+          "rawSql": "SELECT date_trunc('day', closed_at) AS time, COUNT(*)::double precision AS \"Закрыто\" FROM repair_requests WHERE closed_at IS NOT NULL AND $__timeFilter(closed_at) GROUP BY 1 ORDER BY 1",
+          "refId": "B"
         }
       ],
-      "title": "Топ устройств по заявкам",
-      "type": "barchart"
+      "title": "Создано vs закрыто",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -511,16 +459,29 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "fillOpacity": 80,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
             "lineWidth": 1,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -539,8 +500,7 @@
                 "value": 80
               }
             ]
-          },
-          "unit": "percent"
+          }
         },
         "overrides": []
       },
@@ -550,45 +510,30 @@
         "x": 12,
         "y": 6
       },
-      "id": 712,
+      "id": 412,
       "options": {
-        "barRadius": 0,
-        "barWidth": 0.97,
-        "displayMode": "gradient",
-        "fullHighlight": false,
-        "groupWidth": 0.7,
         "legend": {
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "showValue": "auto",
-        "stacking": "none",
         "tooltip": {
           "hideZeros": false,
           "mode": "single",
           "sort": "none"
-        },
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
+        }
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "format": "table",
-          "rawSql": "SELECT COALESCE(c.name, 'Без категории') AS label, ROUND(100.0 * COUNT(*) FILTER (WHERE d.repair_status::text = 'IN_REPAIR') / NULLIF(COUNT(d.id), 0), 1)::double precision AS count FROM devices d LEFT JOIN categories c ON c.id = d.category_id GROUP BY c.id, c.name HAVING COUNT(d.id) > 0 ORDER BY count DESC LIMIT 15",
+          "format": "time_series",
+          "rawSql": "SELECT date_trunc('day', created_at) AS time, COUNT(*) FILTER (WHERE status::text = 'OPEN')::double precision AS OPEN, COUNT(*) FILTER (WHERE status::text = 'IN_PROGRESS')::double precision AS IN_PROGRESS, COUNT(*) FILTER (WHERE status::text = 'NEEDS_INFO')::double precision AS NEEDS_INFO FROM repair_requests WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1",
           "refId": "A"
         }
       ],
-      "title": "% в ремонте по категориям",
-      "type": "barchart"
+      "title": "Новые заявки по статусу (создание)",
+      "type": "timeseries"
     },
     {
       "collapsed": false,
@@ -598,9 +543,9 @@
         "x": 0,
         "y": 14
       },
-      "id": 720,
+      "id": 420,
       "panels": [],
-      "title": "Проблемные устройства",
+      "title": "Застрявшие",
       "type": "row"
     },
     {
@@ -643,14 +588,14 @@
         "x": 0,
         "y": 15
       },
-      "id": 721,
+      "id": 421,
       "options": {
         "cellHeight": "sm",
         "showHeader": true,
         "sortBy": [
           {
             "desc": true,
-            "displayName": "Заявок"
+            "displayName": "Часов открыта"
           }
         ]
       },
@@ -658,67 +603,11 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT d.inventory_number AS \"Инв. №\", d.name AS \"Название\", COALESCE(c.name, '—') AS \"Категория\", COALESCE(a.name, '—') AS \"Аудитория\", COUNT(rr.id)::double precision AS \"Заявок\", CASE WHEN d.repair_status::text = 'IN_REPAIR' THEN 'да' ELSE 'нет' END AS \"В ремонте\" FROM devices d JOIN repair_requests rr ON rr.device_id = d.id LEFT JOIN categories c ON c.id = d.category_id LEFT JOIN audience a ON a.id = d.audience_id GROUP BY d.id, d.inventory_number, d.name, c.name, a.name, d.repair_status HAVING COUNT(rr.id) >= 2 ORDER BY \"Заявок\" DESC LIMIT 50",
+          "rawSql": "SELECT rr.id::text AS \"ID\", status::text AS \"Статус\", ROUND(EXTRACT(EPOCH FROM (NOW() - rr.created_at))/3600, 1)::double precision AS \"Часов открыта\", COALESCE(d.inventory_number, '—') AS \"Инв. №\", COALESCE(a.name, aud.name, '—') AS \"Аудитория\", rr.created_at AS \"Создана\" FROM repair_requests rr LEFT JOIN devices d ON d.id = rr.device_id LEFT JOIN audience a ON a.id = rr.audience_id LEFT JOIN audience aud ON aud.id = d.audience_id WHERE rr.status::text IN ('OPEN', 'IN_PROGRESS', 'NEEDS_INFO') AND rr.created_at < NOW() - INTERVAL '3 days' ORDER BY rr.created_at ASC LIMIT 100",
           "refId": "A"
         }
       ],
-      "title": "Хроники (2+ заявки)",
-      "type": "table"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "postgres"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "footer": {
-              "reducers": []
-            },
-            "inspect": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 24
-      },
-      "id": 722,
-      "options": {
-        "cellHeight": "sm",
-        "showHeader": true
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "format": "table",
-          "rawSql": "SELECT d.inventory_number AS \"Инв. №\", d.name AS \"Название\", CASE WHEN d.audience_id IS NULL THEN 'нет' ELSE 'да' END AS \"Аудитория\", CASE WHEN d.category_id IS NULL THEN 'нет' ELSE 'да' END AS \"Категория\", CASE WHEN d.responsible_id IS NULL THEN 'нет' ELSE 'да' END AS \"Ответственный\" FROM devices d WHERE d.audience_id IS NULL OR d.category_id IS NULL OR d.responsible_id IS NULL ORDER BY d.inventory_number LIMIT 100",
-          "refId": "A"
-        }
-      ],
-      "title": "Неполный каталог",
+      "title": "Активные > 3 дней",
       "type": "table"
     }
   ],
@@ -727,18 +616,19 @@
   "schemaVersion": 42,
   "tags": [
     "fixmykit",
-    "equipment"
+    "sla",
+    "managers"
   ],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-90d",
+    "from": "now-30d",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Fix My Kit — Оборудование",
-  "uid": "fixmykit-equipment",
-  "version": 1
+  "title": "Fix My Kit — SLA заявок",
+  "uid": "fixmykit-sla",
+  "version": 3
 }

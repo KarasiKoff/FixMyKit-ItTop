@@ -98,25 +98,44 @@ Prod на одной машине, Grafana/Prometheus на другой. Env: `.
 | Prometheus | http://localhost:9090 |
 | Alertmanager | http://localhost:9093 |
 
-В Grafana (папка **Fix My Kit**):
+В Grafana две папки дашбордов:
+
+| Папка | Аудитория |
+|-------|-----------|
+| **Fix My Kit — Менеджерам** | Заявки, SLA, оборудование, пользователи — без HTTP/инфры |
+| **Fix My Kit — Технические** | Backend, API, логи, алерты, cAdvisor |
+
+Стартовые точки: **Обзор (менеджерам)** и **Обзор (технические)** — навигация по ссылкам.
+
+### Менеджерам (`json/managers/`)
 
 | Дашборд | Источник |
 |---------|----------|
-| **Fix My Kit — Backend** | Prometheus (`fixmykit-backend.json`) — HTTP, latency, логи (встроенная панель) |
-| **Fix My Kit — Операции** | PostgreSQL (`fixmykit-operations.json`) — заявки, категории, аудитории |
-| **Fix My Kit — Трекер** | PostgreSQL (`fixmykit-tracker.json`) — задачи Яндекс Трекера, sync вложений |
-| **Fix My Kit — SLA заявок** | PostgreSQL (`fixmykit-sla.json`) — время закрытия, застрявшие заявки, динамика |
-| **Fix My Kit — Инфраструктура** | Prometheus (`fixmykit-infra.json`) — API/БД up, postgres-exporter, cAdvisor |
-| **Fix My Kit — Логи** | Loki (`fixmykit-logs.json`) — ERROR/WARNING, Трекер, HTTP 4xx/5xx |
-| **Fix My Kit — Оборудование** | PostgreSQL (`fixmykit-equipment.json`) — хроники, % в ремонте, неполный каталог |
-| **Fix My Kit — Качество закрытия** | PostgreSQL (`fixmykit-quality.json`) — «Решен» / «Не будет исправлено», NEEDS_INFO |
-| **Fix My Kit — Алерты и SLO** | Prometheus (`fixmykit-alerts.json`) — uptime, firing alerts, HTTP error rate |
-| **Fix My Kit — Пользователи** | PostgreSQL + Loki (`fixmykit-users.json`) — роли, закрытия, комментарии, входы |
-| **Fix My Kit — API детализация** | Prometheus (`fixmykit-api-detail.json`) — latency/RPS/ошибки по handler |
-| **Fix My Kit — Трекер (техн.)** | PostgreSQL + Loki (`fixmykit-tracker-tech.json`) — sync, вложения, webhook |
-| **Fix My Kit — Админ-статистика** | PostgreSQL (`fixmykit-admin-stats.json`) — как `/api/admin/stats` с периодом |
-| **Fix My Kit — Объявления** | PostgreSQL (`fixmykit-announcements.json`) — слоты, severity, активность |
-| **Fix My Kit — Еженедельный отчёт** | PostgreSQL + Prometheus + Loki (`fixmykit-weekly.json`) — сводка за 7 дней |
+| **Обзор (менеджерам)** | Навигация по дашбордам |
+| **Операции** | PostgreSQL — заявки, категории, аудитории |
+| **SLA заявок** | PostgreSQL — время закрытия, застрявшие заявки |
+| **Еженедельный отчёт** | PostgreSQL + Prometheus + Loki — сводка за 7 дней |
+| **Трекер** | PostgreSQL — задачи Яндекс Трекера, sync вложений |
+| **Качество закрытия** | PostgreSQL — резолюции, NEEDS_INFO |
+| **Оборудование** | PostgreSQL — хроники, % в ремонте |
+| **Пользователи** | PostgreSQL + Loki — роли, активность |
+| **Админ-статистика** | PostgreSQL — как `/api/admin/stats` |
+| **Объявления** | PostgreSQL — баннеры на сайте |
+
+### Технические (`json/technical/`)
+
+| Дашборд | Источник |
+|---------|----------|
+| **Обзор (технические)** | Навигация по дашбордам |
+| **Backend** | Prometheus — HTTP, latency, логи (встроенная панель) |
+| **API детализация** | Prometheus — RPS/latency/ошибки по handler |
+| **Алерты и SLO** | Prometheus — uptime, firing alerts, error rate |
+| **Инфраструктура** | Prometheus — cAdvisor, postgres-exporter, up |
+| **Логи** | Loki — ERROR/WARNING, Трекер, HTTP 4xx/5xx |
+| **Трекер (техн.)** | PostgreSQL + Loki — sync pending, webhook |
+
+Теги `managers` / `technical` в Grafana → **Dashboards** → фильтр по тегу.
+
 
 Для дашборда **Операции** в `.env.monitoring`:
 

@@ -508,7 +508,8 @@
   "schemaVersion": 42,
   "tags": [
     "fixmykit",
-    "announcements"
+    "announcements",
+    "managers"
   ],
   "templating": {
     "list": []

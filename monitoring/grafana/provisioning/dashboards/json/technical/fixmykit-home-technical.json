@@ -1,0 +1,70 @@
+﻿{
+    "annotations":  {
+                        "list":  [
+                                     {
+                                         "builtIn":  1,
+                                         "datasource":  {
+                                                            "type":  "grafana",
+                                                            "uid":  "-- Grafana --"
+                                                        },
+                                         "enable":  true,
+                                         "hide":  true,
+                                         "iconColor":  "rgba(0, 211, 255, 1)",
+                                         "name":  "Annotations \u0026 Alerts",
+                                         "type":  "dashboard"
+                                     }
+                                 ]
+                    },
+    "editable":  true,
+    "fiscalYearStartMonth":  0,
+    "graphTooltip":  0,
+    "links":  [
+
+              ],
+    "panels":  [
+                   {
+                       "gridPos":  {
+                                       "h":  22,
+                                       "w":  24,
+                                       "x":  0,
+                                       "y":  0
+                                   },
+                       "id":  1,
+                       "options":  {
+                                       "code":  {
+                                                    "language":  "plaintext",
+                                                    "showLineNumbers":  false,
+                                                    "showMiniMap":  false
+                                                },
+                                       "content":  "## Fix My Kit — обзор для технических специалистов\n\nHTTP-метрики, инфраструктура, логи, алерты Prometheus. Бизнес-дашборды — в папке **Fix My Kit — Менеджерам**.\n\n### Мониторинг сервиса\n\n| Дашборд | Для чего |\n|---------|----------|\n| [Backend](/d/fixmykit-backend) | RPS, latency, 4xx/5xx, встроенные логи |\n| [API детализация](/d/fixmykit-api-detail) | RPS и ошибки по handler, repair-requests vs auth |\n| [Алерты и SLO](/d/fixmykit-alerts) | Uptime API/БД, firing alerts, HTTP error rate |\n| [Инфраструктура](/d/fixmykit-infra) | cAdvisor CPU/RAM, postgres-exporter, up |\n\n### Диагностика\n\n| Дашборд | Для чего |\n|---------|----------|\n| [Логи](/d/fixmykit-logs) | ERROR/WARNING, Трекер, HTTP 4xx/5xx в Loki |\n| [Трекер (техн.)](/d/fixmykit-tracker-tech) | Sync pending, вложения, webhook в логах |\n\n---\n\n**Быстрые проверки:** Explore → Prometheus `up{job=\"fmk-backend\"}`; Loki `{service=\"backend\"} |= \"ERROR\"`.",
+                                       "mode":  "markdown"
+                                   },
+                       "title":  "Навигация",
+                       "type":  "text"
+                   }
+               ],
+    "preload":  false,
+    "refresh":  "",
+    "schemaVersion":  42,
+    "tags":  [
+                 "fixmykit",
+                 "technical",
+                 "home"
+             ],
+    "templating":  {
+                       "list":  [
+
+                                ]
+                   },
+    "time":  {
+                 "from":  "now-24h",
+                 "to":  "now"
+             },
+    "timepicker":  {
+
+                   },
+    "timezone":  "browser",
+    "title":  "Fix My Kit — Обзор (технические)",
+    "uid":  "fixmykit-home-technical",
+    "version":  1
+}

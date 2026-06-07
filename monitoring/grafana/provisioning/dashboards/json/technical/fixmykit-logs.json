@@ -488,7 +488,8 @@
   "schemaVersion": 42,
   "tags": [
     "fixmykit",
-    "logs"
+    "logs",
+    "technical"
   ],
   "templating": {
     "list": []

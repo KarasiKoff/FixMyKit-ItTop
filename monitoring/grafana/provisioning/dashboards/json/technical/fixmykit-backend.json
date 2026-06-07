@@ -854,7 +854,8 @@
   "schemaVersion": 42,
   "tags": [
     "fixmykit",
-    "backend"
+    "backend",
+    "technical"
   ],
   "templating": {
     "list": [
