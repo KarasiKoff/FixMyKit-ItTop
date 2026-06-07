@@ -1027,7 +1027,7 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COALESCE(a.name, 'Без аудитории') AS \"Аудитория\", COUNT(*) FILTER (WHERE d.repair_status::text = 'IN_REPAIR')::double precision AS \"В ремонте\", COUNT(d.id)::double precision AS \"Всего устройств\" FROM devices d LEFT JOIN audience a ON a.id = d.audience_id GROUP BY a.id, a.name ORDER BY \"В ремонте\" DESC, \"Всего устройств\" DESC LIMIT 20",
+          "rawSql": "SELECT COALESCE(a.name, 'Без аудитории') AS \"Аудитория\", COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM repair_requests rr WHERE rr.device_id = d.id AND rr.status::text IN ('IN_PROGRESS', 'NEEDS_INFO')))::double precision AS \"В ремонте\", COUNT(d.id)::double precision AS \"Всего устройств\" FROM devices d LEFT JOIN audience a ON a.id = d.audience_id GROUP BY a.id, a.name ORDER BY \"В ремонте\" DESC, \"Всего устройств\" DESC LIMIT 20",
           "refId": "A"
         }
       ],
@@ -1126,7 +1126,7 @@
           "editorMode": "code",
           "format": "table",
           "rawQuery": true,
-          "rawSql": "SELECT\r\n  COALESCE(a.name, 'Без аудитории') AS \"Аудитория\",\r\n  COUNT(d.id)::double precision AS \"Устройств\",\r\n  COUNT(*) FILTER (\r\n    WHERE EXISTS (\r\n      SELECT 1 FROM repair_requests rr\r\n      WHERE rr.device_id = d.id\r\n        AND rr.status::text IN ('IN_PROGRESS', 'NEEDS_INFO')\r\n    )\r\n  )::double precision AS \"В ремонте\",\r\n  ROUND(\r\n    100.0 * COUNT(*) FILTER (\r\n      WHERE EXISTS (\r\n        SELECT 1 FROM repair_requests rr\r\n        WHERE rr.device_id = d.id\r\n          AND rr.status::text IN ('IN_PROGRESS', 'NEEDS_INFO')\r\n      )\r\n    ) / NULLIF(COUNT(d.id), 0),\r\n    1\r\n  ) AS \"% в ремонте\",\r\n  (\r\n    SELECT COUNT(*)::double precision\r\n    FROM repair_requests rr\r\n    WHERE rr.status::text IN ('OPEN', 'IN_PROGRESS', 'NEEDS_INFO')\r\n      AND (\r\n        rr.audience_id IS NOT DISTINCT FROM a.id\r\n        OR EXISTS (\r\n          SELECT 1 FROM devices d_rr\r\n          WHERE d_rr.id = rr.device_id\r\n            AND d_rr.audience_id IS NOT DISTINCT FROM a.id\r\n        )\r\n      )\r\n  ) AS \"Активных заявок\"\r\nFROM devices d\r\nLEFT JOIN audience a ON a.id = d.audience_id\r\nGROUP BY a.id, a.name\r\nORDER BY \"В ремонте\" DESC NULLS LAST, \"Устройств\" DESC",
+          "rawSql": "SELECT COALESCE(a.name, 'Без аудитории') AS \"Аудитория\", COUNT(d.id)::double precision AS \"Устройств\", COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM repair_requests rr WHERE rr.device_id = d.id AND rr.status::text IN ('IN_PROGRESS', 'NEEDS_INFO')))::double precision AS \"В ремонте\", ROUND(100.0 * COUNT(*) FILTER (WHERE EXISTS (SELECT 1 FROM repair_requests rr WHERE rr.device_id = d.id AND rr.status::text IN ('IN_PROGRESS', 'NEEDS_INFO'))) / NULLIF(COUNT(d.id), 0), 1) AS \"% в ремонте\", (SELECT COUNT(*)::double precision FROM repair_requests rr WHERE rr.status::text IN ('OPEN', 'IN_PROGRESS', 'NEEDS_INFO') AND (rr.audience_id IS NOT DISTINCT FROM a.id OR EXISTS (SELECT 1 FROM devices d_rr WHERE d_rr.id = rr.device_id AND d_rr.audience_id IS NOT DISTINCT FROM a.id))) AS \"Активных заявок\" FROM devices d LEFT JOIN audience a ON a.id = d.audience_id GROUP BY a.id, a.name ORDER BY \"В ремонте\" DESC NULLS LAST, \"Устройств\" DESC",
           "refId": "A",
           "sql": {
             "columns": [
