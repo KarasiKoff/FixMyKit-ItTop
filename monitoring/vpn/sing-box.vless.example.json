@@ -1,0 +1,37 @@
+{
+  "log": { "level": "warn" },
+  "inbounds": [
+    {
+      "type": "mixed",
+      "tag": "mixed-in",
+      "listen": "0.0.0.0",
+      "listen_port": 1080,
+      "sniff": true
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "vless",
+      "tag": "proxy",
+      "server": "YOUR_VLESS_HOST.karasikoff.ru",
+      "server_port": 43000,
+      "uuid": "YOUR_UUID",
+      "flow": "xtls-rprx-vision",
+      "tls": {
+        "enabled": true,
+        "server_name": "www.YOUR_SNI",
+        "utls": {
+          "enabled": true,
+          "fingerprint": "randomized"
+        },
+        "reality": {
+          "enabled": true,
+          "public_key": "FULL_REALITY_PUBLIC_KEY",
+          "short_id": "5d"
+        }
+      }
+    },
+    { "type": "direct", "tag": "direct" }
+  ],
+  "route": { "final": "proxy" }
+}

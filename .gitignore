@@ -229,3 +229,5 @@ package-lock.json
 
 data/uploads/
 data/logs/
+
+monitoring/vpn/sing-box.json

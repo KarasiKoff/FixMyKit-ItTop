@@ -263,3 +263,5 @@ curl -X POST http://localhost:9093/api/v2/alerts -H 'Content-Type: application/j
 ```
 
 Если бот получает **429 Too Many Requests** — уменьшите частоту правил или добавьте `group_wait` / `repeat_interval` в [`alertmanager/alertmanager.yml`](alertmanager/alertmanager.yml).
+
+**Telegram через VPN (VLESS / Hysteria2):** VPN нужен **`alertserver`**, не Alertmanager. Профиль `telegram-vpn` + sing-box — [`vpn/README.md`](vpn/README.md).

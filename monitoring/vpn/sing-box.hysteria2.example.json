@@ -1,0 +1,28 @@
+{
+  "log": { "level": "warn" },
+  "inbounds": [
+    {
+      "type": "mixed",
+      "tag": "mixed-in",
+      "listen": "0.0.0.0",
+      "listen_port": 1080,
+      "sniff": true
+    }
+  ],
+  "outbounds": [
+    {
+      "type": "hysteria2",
+      "tag": "proxy",
+      "server": "web.YOUR_SUBDOMAIN.karasikoff.ru",
+      "server_port": 443,
+      "password": "HYSTERIA2_PASSWORD",
+      "tls": {
+        "enabled": true,
+        "server_name": "YOUR_SNI.karasikoff.ru",
+        "alpn": ["h3"]
+      }
+    },
+    { "type": "direct", "tag": "direct" }
+  ],
+  "route": { "final": "proxy" }
+}
