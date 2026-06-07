@@ -83,7 +83,13 @@ function formatValidationIssues(detail: unknown): string {
 
 function formatDetail(detail: unknown, status: number): string {
     if (typeof detail === 'string') {
-        return translateHeuristic(detail) ?? DETAIL_RU[detail] ?? detail;
+        const mapped = translateHeuristic(detail) ?? DETAIL_RU[detail];
+        if (mapped) {
+            return mapped;
+        }
+        if (detail.trim()) {
+            return detail;
+        }
     }
     if (Array.isArray(detail)) {
         return formatValidationIssues(detail);

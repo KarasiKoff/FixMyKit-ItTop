@@ -25,6 +25,11 @@ describe('formatApiError', () => {
     it('translates tracker_unavailable', () => {
         expect(formatApiError(new ApiError(502, 'tracker_unavailable'))).toContain('Трекер');
     });
+
+    it('maps empty body by HTTP status', () => {
+        expect(formatApiError(new ApiError(500, ''))).toBe('Ошибка сервера. Попробуйте позже');
+        expect(formatApiError(new ApiError(413, ''))).toContain('слишком большой');
+    });
 });
 
 describe('TRACKER_SYNC_PENDING_TOAST', () => {
