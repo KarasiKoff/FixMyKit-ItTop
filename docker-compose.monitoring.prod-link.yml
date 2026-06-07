@@ -1,4 +1,4 @@
-# Сценарий 3: prod отдельно, мониторинг отдельно (подключение к сети fixmykit-prod).
+# Сценарий B: prod уже на VPS, мониторинг отдельным проектом fmk-monitoring (monitoring/PRODUCTION.md)
 # Сначала: docker compose -f docker-compose.prod.yml --env-file .env.production up -d
 #
 # docker compose -p fmk-monitoring \

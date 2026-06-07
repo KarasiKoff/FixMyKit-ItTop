@@ -1,4 +1,4 @@
-# Сценарий 2: prod и мониторинг одной командой (один проект fixmykit-prod).
+# Сценарий A: prod + мониторинг на одном VPS, одной командой (см. monitoring/PRODUCTION.md)
 #
 # docker compose \
 #   -f docker-compose.prod.yml \

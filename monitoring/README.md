@@ -2,13 +2,14 @@
 
 Запуск **из корня репозитория**. Конфиги — в каталоге `monitoring/`, переменные — в `.env.monitoring`.
 
-## Три сценария
+## Три сценария (локалка + prod)
 
 | # | Сценарий | Когда использовать |
 |---|----------|-------------------|
 | **1** | **Локалка** | Dev-стек (`docker-compose.yml`) + мониторинг в отдельном проекте `fmk-monitoring` |
-| **2** | **Prod = prod** | Продакшен и мониторинг **одной** командой, общая сеть `fixmykit-prod` |
-| **3** | **Prod отдельно** | Сначала только prod, потом мониторинг отдельно (подключается к сети prod) |
+| **2** | **Prod A — bundle** | Один VPS: prod + мониторинг **одной** командой → [`PRODUCTION.md`](PRODUCTION.md#a-всё-на-одном-сервере-bundle) |
+| **3** | **Prod B — link** | Один VPS: prod и мониторинг **разными** compose → [`PRODUCTION.md`](PRODUCTION.md#b-prod-и-мониторинг-раздельно-один-vps-два-compose) |
+| **4** | **Prod C — remote** | **Два VPS**: prod и monitoring на разных машинах → [`PRODUCTION.md`](PRODUCTION.md#c-prod-и-мониторинг-на-разных-vps) |
 
 ### 1. Локалка
 
@@ -31,7 +32,9 @@ Scrape: `backend:8000`, PostgreSQL: `postgres:5432` (сеть `fixmykit-dev`).
 
 ---
 
-### 2. Prod и мониторинг вместе
+### 2. Prod и мониторинг вместе (сценарий A — один сервер)
+
+Один VPS, один `docker compose`. Подробно: [`monitoring/PRODUCTION.md`](PRODUCTION.md#a-всё-на-одном-сервере-bundle).
 
 ```bash
 cp .env.monitoring.prod.example .env.monitoring
@@ -49,7 +52,9 @@ docker compose \
 
 ---
 
-### 3. Prod отдельно, мониторинг отдельно
+### 3. Prod отдельно, мониторинг отдельно (сценарий B — один VPS, два compose)
+
+Prod уже работает; мониторинг добавляется вторым проектом. Подробно: [`monitoring/PRODUCTION.md`](PRODUCTION.md#b-prod-и-мониторинг-раздельно-один-vps-два-compose).
 
 ```bash
 cp .env.monitoring.prod-standalone.example .env.monitoring
@@ -57,7 +62,7 @@ cp .env.monitoring.prod-standalone.example .env.monitoring
 # Сначала prod
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
 
-# Потом мониторинг (проект fmk-monitoring, внешняя сеть fixmykit-prod)
+# Потом мониторинг (проект fmk-monitoring, сеть fixmykit-prod)
 docker compose -p fmk-monitoring \
   -f docker-compose.monitoring.yml \
   -f docker-compose.monitoring.prod-link.yml \
@@ -65,6 +70,13 @@ docker compose -p fmk-monitoring \
 ```
 
 Остановка только мониторинга: `docker compose -p fmk-monitoring -f docker-compose.monitoring.yml down` — prod не трогается.
+
+---
+
+### 4. Prod и мониторинг на разных VPS (сценарий C)
+
+Prod на одной машине, Grafana/Prometheus на другой. Env: `.env.monitoring.prod-remote.example`.  
+Подробно: [`monitoring/PRODUCTION.md`](PRODUCTION.md#c-prod-и-мониторинг-на-разных-vps).
 
 ---
 
@@ -194,7 +206,10 @@ BACKEND_METRICS_TARGET=host.docker.internal:8000
 
 ## Безопасность
 
-Не выставляйте порты 9090/3000/9093 в интернет без защиты (VPN, SSH-туннель, reverse proxy с auth).
+Не выставляйте порты 9090/3000/9093 в интернет без защиты.
+
+**Production:** пошаговый выкат с поддоменом Grafana, закрытым `/metrics` и localhost-портами — [`PRODUCTION.md`](PRODUCTION.md).  
+Примеры nginx: [`deploy/nginx-fixmykit-monitoring.example.conf`](../deploy/nginx-fixmykit-monitoring.example.conf), блок `/metrics` в [`deploy/nginx-fixmykit.example.conf`](../deploy/nginx-fixmykit.example.conf).
 
 ## Алерты в Telegram
 
