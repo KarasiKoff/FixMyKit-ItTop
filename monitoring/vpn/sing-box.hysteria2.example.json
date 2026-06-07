@@ -1,28 +1,43 @@
 {
-  "log": { "level": "warn" },
+  "log": {
+    "level": "warn"
+  },
   "inbounds": [
     {
       "type": "mixed",
       "tag": "mixed-in",
       "listen": "0.0.0.0",
-      "listen_port": 1080,
-      "sniff": true
+      "listen_port": 1080
     }
   ],
   "outbounds": [
     {
       "type": "hysteria2",
       "tag": "proxy",
-      "server": "web.YOUR_SUBDOMAIN.karasikoff.ru",
+      "server": "YOUR_HYSTERIA_HOST",
       "server_port": 443,
-      "password": "HYSTERIA2_PASSWORD",
+      "password": "PASTE_PASSWORD_FROM_SUBSCRIPTION",
       "tls": {
         "enabled": true,
-        "server_name": "YOUR_SNI.karasikoff.ru",
-        "alpn": ["h3"]
+        "server_name": "YOUR_HYSTERIA_HOST",
+        "alpn": [
+          "h3"
+        ]
       }
     },
-    { "type": "direct", "tag": "direct" }
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
   ],
-  "route": { "final": "proxy" }
+  "route": {
+    "rules": [
+      {
+        "inbound": "mixed-in",
+        "action": "sniff",
+        "timeout": "1s"
+      }
+    ],
+    "final": "proxy"
+  }
 }

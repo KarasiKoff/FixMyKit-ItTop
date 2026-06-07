@@ -1,25 +1,26 @@
 {
-  "log": { "level": "warn" },
+  "log": {
+    "level": "warn"
+  },
   "inbounds": [
     {
       "type": "mixed",
       "tag": "mixed-in",
       "listen": "0.0.0.0",
-      "listen_port": 1080,
-      "sniff": true
+      "listen_port": 1080
     }
   ],
   "outbounds": [
     {
       "type": "vless",
       "tag": "proxy",
-      "server": "YOUR_VLESS_HOST.karasikoff.ru",
+      "server": "YOUR_VLESS_HOST",
       "server_port": 43000,
       "uuid": "YOUR_UUID",
       "flow": "xtls-rprx-vision",
       "tls": {
         "enabled": true,
-        "server_name": "www.YOUR_SNI",
+        "server_name": "YOUR_SNI",
         "utls": {
           "enabled": true,
           "fingerprint": "randomized"
@@ -31,7 +32,19 @@
         }
       }
     },
-    { "type": "direct", "tag": "direct" }
+    {
+      "type": "direct",
+      "tag": "direct"
+    }
   ],
-  "route": { "final": "proxy" }
+  "route": {
+    "rules": [
+      {
+        "inbound": "mixed-in",
+        "action": "sniff",
+        "timeout": "1s"
+      }
+    ],
+    "final": "proxy"
+  }
 }
