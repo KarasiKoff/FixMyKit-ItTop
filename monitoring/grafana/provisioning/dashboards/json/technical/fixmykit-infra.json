@@ -19,7 +19,30 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": 8,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Backend",
+      "type": "link",
+      "url": "/d/fixmykit-backend"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Алерты",
+      "type": "link",
+      "url": "/d/fixmykit-alerts"
+    }
+  ],
   "panels": [
     {
       "collapsed": false,
@@ -755,7 +778,8 @@
   "schemaVersion": 42,
   "tags": [
     "fixmykit",
-    "infra"
+    "infra",
+    "technical"
   ],
   "templating": {
     "list": [

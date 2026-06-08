@@ -18,8 +18,21 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 16,
-  "links": [],
+  "id": 7,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Трекер (техн.)",
+      "tooltip": "Логи webhook и outbound",
+      "type": "link",
+      "url": "/d/fixmykit-tracker-tech"
+    }
+  ],
   "panels": [
     {
       "collapsed": false,
@@ -29,9 +42,9 @@
         "x": 0,
         "y": 0
       },
-      "id": 1400,
+      "id": 300,
       "panels": [],
-      "title": "Объявления",
+      "title": "Яндекс Трекер",
       "type": "row"
     },
     {
@@ -60,14 +73,14 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
+        "w": 4,
         "x": 0,
         "y": 1
       },
-      "id": 1401,
+      "id": 301,
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -79,18 +92,18 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value",
         "wideLayout": true
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM site_announcements WHERE is_enabled = true",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE tracker_ticket_id IS NOT NULL AND BTRIM(tracker_ticket_id) <> ''",
           "refId": "A"
         }
       ],
-      "title": "Включено слотов",
+      "title": "С задачей в Трекере",
       "type": "stat"
     },
     {
@@ -109,7 +122,66 @@
                 "value": 0
               },
               {
-                "color": "blue",
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 4,
+        "x": 4,
+        "y": 1
+      },
+      "id": 302,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE tracker_ticket_id IS NULL OR BTRIM(tracker_ticket_id) = ''",
+          "refId": "A"
+        }
+      ],
+      "title": "Без задачи",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
                 "value": 1
               }
             ]
@@ -119,14 +191,14 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 6,
+        "w": 4,
+        "x": 8,
         "y": 1
       },
-      "id": 1402,
+      "id": 303,
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -138,18 +210,18 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value",
         "wideLayout": true
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM site_announcements WHERE is_enabled = true AND (starts_at IS NULL OR starts_at <= NOW()) AND (ends_at IS NULL OR ends_at >= NOW())",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE tracker_status_sync_pending = true",
           "refId": "A"
         }
       ],
-      "title": "Активны сейчас",
+      "title": "Ожидают sync статуса",
       "type": "stat"
     },
     {
@@ -178,14 +250,14 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
+        "w": 4,
         "x": 12,
         "y": 1
       },
-      "id": 1403,
+      "id": 304,
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -197,18 +269,18 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value",
         "wideLayout": true
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM site_announcements WHERE is_enabled = true AND starts_at IS NOT NULL AND starts_at > NOW()",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE is_published = true",
           "refId": "A"
         }
       ],
-      "title": "Запланированы",
+      "title": "Опубликовано",
       "type": "stat"
     },
     {
@@ -227,8 +299,8 @@
                 "value": 0
               },
               {
-                "color": "red",
-                "value": 80
+                "color": "orange",
+                "value": 1
               }
             ]
           }
@@ -237,14 +309,14 @@
       },
       "gridPos": {
         "h": 4,
-        "w": 6,
-        "x": 18,
+        "w": 4,
+        "x": 16,
         "y": 1
       },
-      "id": 1404,
+      "id": 305,
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -256,18 +328,18 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value",
         "wideLayout": true
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM site_announcements WHERE is_enabled = true AND ends_at IS NOT NULL AND ends_at < NOW()",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE status::text NOT IN ('CLOSED', 'closed') AND tracker_ticket_id IS NOT NULL AND BTRIM(tracker_ticket_id) <> '' AND (last_sync_at IS NULL OR last_sync_at < NOW() - INTERVAL '24 hours')",
           "refId": "A"
         }
       ],
-      "title": "Истекли",
+      "title": "Без sync > 24ч",
       "type": "stat"
     },
     {
@@ -277,58 +349,68 @@
       },
       "fieldConfig": {
         "defaults": {
-          "color": {
-            "mode": "palette-classic"
+          "mappings": [],
+          "noValue": "никогда",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              }
+            ]
           },
-          "custom": {
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            }
-          },
-          "mappings": []
+          "unit": "dateTimeAsLocal"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 8,
+        "h": 4,
+        "w": 4,
+        "x": 20,
+        "y": 1
+      },
+      "id": 306,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "/^time$/",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "format": "table",
+          "rawSql": "SELECT MAX(last_sync_at) AS time FROM repair_requests",
+          "refId": "A"
+        }
+      ],
+      "title": "Последний sync",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
         "x": 0,
         "y": 5
       },
-      "id": 1405,
-      "options": {
-        "legend": {
-          "displayMode": "table",
-          "placement": "right",
-          "showLegend": true
-        },
-        "pieType": "donut",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": true
-        },
-        "sort": "desc",
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "format": "table",
-          "rawSql": "SELECT severity::text AS label, COUNT(*)::double precision AS count FROM site_announcements WHERE is_enabled = true GROUP BY 1",
-          "refId": "A"
-        }
-      ],
-      "title": "Severity (включённые)",
-      "type": "piechart"
+      "id": 310,
+      "panels": [],
+      "title": "Обзор вложений и статусов",
+      "type": "row"
     },
     {
       "datasource": {
@@ -353,11 +435,11 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 8,
-        "y": 5
+        "w": 12,
+        "x": 0,
+        "y": 6
       },
-      "id": 1406,
+      "id": 311,
       "options": {
         "legend": {
           "displayMode": "table",
@@ -383,11 +465,11 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT audience::text AS label, COUNT(*)::double precision AS count FROM site_announcements WHERE is_enabled = true GROUP BY 1",
+          "rawSql": "SELECT attachments_sync_status::text AS label, COUNT(*)::double precision AS count FROM repair_requests GROUP BY 1 ORDER BY count DESC",
           "refId": "A"
         }
       ],
-      "title": "Аудитория показа",
+      "title": "Синхронизация вложений",
       "type": "piechart"
     },
     {
@@ -397,15 +479,29 @@
       },
       "fieldConfig": {
         "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
           "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
             },
-            "footer": {
-              "reducers": []
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
             },
-            "inspect": false
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "mappings": [],
           "thresholds": {
@@ -426,25 +522,62 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 5
+        "w": 12,
+        "x": 12,
+        "y": 6
       },
-      "id": 1407,
+      "id": 312,
       "options": {
-        "cellHeight": "sm",
-        "showHeader": true
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "displayMode": "gradient",
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT slot AS \"Слот\", CASE WHEN is_enabled THEN 'да' ELSE 'нет' END AS \"Вкл\", LEFT(message, 80) AS \"Текст\", severity::text AS \"Severity\", audience::text AS \"Кому\", starts_at AS \"С\", ends_at AS \"До\", updated_at AS \"Обновлено\" FROM site_announcements ORDER BY slot",
+          "rawSql": "SELECT COALESCE(NULLIF(BTRIM(tracker_status_label), ''), CASE status::text WHEN 'OPEN' THEN 'Открыт' WHEN 'IN_PROGRESS' THEN 'В работе' WHEN 'NEEDS_INFO' THEN 'Требуется информация' WHEN 'CLOSED' THEN 'Закрыт' ELSE status::text END) AS label, COUNT(*)::double precision AS count FROM repair_requests GROUP BY 1 ORDER BY count DESC LIMIT 12",
           "refId": "A"
         }
       ],
-      "title": "Слоты 1 и 2",
-      "type": "table"
+      "title": "Метки статуса Трекера",
+      "type": "barchart"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 14
+      },
+      "id": 320,
+      "panels": [],
+      "title": "Проблемные заявки",
+      "type": "row"
     },
     {
       "datasource": {
@@ -484,22 +617,28 @@
         "h": 9,
         "w": 24,
         "x": 0,
-        "y": 13
+        "y": 15
       },
-      "id": 1408,
+      "id": 321,
       "options": {
         "cellHeight": "sm",
-        "showHeader": true
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Создана"
+          }
+        ]
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT sa.slot AS \"Слот\", sa.message AS \"Сообщение\", sa.severity::text AS \"Severity\", sa.audience::text AS \"Аудитория\", sa.link_url AS \"Ссылка\", sa.emoji AS \"Emoji\", COALESCE(u.login, '—') AS \"Обновил\", sa.updated_at AS \"Обновлено\" FROM site_announcements sa LEFT JOIN users u ON u.id = sa.updated_by_user_id ORDER BY sa.slot",
+          "rawSql": "SELECT tracker_ticket_key AS \"Ключ\", status::text AS \"Статус\", attachments_sync_status::text AS \"Вложения\", tracker_status_sync_pending AS \"Sync pending\", last_sync_at AS \"Последний sync\", created_at AS \"Создана\" FROM repair_requests WHERE status::text NOT IN ('CLOSED', 'closed') AND (tracker_status_sync_pending = true OR (attachments_sync_status::text IN ('partial', 'none') AND has_attachments = true) OR (tracker_ticket_id IS NOT NULL AND BTRIM(tracker_ticket_id) <> '' AND (last_sync_at IS NULL OR last_sync_at < NOW() - INTERVAL '24 hours'))) ORDER BY created_at DESC LIMIT 50",
           "refId": "A"
         }
       ],
-      "title": "Детали объявлений",
+      "title": "Требуют внимания",
       "type": "table"
     }
   ],
@@ -508,7 +647,8 @@
   "schemaVersion": 42,
   "tags": [
     "fixmykit",
-    "announcements"
+    "tracker",
+    "managers"
   ],
   "templating": {
     "list": []
@@ -519,7 +659,7 @@
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Fix My Kit — Объявления",
-  "uid": "fixmykit-announcements",
-  "version": 1
+  "title": "Fix My Kit — Трекер",
+  "uid": "fixmykit-tracker",
+  "version": 4
 }

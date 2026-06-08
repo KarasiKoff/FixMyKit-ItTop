@@ -19,7 +19,52 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": 3,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "API детализация",
+      "type": "link",
+      "url": "/d/fixmykit-api-detail"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Логи",
+      "type": "link",
+      "url": "/d/fixmykit-logs"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Алерты",
+      "type": "link",
+      "url": "/d/fixmykit-alerts"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Инфра",
+      "type": "link",
+      "url": "/d/fixmykit-infra"
+    }
+  ],
   "panels": [
     {
       "datasource": {
@@ -77,7 +122,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum(http_requests_total{job=~\"$job\", handler!=\"/metrics\"})",
+          "expr": "sum(http_requests_total{job=\"fmk-backend\", handler!=\"/metrics\"})",
           "format": "time_series",
           "instant": false,
           "interval": "",
@@ -143,7 +188,7 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "sum by (method, handler) (increase(http_requests_total{job=~\"$job\", handler!=\"/metrics\"}[24h]))",
+          "expr": "sum by (method, handler) (increase(http_requests_total{job=\"fmk-backend\", handler!=\"/metrics\"}[24h]))",
           "instant": true,
           "legendFormat": "{{method}} {{handler}}",
           "range": false,
@@ -221,7 +266,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "(\n  sum by (method, handler) (\n    increase(http_request_duration_seconds_sum{job=~\"$job\", handler!~\"/metrics|/api/events/stream\"}[$__range])\n  )\n  /\n  sum by (method, handler) (\n    increase(http_request_duration_seconds_count{job=~\"$job\", handler!~\"/metrics|/api/events/stream\"}[$__range])\n  )\n)\nand on (method, handler)\n  sum by (method, handler) (\n    increase(http_request_duration_seconds_count{job=~\"$job\", handler!~\"/metrics|/api/events/stream\"}[$__range])\n  ) >= 1",
+          "expr": "(\n  sum by (method, handler) (\n    increase(http_request_duration_seconds_sum{job=\"fmk-backend\", handler!~\"/metrics|/api/events/stream\"}[$__range])\n  )\n  /\n  sum by (method, handler) (\n    increase(http_request_duration_seconds_count{job=\"fmk-backend\", handler!~\"/metrics|/api/events/stream\"}[$__range])\n  )\n)\nand on (method, handler)\n  sum by (method, handler) (\n    increase(http_request_duration_seconds_count{job=\"fmk-backend\", handler!~\"/metrics|/api/events/stream\"}[$__range])\n  ) >= 1",
           "instant": true,
           "legendFormat": "{{handler}} - {{method}}",
           "range": false,
@@ -287,7 +332,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(http_requests_total{job=~\"$job\", status=~\"4xx|5xx\"})",
+          "expr": "sum(http_requests_total{job=\"fmk-backend\", status=~\"4xx|5xx\"})",
           "instant": true,
           "legendFormat": "",
           "range": false,
@@ -389,7 +434,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(http_requests_total{job=~\"$job\", status=\"4xx\"}[5m])) / sum(rate(http_requests_total{job=~\"$job\"}[5m]))",
+          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", status=\"4xx\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"fmk-backend\"}[5m])), 1e-9)",
           "instant": false,
           "legendFormat": "",
           "range": true,
@@ -490,7 +535,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(http_requests_total{job=~\"$job\", status=\"5xx\"}[5m])) / sum(rate(http_requests_total{job=~\"$job\"}[5m]))",
+          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", status=\"5xx\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"fmk-backend\"}[5m])), 1e-9)",
           "instant": false,
           "legendFormat": "",
           "range": true,
@@ -590,7 +635,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=~\"$job\", handler!~\"/metrics|/api/events/stream\"}[5m])) by (handler, le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"fmk-backend\", handler!~\"/metrics|/api/events/stream\"}[5m])) by (handler, le))",
           "instant": false,
           "legendFormat": "{{handler}}",
           "range": true,
@@ -689,7 +734,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by (handler) (rate(http_requests_total{job=~\"$job\", handler!=\"/metrics\"}[5m]))",
+          "expr": "sum by (handler) (rate(http_requests_total{job=\"fmk-backend\", handler!=\"/metrics\"}[5m]))",
           "instant": false,
           "legendFormat": "{{handler}}",
           "range": true,
@@ -789,7 +834,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(rate(http_requests_total{job=~\"$job\"}[1m])) by (handler)",
+          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\"}[1m])) by (handler)",
           "instant": false,
           "legendFormat": "{{handler}}",
           "range": true,
@@ -854,32 +899,11 @@
   "schemaVersion": 42,
   "tags": [
     "fixmykit",
-    "backend"
+    "backend",
+    "technical"
   ],
   "templating": {
     "list": [
-      {
-        "current": {
-          "text": "fmk-backend",
-          "value": "fmk-backend"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "prometheus"
-        },
-        "definition": "label_values(http_requests_total, job)",
-        "includeAll": false,
-        "label": "Prometheus job",
-        "name": "job",
-        "options": [],
-        "query": {
-          "qryType": 1,
-          "query": "label_values(http_requests_total, job)",
-          "refId": "PrometheusVariableQueryEditor-VariableQuery"
-        },
-        "refresh": 1,
-        "type": "query"
-      },
       {
         "current": {
           "text": "backend",
@@ -911,12 +935,12 @@
     ]
   },
   "time": {
-    "from": "now-5m",
+    "from": "now-24h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Fix My Kit — Backend",
   "uid": "fixmykit-backend",
-  "version": 5
+  "version": 8
 }

@@ -18,20 +18,46 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 11,
+  "id": 14,
   "links": [],
   "panels": [
     {
-      "collapsed": false,
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
       "gridPos": {
-        "h": 1,
+        "h": 2,
         "w": 24,
         "x": 0,
         "y": 0
       },
-      "id": 700,
+      "id": 1500,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "# Еженедельный отчёт\nСводка за выбранный период (по умолчанию **7 дней**)",
+        "mode": "markdown"
+      },
+      "pluginVersion": "12.3.1",
+      "title": "",
+      "transparent": true,
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 2
+      },
+      "id": 1501,
       "panels": [],
-      "title": "Оборудование",
+      "title": "Заявки за неделю",
       "type": "row"
     },
     {
@@ -50,8 +76,8 @@
                 "value": 0
               },
               {
-                "color": "orange",
-                "value": 1
+                "color": "red",
+                "value": 80
               }
             ]
           }
@@ -59,15 +85,15 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 5,
         "w": 4,
         "x": 0,
-        "y": 1
+        "y": 3
       },
-      "id": 701,
+      "id": 1502,
       "options": {
         "colorMode": "background",
-        "graphMode": "none",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -86,11 +112,11 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM (SELECT d.id FROM devices d JOIN repair_requests rr ON rr.device_id = d.id GROUP BY d.id HAVING COUNT(rr.id) >= 2) t",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE $__timeFilter(created_at)",
           "refId": "A"
         }
       ],
-      "title": "С 2+ заявками",
+      "title": "Создано",
       "type": "stat"
     },
     {
@@ -118,15 +144,15 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 5,
         "w": 4,
         "x": 4,
-        "y": 1
+        "y": 3
       },
-      "id": 702,
+      "id": 1503,
       "options": {
         "colorMode": "background",
-        "graphMode": "none",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -138,195 +164,18 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "value",
+        "textMode": "auto",
         "wideLayout": true
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM devices WHERE repair_status::text = 'IN_REPAIR'",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE closed_at IS NOT NULL AND $__timeFilter(closed_at)",
           "refId": "A"
         }
       ],
-      "title": "Сейчас в ремонте",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "postgres"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 8,
-        "y": 1
-      },
-      "id": 703,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "value",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM devices WHERE audience_id IS NULL",
-          "refId": "A"
-        }
-      ],
-      "title": "Без аудитории",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "postgres"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 12,
-        "y": 1
-      },
-      "id": 704,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "value",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM devices WHERE category_id IS NULL",
-          "refId": "A"
-        }
-      ],
-      "title": "Без категории",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "postgres"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 4,
-        "w": 4,
-        "x": 16,
-        "y": 1
-      },
-      "id": 705,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "none",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "value",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM devices WHERE responsible_id IS NULL",
-          "refId": "A"
-        }
-      ],
-      "title": "Без ответственного",
+      "title": "Закрыто",
       "type": "stat"
     },
     {
@@ -354,12 +203,358 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 4,
+        "h": 5,
+        "w": 4,
+        "x": 8,
+        "y": 3
+      },
+      "id": 1504,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE (resolution_note = 'Решен' OR resolution_desc = 'Решен') AND $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "title": "Решено",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 12,
+        "y": 3
+      },
+      "id": 1505,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE status::text = 'CLOSED' AND (resolution_note = 'Не будет исправлено' OR resolution_desc = 'Не будет исправлено') AND $__timeFilter(created_at)",
+          "refId": "A"
+        }
+      ],
+      "title": "Отказов",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 4,
+        "x": 16,
+        "y": 3
+      },
+      "id": 1506,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE status::text IN ('OPEN', 'IN_PROGRESS', 'NEEDS_INFO')",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "Активных сейчас",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
         "w": 4,
         "x": 20,
-        "y": 1
+        "y": 3
       },
-      "id": 706,
+      "id": 1507,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT COUNT(*)::double precision AS \"Активных\" FROM repair_requests WHERE status::text IN ('IN_PROGRESS', 'NEEDS_INFO')",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "В ремонте",
+      "type": "stat"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 8
+      },
+      "id": 1510,
+      "panels": [],
+      "title": "Яндекс Трекер",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 9
+      },
+      "id": 1514,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE last_sync_at IS NOT NULL AND $__timeFilter(last_sync_at)",
+          "refId": "A"
+        }
+      ],
+      "title": "Sync за период",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 9
+      },
+      "id": 1515,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
@@ -381,11 +576,11 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_history WHERE new_status::text = 'IN_REPAIR'",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE tracker_status_sync_pending = true",
           "refId": "A"
         }
       ],
-      "title": "Переводов в ремонт",
+      "title": "Ожидают sync статуса",
       "type": "stat"
     },
     {
@@ -394,11 +589,11 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 13
       },
-      "id": 710,
+      "id": 1520,
       "panels": [],
-      "title": "Распределение",
+      "title": "Динамика",
       "type": "row"
     },
     {
@@ -417,16 +612,29 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "fillOpacity": 80,
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
             "lineWidth": 1,
+            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -452,156 +660,130 @@
       "gridPos": {
         "h": 8,
         "w": 12,
-        "x": 0,
-        "y": 6
-      },
-      "id": 711,
-      "options": {
-        "barRadius": 0,
-        "barWidth": 0.97,
-        "displayMode": "gradient",
-        "fullHighlight": false,
-        "groupWidth": 0.7,
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "showValue": "auto",
-        "stacking": "none",
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        },
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "format": "table",
-          "rawSql": "SELECT COALESCE(d.inventory_number, d.name) AS label, COUNT(rr.id)::double precision AS count FROM devices d JOIN repair_requests rr ON rr.device_id = d.id GROUP BY d.id, d.inventory_number, d.name ORDER BY count DESC LIMIT 15",
-          "refId": "A"
-        }
-      ],
-      "title": "Топ устройств по заявкам",
-      "type": "barchart"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "postgres"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "fillOpacity": 80,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineWidth": 1,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 6
-      },
-      "id": 712,
-      "options": {
-        "barRadius": 0,
-        "barWidth": 0.97,
-        "displayMode": "gradient",
-        "fullHighlight": false,
-        "groupWidth": 0.7,
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "orientation": "horizontal",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ]
-        },
-        "showValue": "auto",
-        "stacking": "none",
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        },
-        "xTickLabelRotation": 0,
-        "xTickLabelSpacing": 0
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "format": "table",
-          "rawSql": "SELECT COALESCE(c.name, 'Без категории') AS label, ROUND(100.0 * COUNT(*) FILTER (WHERE d.repair_status::text = 'IN_REPAIR') / NULLIF(COUNT(d.id), 0), 1)::double precision AS count FROM devices d LEFT JOIN categories c ON c.id = d.category_id GROUP BY c.id, c.name HAVING COUNT(d.id) > 0 ORDER BY count DESC LIMIT 15",
-          "refId": "A"
-        }
-      ],
-      "title": "% в ремонте по категориям",
-      "type": "barchart"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
         "x": 0,
         "y": 14
       },
-      "id": 720,
-      "panels": [],
-      "title": "Проблемные устройства",
-      "type": "row"
+      "id": 1521,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "format": "time_series",
+          "rawSql": "SELECT date_trunc('day', created_at) AS time, COUNT(*)::double precision AS \"Создано\" FROM repair_requests WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        },
+        {
+          "format": "time_series",
+          "rawSql": "SELECT date_trunc('day', closed_at) AS time, COUNT(*)::double precision AS \"Закрыто\" FROM repair_requests WHERE closed_at IS NOT NULL AND $__timeFilter(closed_at) GROUP BY 1 ORDER BY 1",
+          "refId": "B"
+        }
+      ],
+      "title": "Заявки по дням",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "showValues": false,
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 14
+      },
+      "id": 1522,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "hideZeros": false,
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "format": "time_series",
+          "rawSql": "SELECT date_trunc('day', created_at) AS time, COUNT(*)::double precision AS \"Комментарии\" FROM repair_request_comments WHERE $__timeFilter(created_at) GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Комментарии по дням",
+      "type": "timeseries"
     },
     {
       "datasource": {
@@ -638,19 +820,19 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
+        "h": 8,
         "w": 24,
         "x": 0,
-        "y": 15
+        "y": 22
       },
-      "id": 721,
+      "id": 1523,
       "options": {
         "cellHeight": "sm",
         "showHeader": true,
         "sortBy": [
           {
             "desc": true,
-            "displayName": "Заявок"
+            "displayName": "В ремонте"
           }
         ]
       },
@@ -658,87 +840,33 @@
       "targets": [
         {
           "format": "table",
-          "rawSql": "SELECT d.inventory_number AS \"Инв. №\", d.name AS \"Название\", COALESCE(c.name, '—') AS \"Категория\", COALESCE(a.name, '—') AS \"Аудитория\", COUNT(rr.id)::double precision AS \"Заявок\", CASE WHEN d.repair_status::text = 'IN_REPAIR' THEN 'да' ELSE 'нет' END AS \"В ремонте\" FROM devices d JOIN repair_requests rr ON rr.device_id = d.id LEFT JOIN categories c ON c.id = d.category_id LEFT JOIN audience a ON a.id = d.audience_id GROUP BY d.id, d.inventory_number, d.name, c.name, a.name, d.repair_status HAVING COUNT(rr.id) >= 2 ORDER BY \"Заявок\" DESC LIMIT 50",
+          "rawSql": "SELECT COALESCE(a.name, 'Без аудитории') AS \"Аудитория\", COUNT(*) FILTER (WHERE d.repair_status::text = 'IN_REPAIR')::double precision AS \"В ремонте\", COUNT(d.id)::double precision AS \"Устройств\" FROM devices d LEFT JOIN audience a ON a.id = d.audience_id GROUP BY a.id, a.name ORDER BY \"В ремонте\" DESC LIMIT 10",
           "refId": "A"
         }
       ],
-      "title": "Хроники (2+ заявки)",
-      "type": "table"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "postgres"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "footer": {
-              "reducers": []
-            },
-            "inspect": false
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 24
-      },
-      "id": 722,
-      "options": {
-        "cellHeight": "sm",
-        "showHeader": true
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "format": "table",
-          "rawSql": "SELECT d.inventory_number AS \"Инв. №\", d.name AS \"Название\", CASE WHEN d.audience_id IS NULL THEN 'нет' ELSE 'да' END AS \"Аудитория\", CASE WHEN d.category_id IS NULL THEN 'нет' ELSE 'да' END AS \"Категория\", CASE WHEN d.responsible_id IS NULL THEN 'нет' ELSE 'да' END AS \"Ответственный\" FROM devices d WHERE d.audience_id IS NULL OR d.category_id IS NULL OR d.responsible_id IS NULL ORDER BY d.inventory_number LIMIT 100",
-          "refId": "A"
-        }
-      ],
-      "title": "Неполный каталог",
+      "title": "Топ аудиторий в ремонте",
       "type": "table"
     }
   ],
   "preload": false,
-  "refresh": "1m",
+  "refresh": "5m",
   "schemaVersion": 42,
   "tags": [
     "fixmykit",
-    "equipment"
+    "weekly",
+    "report",
+    "managers"
   ],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-90d",
+    "from": "now-7d",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Fix My Kit — Оборудование",
-  "uid": "fixmykit-equipment",
-  "version": 1
+  "title": "Fix My Kit — Еженедельный отчёт",
+  "uid": "fixmykit-weekly",
+  "version": 4
 }

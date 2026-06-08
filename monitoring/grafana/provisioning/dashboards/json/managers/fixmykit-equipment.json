@@ -18,7 +18,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
-  "id": 9,
+  "id": 11,
   "links": [],
   "panels": [
     {
@@ -29,42 +29,28 @@
         "x": 0,
         "y": 0
       },
-      "id": 900,
+      "id": 700,
       "panels": [],
-      "title": "Доступность",
+      "title": "Оборудование",
       "type": "row"
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
+        "type": "postgres",
+        "uid": "postgres"
       },
       "fieldConfig": {
         "defaults": {
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "red",
-                  "text": "DOWN"
-                },
-                "1": {
-                  "color": "green",
-                  "text": "UP"
-                }
-              },
-              "type": "value"
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "green",
                 "value": 0
               },
               {
-                "color": "green",
+                "color": "orange",
                 "value": 1
               }
             ]
@@ -78,7 +64,7 @@
         "x": 0,
         "y": 1
       },
-      "id": 901,
+      "id": 701,
       "options": {
         "colorMode": "background",
         "graphMode": "none",
@@ -93,41 +79,28 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value",
         "wideLayout": true
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "up{job=\"fmk-backend\"}",
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM (SELECT d.id FROM devices d JOIN repair_requests rr ON rr.device_id = d.id GROUP BY d.id HAVING COUNT(rr.id) >= 2) t",
           "refId": "A"
         }
       ],
-      "title": "API",
+      "title": "С 2+ заявками",
       "type": "stat"
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
+        "type": "postgres",
+        "uid": "postgres"
       },
       "fieldConfig": {
         "defaults": {
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "red",
-                  "text": "DOWN"
-                },
-                "1": {
-                  "color": "green",
-                  "text": "UP"
-                }
-              },
-              "type": "value"
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -150,10 +123,10 @@
         "x": 4,
         "y": 1
       },
-      "id": 902,
+      "id": 702,
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -165,41 +138,28 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value",
         "wideLayout": true
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "up{job=\"fmk-db\"}",
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM devices WHERE repair_status::text = 'IN_REPAIR'",
           "refId": "A"
         }
       ],
-      "title": "PostgreSQL",
+      "title": "Сейчас в ремонте",
       "type": "stat"
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
+        "type": "postgres",
+        "uid": "postgres"
       },
       "fieldConfig": {
         "defaults": {
-          "mappings": [
-            {
-              "options": {
-                "0": {
-                  "color": "red",
-                  "text": "DOWN"
-                },
-                "1": {
-                  "color": "green",
-                  "text": "UP"
-                }
-              },
-              "type": "value"
-            }
-          ],
+          "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -208,8 +168,8 @@
                 "value": 0
               },
               {
-                "color": "red",
-                "value": 80
+                "color": "yellow",
+                "value": 1
               }
             ]
           }
@@ -222,10 +182,10 @@
         "x": 8,
         "y": 1
       },
-      "id": 903,
+      "id": 703,
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -237,48 +197,41 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value",
         "wideLayout": true
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "up{job=\"fmk-cadvisor\"}",
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM devices WHERE audience_id IS NULL",
           "refId": "A"
         }
       ],
-      "title": "cAdvisor",
+      "title": "Без аудитории",
       "type": "stat"
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
+        "type": "postgres",
+        "uid": "postgres"
       },
       "fieldConfig": {
         "defaults": {
-          "decimals": 2,
           "mappings": [],
-          "max": 100,
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "green",
                 "value": 0
               },
               {
                 "color": "yellow",
-                "value": 95
-              },
-              {
-                "color": "green",
-                "value": 99
+                "value": 1
               }
             ]
-          },
-          "unit": "percent"
+          }
         },
         "overrides": []
       },
@@ -288,10 +241,10 @@
         "x": 12,
         "y": 1
       },
-      "id": 904,
+      "id": 704,
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -303,48 +256,41 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value",
         "wideLayout": true
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "avg_over_time(up{job=\"fmk-backend\"}[24h]) * 100",
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM devices WHERE category_id IS NULL",
           "refId": "A"
         }
       ],
-      "title": "Uptime API 24ч",
+      "title": "Без категории",
       "type": "stat"
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
+        "type": "postgres",
+        "uid": "postgres"
       },
       "fieldConfig": {
         "defaults": {
-          "decimals": 2,
           "mappings": [],
-          "max": 100,
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "green",
                 "value": 0
               },
               {
                 "color": "yellow",
-                "value": 95
-              },
-              {
-                "color": "green",
-                "value": 99
+                "value": 1
               }
             ]
-          },
-          "unit": "percent"
+          }
         },
         "overrides": []
       },
@@ -354,10 +300,10 @@
         "x": 16,
         "y": 1
       },
-      "id": 905,
+      "id": 705,
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -369,23 +315,24 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value",
         "wideLayout": true
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "avg_over_time(up{job=\"fmk-backend\"}[7d]) * 100",
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM devices WHERE responsible_id IS NULL",
           "refId": "A"
         }
       ],
-      "title": "Uptime API 7д",
+      "title": "Без ответственного",
       "type": "stat"
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
+        "type": "postgres",
+        "uid": "postgres"
       },
       "fieldConfig": {
         "defaults": {
@@ -399,7 +346,7 @@
               },
               {
                 "color": "red",
-                "value": 1
+                "value": 80
               }
             ]
           }
@@ -412,10 +359,10 @@
         "x": 20,
         "y": 1
       },
-      "id": 906,
+      "id": 706,
       "options": {
         "colorMode": "background",
-        "graphMode": "area",
+        "graphMode": "none",
         "justifyMode": "auto",
         "orientation": "auto",
         "percentChangeColorMode": "standard",
@@ -427,18 +374,18 @@
           "values": false
         },
         "showPercentChange": false,
-        "textMode": "auto",
+        "textMode": "value",
         "wideLayout": true
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(ALERTS{alertstate=\"firing\"}) or vector(0)",
-          "instant": true,
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_history WHERE new_status::text = 'IN_REPAIR'",
           "refId": "A"
         }
       ],
-      "title": "Алертов firing",
+      "title": "Переводов в ремонт",
       "type": "stat"
     },
     {
@@ -449,15 +396,15 @@
         "x": 0,
         "y": 5
       },
-      "id": 910,
+      "id": 710,
       "panels": [],
-      "title": "HTTP SLO",
+      "title": "Распределение",
       "type": "row"
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
+        "type": "postgres",
+        "uid": "postgres"
       },
       "fieldConfig": {
         "defaults": {
@@ -470,37 +417,22 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 80,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
             },
             "thresholdsStyle": {
               "mode": "off"
             }
           },
           "mappings": [],
-          "max": 1,
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -513,51 +445,60 @@
                 "value": 80
               }
             ]
-          },
-          "unit": "percentunit"
+          }
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 8,
+        "h": 8,
+        "w": 12,
         "x": 0,
         "y": 6
       },
-      "id": 911,
+      "id": 711,
       "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "displayMode": "gradient",
+        "fullHighlight": false,
+        "groupWidth": 0.7,
         "legend": {
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showValue": "auto",
+        "stacking": "none",
         "tooltip": {
           "hideZeros": false,
           "mode": "single",
           "sort": "none"
-        }
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", status=\"5xx\"}[5m])) / sum(rate(http_requests_total{job=\"fmk-backend\"}[5m]))",
-          "legendFormat": "5xx",
+          "format": "table",
+          "rawSql": "SELECT COALESCE(d.inventory_number, d.name) AS label, COUNT(rr.id)::double precision AS count FROM devices d JOIN repair_requests rr ON rr.device_id = d.id GROUP BY d.id, d.inventory_number, d.name ORDER BY count DESC LIMIT 15",
           "refId": "A"
-        },
-        {
-          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", status=\"4xx\"}[5m])) / sum(rate(http_requests_total{job=\"fmk-backend\"}[5m]))",
-          "legendFormat": "4xx",
-          "refId": "B"
         }
       ],
-      "title": "Доля ошибок HTTP",
-      "type": "timeseries"
+      "title": "Топ устройств по заявкам",
+      "type": "barchart"
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
+        "type": "postgres",
+        "uid": "postgres"
       },
       "fieldConfig": {
         "defaults": {
@@ -570,29 +511,16 @@
             "axisColorMode": "text",
             "axisLabel": "",
             "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 80,
             "gradientMode": "none",
             "hideFrom": {
               "legend": false,
               "tooltip": false,
               "viz": false
             },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
             "lineWidth": 1,
-            "pointSize": 5,
             "scaleDistribution": {
               "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
             },
             "thresholdsStyle": {
               "mode": "off"
@@ -612,133 +540,55 @@
               }
             ]
           },
-          "unit": "reqps"
+          "unit": "percent"
         },
         "overrides": []
       },
       "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 8,
+        "h": 8,
+        "w": 12,
+        "x": 12,
         "y": 6
       },
-      "id": 912,
+      "id": 712,
       "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "displayMode": "gradient",
+        "fullHighlight": false,
+        "groupWidth": 0.7,
         "legend": {
           "calcs": [],
           "displayMode": "list",
           "placement": "bottom",
           "showLegend": true
         },
+        "orientation": "horizontal",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "showValue": "auto",
+        "stacking": "none",
         "tooltip": {
           "hideZeros": false,
           "mode": "single",
           "sort": "none"
-        }
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
       },
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\"}[5m]))",
-          "legendFormat": "RPS",
+          "format": "table",
+          "rawSql": "SELECT COALESCE(c.name, 'Без категории') AS label, ROUND(100.0 * COUNT(*) FILTER (WHERE d.repair_status::text = 'IN_REPAIR') / NULLIF(COUNT(d.id), 0), 1)::double precision AS count FROM devices d LEFT JOIN categories c ON c.id = d.category_id GROUP BY c.id, c.name HAVING COUNT(d.id) > 0 ORDER BY count DESC LIMIT 15",
           "refId": "A"
         }
       ],
-      "title": "Запросов/сек",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 7,
-        "w": 8,
-        "x": 16,
-        "y": 6
-      },
-      "id": 913,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"fmk-backend\", handler!=\"/metrics\"}[5m])) by (le))",
-          "legendFormat": "p99",
-          "refId": "A"
-        }
-      ],
-      "title": "Latency p99",
-      "type": "timeseries"
+      "title": "% в ремонте по категориям",
+      "type": "barchart"
     },
     {
       "collapsed": false,
@@ -746,17 +596,79 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 13
+        "y": 14
       },
-      "id": 920,
+      "id": 720,
       "panels": [],
-      "title": "Алерты Prometheus",
+      "title": "Проблемные устройства",
       "type": "row"
     },
     {
       "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "footer": {
+              "reducers": []
+            },
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 9,
+        "w": 24,
+        "x": 0,
+        "y": 15
+      },
+      "id": 721,
+      "options": {
+        "cellHeight": "sm",
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": true,
+            "displayName": "Заявок"
+          }
+        ]
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "format": "table",
+          "rawSql": "SELECT d.inventory_number AS \"Инв. №\", d.name AS \"Название\", COALESCE(c.name, '—') AS \"Категория\", COALESCE(a.name, '—') AS \"Аудитория\", COUNT(rr.id)::double precision AS \"Заявок\", CASE WHEN d.repair_status::text = 'IN_REPAIR' THEN 'да' ELSE 'нет' END AS \"В ремонте\" FROM devices d JOIN repair_requests rr ON rr.device_id = d.id LEFT JOIN categories c ON c.id = d.category_id LEFT JOIN audience a ON a.id = d.audience_id GROUP BY d.id, d.inventory_number, d.name, c.name, a.name, d.repair_status HAVING COUNT(rr.id) >= 2 ORDER BY \"Заявок\" DESC LIMIT 50",
+          "refId": "A"
+        }
+      ],
+      "title": "Хроники (2+ заявки)",
+      "type": "table"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
       },
       "fieldConfig": {
         "defaults": {
@@ -791,9 +703,9 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 24
       },
-      "id": 921,
+      "id": 722,
       "options": {
         "cellHeight": "sm",
         "showHeader": true
@@ -801,144 +713,33 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "ALERTS{alertstate=\"firing\"}",
           "format": "table",
-          "instant": true,
+          "rawSql": "SELECT d.inventory_number AS \"Инв. №\", d.name AS \"Название\", CASE WHEN d.audience_id IS NULL THEN 'нет' ELSE 'да' END AS \"Аудитория\", CASE WHEN d.category_id IS NULL THEN 'нет' ELSE 'да' END AS \"Категория\", CASE WHEN d.responsible_id IS NULL THEN 'нет' ELSE 'да' END AS \"Ответственный\" FROM devices d WHERE d.audience_id IS NULL OR d.category_id IS NULL OR d.responsible_id IS NULL ORDER BY d.inventory_number LIMIT 100",
           "refId": "A"
         }
       ],
-      "title": "Сработавшие алерты",
-      "transformations": [
-        {
-          "id": "labelsToFields",
-          "options": {
-            "mode": "columns"
-          }
-        }
-      ],
+      "title": "Неполный каталог",
       "type": "table"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 22
-      },
-      "id": 922,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "expr": "up{job=\"fmk-backend\"}",
-          "legendFormat": "API",
-          "refId": "A"
-        },
-        {
-          "expr": "up{job=\"fmk-db\"}",
-          "legendFormat": "PostgreSQL",
-          "refId": "B"
-        },
-        {
-          "expr": "up{job=\"fmk-cadvisor\"}",
-          "legendFormat": "cAdvisor",
-          "refId": "C"
-        }
-      ],
-      "title": "История up/down",
-      "type": "timeseries"
     }
   ],
   "preload": false,
-  "refresh": "30s",
+  "refresh": "1m",
   "schemaVersion": 42,
   "tags": [
     "fixmykit",
-    "alerts",
-    "slo"
+    "equipment",
+    "managers"
   ],
   "templating": {
     "list": []
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-90d",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "browser",
-  "title": "Fix My Kit — Алерты и SLO",
-  "uid": "fixmykit-alerts",
-  "version": 2
+  "title": "Fix My Kit — Оборудование",
+  "uid": "fixmykit-equipment",
+  "version": 1
 }
