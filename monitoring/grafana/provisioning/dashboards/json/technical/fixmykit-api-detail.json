@@ -19,7 +19,30 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": 15,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Backend",
+      "type": "link",
+      "url": "/d/fixmykit-backend"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Логи",
+      "type": "link",
+      "url": "/d/fixmykit-logs"
+    }
+  ],
   "panels": [
     {
       "collapsed": false,
@@ -86,7 +109,7 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{job=~\"$job\", handler!=\"/metrics\"}[5m]))",
+          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", handler!=\"/metrics\"}[5m]))",
           "refId": "A"
         }
       ],
@@ -147,7 +170,7 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{job=~\"$job\", status=\"5xx\"}[5m])) / sum(rate(http_requests_total{job=~\"$job\"}[5m]))",
+          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", status=\"5xx\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"fmk-backend\"}[5m])), 1e-9)",
           "refId": "A"
         }
       ],
@@ -208,7 +231,7 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{job=~\"$job\", status=\"4xx\"}[5m])) / sum(rate(http_requests_total{job=~\"$job\"}[5m]))",
+          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", status=\"4xx\"}[5m])) / clamp_min(sum(rate(http_requests_total{job=\"fmk-backend\"}[5m])), 1e-9)",
           "refId": "A"
         }
       ],
@@ -267,7 +290,7 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=~\"$job\", handler!=\"/metrics\"}[5m])) by (le))",
+          "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{job=\"fmk-backend\", handler!=\"/metrics\"}[5m])) by (le))",
           "refId": "A"
         }
       ],
@@ -372,7 +395,7 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "topk(10, histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=~\"$job\", handler!=\"/metrics\"}[5m])) by (handler, le)))",
+          "expr": "topk(10, histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{job=\"fmk-backend\", handler!=\"/metrics\"}[5m])) by (handler, le)))",
           "legendFormat": "{{handler}}",
           "refId": "A"
         }
@@ -465,7 +488,7 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "topk(10, sum(rate(http_requests_total{job=~\"$job\", handler!=\"/metrics\"}[5m])) by (handler))",
+          "expr": "topk(10, sum(rate(http_requests_total{job=\"fmk-backend\", handler!=\"/metrics\"}[5m])) by (handler))",
           "legendFormat": "{{handler}}",
           "refId": "A"
         }
@@ -558,7 +581,7 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{job=~\"$job\", status=\"5xx\", handler!=\"/metrics\"}[5m])) by (handler)",
+          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", status=\"5xx\", handler!=\"/metrics\"}[5m])) by (handler)",
           "legendFormat": "{{handler}}",
           "refId": "A"
         }
@@ -651,7 +674,7 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{job=~\"$job\", status=\"4xx\", handler!=\"/metrics\"}[5m])) by (handler)",
+          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", status=\"4xx\", handler!=\"/metrics\"}[5m])) by (handler)",
           "legendFormat": "{{handler}}",
           "refId": "A"
         }
@@ -757,27 +780,27 @@
       "pluginVersion": "12.3.1",
       "targets": [
         {
-          "expr": "sum(rate(http_requests_total{job=~\"$job\", handler=~\"/api/repair-requests.*\"}[5m]))",
+          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", handler=~\"/api/repair-requests.*\"}[5m]))",
           "legendFormat": "repair-requests",
           "refId": "A"
         },
         {
-          "expr": "sum(rate(http_requests_total{job=~\"$job\", handler=~\"/api/devices.*\"}[5m]))",
+          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", handler=~\"/api/devices.*\"}[5m]))",
           "legendFormat": "devices",
           "refId": "B"
         },
         {
-          "expr": "sum(rate(http_requests_total{job=~\"$job\", handler=~\"/api/auth.*\"}[5m]))",
+          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", handler=~\"/api/auth.*\"}[5m]))",
           "legendFormat": "auth",
           "refId": "C"
         },
         {
-          "expr": "sum(rate(http_requests_total{job=~\"$job\", handler=~\"/api/webhooks.*\"}[5m]))",
+          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", handler=~\"/api/webhooks.*\"}[5m]))",
           "legendFormat": "webhooks",
           "refId": "D"
         },
         {
-          "expr": "sum(rate(http_requests_total{job=~\"$job\", handler=~\"/api/admin.*\"}[5m]))",
+          "expr": "sum(rate(http_requests_total{job=\"fmk-backend\", handler=~\"/api/admin.*\"}[5m]))",
           "legendFormat": "admin",
           "refId": "E"
         }
@@ -795,29 +818,7 @@
     "technical"
   ],
   "templating": {
-    "list": [
-      {
-        "current": {
-          "text": "fmk-backend",
-          "value": "fmk-backend"
-        },
-        "datasource": {
-          "type": "prometheus",
-          "uid": "prometheus"
-        },
-        "definition": "label_values(http_requests_total, job)",
-        "includeAll": false,
-        "label": "Job",
-        "name": "job",
-        "options": [],
-        "query": {
-          "query": "label_values(http_requests_total, job)",
-          "refId": "A"
-        },
-        "refresh": 1,
-        "type": "query"
-      }
-    ]
+    "list": []
   },
   "time": {
     "from": "now-6h",
@@ -827,5 +828,5 @@
   "timezone": "browser",
   "title": "Fix My Kit — API детализация",
   "uid": "fixmykit-api-detail",
-  "version": 1
+  "version": 3
 }

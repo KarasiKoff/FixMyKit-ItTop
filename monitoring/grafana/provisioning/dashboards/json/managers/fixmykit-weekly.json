@@ -39,7 +39,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "# Еженедельный отчёт\nСводка за выбранный период (по умолчанию **7 дней**). Удобно для скриншота или PDF.",
+        "content": "# Еженедельный отчёт\nСводка за выбранный период (по умолчанию **7 дней**)",
         "mode": "markdown"
       },
       "pluginVersion": "12.3.1",
@@ -462,193 +462,8 @@
       },
       "id": 1510,
       "panels": [],
-      "title": "Техника и мониторинг",
+      "title": "Яндекс Трекер",
       "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "decimals": 2,
-          "mappings": [],
-          "max": 100,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "red",
-                "value": 0
-              },
-              {
-                "color": "yellow",
-                "value": 95
-              },
-              {
-                "color": "green",
-                "value": 99
-              }
-            ]
-          },
-          "unit": "percent"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 0,
-        "y": 9
-      },
-      "id": 1511,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "expr": "avg_over_time(up{job=\"fmk-backend\"}[$__range]) * 100",
-          "refId": "A"
-        }
-      ],
-      "title": "Uptime API",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "prometheus"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "max": 1,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "percentunit"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 6,
-        "y": 9
-      },
-      "id": 1512,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "expr": "sum(increase(http_requests_total{job=\"fmk-backend\", status=\"5xx\"}[$__range])) / sum(increase(http_requests_total{job=\"fmk-backend\"}[$__range]))",
-          "refId": "A"
-        }
-      ],
-      "title": "Доля 5xx",
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "loki",
-        "uid": "loki"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 5,
-        "w": 6,
-        "x": 12,
-        "y": 9
-      },
-      "id": 1513,
-      "options": {
-        "colorMode": "background",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "auto",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "sum"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "expr": "sum(count_over_time({service=\"backend\", level=\"ERROR\"}[7d]))",
-          "refId": "A"
-        }
-      ],
-      "title": "ERROR в логах (7д)",
-      "type": "stat"
     },
     {
       "datasource": {
@@ -675,9 +490,9 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 4,
         "w": 6,
-        "x": 18,
+        "x": 0,
         "y": 9
       },
       "id": 1514,
@@ -706,7 +521,66 @@
           "refId": "A"
         }
       ],
-      "title": "Sync Трекера",
+      "title": "Sync за период",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "postgres",
+        "uid": "postgres"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": 0
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 9
+      },
+      "id": 1515,
+      "options": {
+        "colorMode": "background",
+        "graphMode": "none",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "value",
+        "wideLayout": true
+      },
+      "pluginVersion": "12.3.1",
+      "targets": [
+        {
+          "format": "table",
+          "rawSql": "SELECT COUNT(*)::double precision AS v FROM repair_requests WHERE tracker_status_sync_pending = true",
+          "refId": "A"
+        }
+      ],
+      "title": "Ожидают sync статуса",
       "type": "stat"
     },
     {
@@ -715,7 +589,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 14
+        "y": 13
       },
       "id": 1520,
       "panels": [],
@@ -787,7 +661,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 15
+        "y": 14
       },
       "id": 1521,
       "options": {
@@ -884,7 +758,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 15
+        "y": 14
       },
       "id": 1522,
       "options": {
@@ -949,7 +823,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 22
       },
       "id": 1523,
       "options": {
@@ -994,5 +868,5 @@
   "timezone": "browser",
   "title": "Fix My Kit — Еженедельный отчёт",
   "uid": "fixmykit-weekly",
-  "version": 3
+  "version": 4
 }

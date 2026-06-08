@@ -19,7 +19,41 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": 17,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Трекер (менедж.)",
+      "type": "link",
+      "url": "/d/fixmykit-tracker"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Логи",
+      "type": "link",
+      "url": "/d/fixmykit-logs"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Backend",
+      "type": "link",
+      "url": "/d/fixmykit-backend"
+    }
+  ],
   "panels": [
     {
       "collapsed": false,

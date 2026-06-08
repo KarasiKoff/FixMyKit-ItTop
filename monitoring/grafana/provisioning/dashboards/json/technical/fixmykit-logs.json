@@ -19,7 +19,41 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": 5,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Backend",
+      "type": "link",
+      "url": "/d/fixmykit-backend"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "API детализация",
+      "type": "link",
+      "url": "/d/fixmykit-api-detail"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Трекер (техн.)",
+      "type": "link",
+      "url": "/d/fixmykit-tracker-tech"
+    }
+  ],
   "panels": [
     {
       "collapsed": false,

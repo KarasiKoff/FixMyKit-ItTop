@@ -19,7 +19,20 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
   "id": 7,
-  "links": [],
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Трекер (техн.)",
+      "tooltip": "Логи webhook и outbound",
+      "type": "link",
+      "url": "/d/fixmykit-tracker-tech"
+    }
+  ],
   "panels": [
     {
       "collapsed": false,
@@ -396,7 +409,7 @@
       },
       "id": 310,
       "panels": [],
-      "title": "Вложения и статусы Трекера",
+      "title": "Обзор вложений и статусов",
       "type": "row"
     },
     {
@@ -422,7 +435,7 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
+        "w": 12,
         "x": 0,
         "y": 6
       },
@@ -509,8 +522,8 @@
       },
       "gridPos": {
         "h": 8,
-        "w": 8,
-        "x": 8,
+        "w": 12,
+        "x": 12,
         "y": 6
       },
       "id": 312,
@@ -552,99 +565,6 @@
       ],
       "title": "Метки статуса Трекера",
       "type": "barchart"
-    },
-    {
-      "datasource": {
-        "type": "postgres",
-        "uid": "postgres"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": 0
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          },
-          "unit": "short"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 8,
-        "x": 16,
-        "y": 6
-      },
-      "id": 313,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "none"
-        }
-      },
-      "pluginVersion": "12.3.1",
-      "targets": [
-        {
-          "format": "time_series",
-          "rawSql": "SELECT date_trunc('day', last_sync_at) AS time, COUNT(*)::double precision AS \"Sync по дням\" FROM repair_requests WHERE last_sync_at IS NOT NULL AND $__timeFilter(last_sync_at) GROUP BY 1 ORDER BY 1",
-          "refId": "A"
-        }
-      ],
-      "title": "Синхронизации по дням",
-      "type": "timeseries"
     },
     {
       "collapsed": false,
@@ -741,5 +661,5 @@
   "timezone": "browser",
   "title": "Fix My Kit — Трекер",
   "uid": "fixmykit-tracker",
-  "version": 3
+  "version": 4
 }

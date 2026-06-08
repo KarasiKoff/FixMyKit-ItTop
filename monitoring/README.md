@@ -114,7 +114,7 @@ Prod на одной машине, Grafana/Prometheus на другой. Env: `.
 | **Обзор (менеджерам)** | Навигация по дашбордам |
 | **Операции** | PostgreSQL — заявки, категории, аудитории |
 | **SLA заявок** | PostgreSQL — время закрытия, застрявшие заявки |
-| **Еженедельный отчёт** | PostgreSQL + Prometheus + Loki — сводка за 7 дней |
+| **Еженедельный отчёт** | PostgreSQL — сводка за 7 дней |
 | **Трекер** | PostgreSQL — задачи Яндекс Трекера, sync вложений |
 | **Качество закрытия** | PostgreSQL — резолюции, NEEDS_INFO |
 | **Оборудование** | PostgreSQL — хроники, % в ремонте |
@@ -132,10 +132,11 @@ Prod на одной машине, Grafana/Prometheus на другой. Env: `.
 | **Алерты и SLO** | Prometheus — uptime, firing alerts, error rate |
 | **Инфраструктура** | Prometheus — cAdvisor, postgres-exporter, up |
 | **Логи** | Loki — ERROR/WARNING, Трекер, HTTP 4xx/5xx |
-| **Трекер (техн.)** | PostgreSQL + Loki — sync pending, webhook |
+| **Трекер (техн.)** | PostgreSQL + Loki — sync, webhook/outbound логи |
 
 Теги `managers` / `technical` в Grafana → **Dashboards** → фильтр по тегу.
 
+**Cross-links:** в шапке технических дашбордов — Backend → API → Logs; **Трекер** ↔ **Трекер (техн.)** для менеджеров и сисадминов.
 
 Для дашборда **Операции** в `.env.monitoring`:
 
