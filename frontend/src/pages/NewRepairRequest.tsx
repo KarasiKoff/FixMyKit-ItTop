@@ -8,6 +8,7 @@ import { RepairSubmitSuccess } from '../components/RepairSubmitSuccess';
 import { FormSubmitOverlay } from '../components/ui/FormSubmitOverlay';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
 import { useAuth } from '../hooks/useAuth';
+import { usePublicIntegration } from '../context/public-integration-context';
 import { useToast } from '../hooks/useToast';
 import { fetchAudiences, type AudienceDto } from '../api/audiences';
 import { fetchDevices, fetchPublicDeviceById } from '../api/devices';
@@ -15,6 +16,12 @@ import { createRepairRequest as submitRepairRequest, fetchPublicAudienceRepairSu
 import { Device } from '../types/device';
 import type { PublicAudienceInfo, RepairRequest } from '../types/repairRequest';
 import { formatApiError } from '../utils/formatApiError';
+import {
+    integrationDisplayName,
+    issueCreatedInIntegrationLabel,
+    sendToIntegrationLabel,
+    syncWithIntegrationLabel,
+} from '../utils/externalIntegrationCopy';
 import { repairSubmitOverlayMessage } from '../utils/repairSubmitMessages';
 import { isUuid } from '../utils/uuid';
 
@@ -22,6 +29,7 @@ type RequestTarget = 'device' | 'cabinet';
 
 export function NewRepairRequest() {
     const { isAuthenticated, user } = useAuth();
+    const integration = usePublicIntegration();
     const { showSuccess, showError } = useToast();
     const [searchParams] = useSearchParams();
     const deviceIdRaw = searchParams.get('deviceId');
@@ -50,6 +58,12 @@ export function NewRepairRequest() {
     };
     const [submitSuccess, setSubmitSuccess] = useState<SubmitSuccessState | null>(null);
     const [sendToTracker, setSendToTracker] = useState(true);
+
+    useEffect(() => {
+        if (integration.ready) {
+            setSendToTracker(integration.enabled);
+        }
+    }, [integration.enabled, integration.ready]);
     const [attachmentDrafts, setAttachmentDrafts] = useState<AttachmentDraft[]>([]);
     const [devices, setDevices] = useState<Device[]>([]);
     const [devicesLoading, setDevicesLoading] = useState(false);
@@ -95,11 +109,12 @@ export function NewRepairRequest() {
     const submitOverlay = useMemo(
         () =>
             repairSubmitOverlayMessage({
-                sendToTracker: isAuthenticated && sendToTracker,
+                sendToTracker: isAuthenticated && integration.enabled && sendToTracker,
                 fileCount: attachmentDrafts.length,
                 isGuest: !isAuthenticated,
+                integrationLabel: integrationDisplayName(integration),
             }),
-        [attachmentDrafts.length, isAuthenticated, sendToTracker],
+        [attachmentDrafts.length, integration, isAuthenticated, sendToTracker],
     );
 
     async function runSubmit(task: () => Promise<void>) {
@@ -115,21 +130,24 @@ export function NewRepairRequest() {
     }
 
     function notifyAttachmentOutcome(created: RepairRequest, syncToTracker: boolean, hadFiles: boolean) {
+        const trackerName = integrationDisplayName(integration);
         if (!hadFiles) {
             showSuccess('Заявка отправлена');
             return;
         }
         if (!syncToTracker) {
-            showSuccess('Заявка отправлена. Файлы сохранены и загрузятся в Трекер после синхронизации.');
+            showSuccess(
+                `Заявка отправлена. Файлы сохранены и загрузятся в ${trackerName} после синхронизации.`,
+            );
             return;
         }
         if (created.attachmentsSyncStatus === 'complete') {
-            showSuccess('Заявка отправлена. Все файлы загружены в Трекер.');
+            showSuccess(`Заявка отправлена. Все файлы загружены в ${trackerName}.`);
             return;
         }
         showError(
-            `Заявка создана, но в Трекер загружено не всё (${created.attachmentsCount ?? 0} файл(ов) на сервере). ` +
-                'Откройте карточку заявки и нажмите «Синхронизировать с Трекером», либо уменьшите размер файлов (лимит Трекера ~128 МБ).',
+            `Заявка создана, но в ${trackerName} загружено не всё (${created.attachmentsCount ?? 0} файл(ов) на сервере). ` +
+                `Откройте карточку заявки и нажмите «${syncWithIntegrationLabel(integration)}», либо уменьшите размер файлов.`,
         );
     }
 
@@ -308,7 +326,7 @@ export function NewRepairRequest() {
                     deviceId: data.deviceId,
                     requesterName: user?.name ?? user?.login ?? '',
                     description: data.description,
-                    syncToTracker: sendToTracker,
+                    syncToTracker: integration.enabled && sendToTracker,
                     files,
                 },
                 { staff: true },
@@ -319,7 +337,7 @@ export function NewRepairRequest() {
                     targetId: data.deviceId,
                     targetLabel: deviceTargetLabel(data.deviceId),
                     hadFiles: files.length > 0,
-                    sentToTracker: sendToTracker,
+                    sentToTracker: integration.enabled && sendToTracker,
                 });
             } else {
                 notifyAttachmentOutcome(created, sendToTracker, files.length > 0);
@@ -350,7 +368,7 @@ export function NewRepairRequest() {
                     audienceId: data.audienceId,
                     requesterName: user?.name ?? user?.login ?? '',
                     description: data.description,
-                    syncToTracker: sendToTracker,
+                    syncToTracker: integration.enabled && sendToTracker,
                     files,
                 },
                 { staff: true },
@@ -361,7 +379,7 @@ export function NewRepairRequest() {
                     targetId: data.audienceId,
                     targetLabel: cabinetTargetLabel(data.audienceId),
                     hadFiles: files.length > 0,
-                    sentToTracker: sendToTracker,
+                    sentToTracker: integration.enabled && sendToTracker,
                 });
             } else {
                 notifyAttachmentOutcome(created, sendToTracker, files.length > 0);
@@ -469,7 +487,7 @@ export function NewRepairRequest() {
             successLines.push('Вложения сохранены вместе с заявкой');
         }
         if (submitSuccess.sentToTracker) {
-            successLines.push('Задача создана в Яндекс Трекере');
+            successLines.push(issueCreatedInIntegrationLabel(integration));
         } else if (!isAuthenticated) {
             successLines.push('Сисадмины обработают заявку в ближайшее время');
         }
@@ -539,7 +557,7 @@ export function NewRepairRequest() {
                     </div>
                 ) : null}
 
-                {isAuthenticated ? (
+                {isAuthenticated && integration.enabled ? (
                     <label className="repair-tracker-toggle">
                         <input
                             type="checkbox"
@@ -547,7 +565,7 @@ export function NewRepairRequest() {
                             onChange={(e) => setSendToTracker(e.target.checked)}
                             disabled={submitBusy}
                         />
-                        <span>Отправить заявку в Яндекс Трекер</span>
+                        <span>{sendToIntegrationLabel(integration)}</span>
                     </label>
                 ) : null}
 

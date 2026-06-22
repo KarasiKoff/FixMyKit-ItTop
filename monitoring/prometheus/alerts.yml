@@ -128,6 +128,17 @@ groups:
           description: "⏱️ p95 latency по repair-requests выше 2 секунд уже 2 минуты.\n\nПроверь PostgreSQL, тяжёлые списки и вложения."
           resolved_description: "⚡️ Заявки снова летят! Latency repair-requests в норме 😎"
 
+      - alert: JiraWebhookFailures
+        expr: |
+          sum(rate(http_requests_total{job="fmk-backend", status="5xx", handler=~".*webhooks/jira.*"}[5m])) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "💥 Ошибки webhook Jira"
+          description: "🚨 Эндпоинты /api/webhooks/jira* отдают 5xx.\n\nСтатусы из Jira Automation могут не доходить до Fix My Kit.\n\nПроверь логи fixmykit.http, JIRA_WEBHOOK_SECRET и JIRA_STATUS_MAP."
+          resolved_description: "✅ Webhook Jira снова принимает события! Синхронизация жива 🔗"
+
       - alert: TrackerWebhookFailures
         expr: |
           sum(rate(http_requests_total{job="fmk-backend", status="5xx", handler=~".*webhooks.*"}[5m])) > 0

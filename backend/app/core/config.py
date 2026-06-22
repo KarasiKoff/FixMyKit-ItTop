@@ -74,6 +74,77 @@ class ServerConfig(BaseSettings):
         alias="TRACKER_WEBHOOK_ACTOR_LOGIN",
         description="Логин технического пользователя",
     )
+    issue_tracker: str = Field(
+        default="auto",
+        alias="ISSUE_TRACKER",
+        description=(
+            "auto | none | yandex | jira. "
+            "auto: jira при настроенных JIRA_*; иначе yandex при TRACKER_TOKEN; иначе none."
+        ),
+    )
+    jira_base_url: str | None = Field(
+        default=None,
+        alias="JIRA_BASE_URL",
+        description="URL сайта Jira (https://org.atlassian.net) — ссылки browse/KEY.",
+    )
+    jira_cloud_id: str | None = Field(
+        default=None,
+        alias="JIRA_CLOUD_ID",
+        description="Cloud ID для API сервисного аккаунта (api.atlassian.com/ex/jira/{id}).",
+    )
+    jira_auth_mode: str = Field(
+        default="auto",
+        alias="JIRA_AUTH_MODE",
+        description="auto | service_account | site. auto: service_account при JIRA_CLOUD_ID.",
+    )
+    jira_service_account_email: str | None = Field(
+        default=None,
+        alias="JIRA_SERVICE_ACCOUNT_EMAIL",
+        description="Email сервисного аккаунта (legacy site mode; Bearer-token — не обязателен).",
+    )
+    jira_email: str | None = Field(
+        default=None,
+        alias="JIRA_EMAIL",
+        description="Устаревший alias для JIRA_SERVICE_ACCOUNT_EMAIL.",
+    )
+    jira_api_token: str | None = Field(default=None, alias="JIRA_API_TOKEN")
+    jira_project_key: str | None = Field(default=None, alias="JIRA_PROJECT_KEY")
+    jira_issue_type: str = Field(
+        default="Task",
+        alias="JIRA_ISSUE_TYPE",
+        description="Имя типа задачи (локаль Jira). Если не найден — JIRA_ISSUE_TYPE_ID или createmeta.",
+    )
+    jira_issue_type_id: str | None = Field(
+        default=None,
+        alias="JIRA_ISSUE_TYPE_ID",
+        description="Numeric id типа задачи (надёжнее имени, см. createmeta).",
+    )
+    jira_issue_label: str = Field(
+        default="fmk",
+        alias="JIRA_ISSUE_LABEL",
+        description="Метка(и) Jira при создании задачи (через запятую).",
+    )
+    jira_timeout_seconds: int = Field(default=15, alias="JIRA_TIMEOUT_SECONDS")
+    jira_attachment_timeout_seconds: int = Field(
+        default=600,
+        alias="JIRA_ATTACHMENT_TIMEOUT_SECONDS",
+    )
+    jira_webhook_secret: str | None = Field(default=None, alias="JIRA_WEBHOOK_SECRET")
+    jira_status_map_json: str = Field(
+        default="{}",
+        alias="JIRA_STATUS_MAP",
+        description='JSON: {"To Do":"open",...} для входящих вебхуков (фаза C).',
+    )
+    jira_transition_open: str | None = Field(default=None, alias="JIRA_TRANSITION_OPEN")
+    jira_transition_in_progress: str | None = Field(
+        default=None, alias="JIRA_TRANSITION_IN_PROGRESS"
+    )
+    jira_transition_needs_info: str | None = Field(
+        default=None, alias="JIRA_TRANSITION_NEEDS_INFO"
+    )
+    jira_transition_closed: str | None = Field(
+        default=None, alias="JIRA_TRANSITION_CLOSED"
+    )
     public_frontend_base_url: str = Field(
         default="https://fixmykit.local",
         alias="PUBLIC_FRONTEND_BASE_URL",
@@ -150,6 +221,54 @@ class ServerConfig(BaseSettings):
         if mode in ("redis", "memory"):
             return mode
         return "memory"
+
+    def jira_credentials_ready(self) -> bool:
+        if not (self.jira_api_token or "").strip():
+            return False
+        if not (self.jira_project_key or "").strip():
+            return False
+        if self.resolved_jira_auth_mode() == "service_account":
+            return bool((self.jira_cloud_id or "").strip()) and bool(
+                (self.jira_base_url or "").strip()
+            )
+        if not (self.jira_base_url or "").strip():
+            return False
+        account = (self.jira_service_account_email or self.jira_email or "").strip()
+        return bool(account)
+
+    def resolved_issue_tracker(self) -> str:
+        mode = (self.issue_tracker or "auto").strip().lower()
+        if mode == "auto":
+            if self.jira_credentials_ready():
+                return "jira"
+            if (self.tracker_token or "").strip():
+                return "yandex"
+            return "none"
+        if mode in ("none", "yandex", "jira"):
+            return mode
+        return "none"
+
+    def external_tracker_enabled(self) -> bool:
+        return self.resolved_issue_tracker() != "none"
+
+    def external_tracker_label(self) -> str:
+        match self.resolved_issue_tracker():
+            case "jira":
+                return "Jira"
+            case "yandex":
+                return "Yandex Tracker"
+            case _:
+                return ""
+
+    def resolved_jira_auth_mode(self) -> str:
+        mode = (self.jira_auth_mode or "auto").strip().lower()
+        if mode == "auto":
+            if (self.jira_cloud_id or "").strip():
+                return "service_account"
+            return "site"
+        if mode in ("service_account", "site"):
+            return mode
+        return "site"
 
 
 class DbConfig(BaseSettings):

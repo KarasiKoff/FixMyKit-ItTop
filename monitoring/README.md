@@ -282,6 +282,49 @@ curl -X POST http://localhost:9093/api/v2/alerts -H 'Content-Type: application/j
 # или дождаться firing rule в Prometheus → Alertmanager → Telegram
 ```
 
-Если бот получает **429 Too Many Requests** — уменьшите частоту правил или добавьте `group_wait` / `repeat_interval` в [`alertmanager/alertmanager.yml`](alertmanager/alertmanager.yml).
+Если бот получает **429 Too Many Requests** — уменьшите частоту правил или добавьте `group_wait` / `repeat_interval` в [`alertmanager/alertmanager.yml.template`](alertmanager/alertmanager.yml.template).
 
 **Telegram через VPN (VLESS / Hysteria2):** VPN нужен **`alertserver`**, не Alertmanager. Профиль `telegram-vpn` + sing-box — [`vpn/README.md`](vpn/README.md).
+
+## Алерты в Jira Service Management
+
+Цепочка для **critical**: **Prometheus** → **Alertmanager** → **JSM Ops** (интеграция Prometheus) + **Telegram**.
+
+### Настройка в Jira
+
+1. **Jira Service Management** → ваш сервисный проект (например IT) → **Alerts** → **Integrations** → **Prometheus** → включить.
+2. Скопировать **API key** (UUID вида `a553fb2b-…`).
+3. Убедиться, что **Assignee team** совпадает с `JSM_OPS_TEAM` (у вас: `IT-Support`).
+
+Правила обработки входящих алертов (Create / Close / Acknowledge) настраиваются на той же странице интеграции — по умолчанию «все алерты → create/close».
+
+### Переменные в `.env.monitoring`
+
+```env
+JSM_OPS_API_KEY=xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx   # из JSM, не коммитить
+JSM_OPS_TEAM=IT-Support
+```
+
+Alertmanager при старте подставляет ключ в [`alertmanager.yml.template`](alertmanager/alertmanager.yml.template).  
+Если `JSM_OPS_API_KEY` пуст — используется только Telegram ([`alertmanager.telegram-only.yml`](alertmanager/alertmanager.telegram-only.yml)).
+
+**Warning**-алерты (4xx, медленный API, webhook Jira) идут только в Telegram. **Critical** (backend down, БД down, 5xx rate) — в JSM **и** Telegram.
+
+### Проверка
+
+```bash
+# Пересобрать alertmanager после смены .env.monitoring
+docker compose -p fmk-monitoring -f docker-compose.monitoring.yml ... up -d alertmanager
+
+# Тестовый алерт (из хоста, где доступен :9093)
+curl -s -X POST http://127.0.0.1:9093/api/v2/alerts \
+  -H 'Content-Type: application/json' \
+  -d '[{
+    "labels": {"alertname": "FixMyKitTest", "severity": "critical"},
+    "annotations": {"summary": "Тест JSM", "description": "Проверка интеграции Prometheus → Jira"},
+    "startsAt": "2026-01-01T00:00:00.000Z"
+  }]'
+```
+
+В JSM → **Alerts** должен появиться алерт `[Fix My Kit] FixMyKitTest`. Закрытие (`send_resolved`) приходит при resolve в Alertmanager.
+

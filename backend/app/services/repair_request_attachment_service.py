@@ -31,12 +31,11 @@ from backend.app.services.attachment_validation import (
     effective_max_attachment_bytes,
     is_allowed_attachment,
 )
-from backend.app.services.tracker_service import (
-    TrackerUnavailableError,
-    issue_ref_for,
-    sync_repair_request_to_tracker,
-    upload_issue_attachment,
-)
+from backend.app.integrations.registry import external_tracker_enabled, get_issue_tracker
+from backend.app.integrations.types import IssueTrackerUnavailableError
+from backend.app.services.tracker_types import issue_ref_for
+
+TrackerUnavailableError = IssueTrackerUnavailableError
 
 logger = logging.getLogger(__name__)
 
@@ -163,10 +162,12 @@ def sync_pending_attachments_to_tracker(
     uploaded: list[PendingAttachment] = []
     for item in list_pending(repair_request.id):
         try:
-            upload_issue_attachment(
-                ref, file_path=item.path, filename=item.original_name
+            get_issue_tracker().upload_attachment(
+                repair_request,
+                file_path=str(item.path),
+                filename=item.original_name,
             )
-        except TrackerUnavailableError as exc:
+        except IssueTrackerUnavailableError as exc:
             failed += 1
             logger.warning(
                 "tracker_attachment_upload_failed request_id=%s file=%s error=%s",
@@ -201,13 +202,25 @@ def refresh_attachment_fields_from_disk(repair_request: RepairRequest) -> None:
     recompute_attachment_fields(repair_request)
 
 
-def sync_tracker_issue_and_attachments(
+def sync_external_issue_and_attachments(
     db: Session, repair_request: RepairRequest
 ) -> bool:
-    """Создаёт/подтверждает задачу и догружает pending-вложения."""
+    """Создаёт/подтверждает задачу во внешнем трекере и догружает pending-вложения."""
+    tracker = get_issue_tracker()
+    if not tracker.is_configured():
+        logger.warning(
+            "external_sync_skipped_not_configured request_id=%s",
+            repair_request.id,
+        )
+        return False
     try:
-        result = sync_repair_request_to_tracker(repair_request)
-    except TrackerUnavailableError:
+        result = tracker.sync_repair_request(repair_request)
+    except IssueTrackerUnavailableError as exc:
+        logger.error(
+            "external_sync_failed request_id=%s error=%s",
+            repair_request.id,
+            exc.message,
+        )
         return False
 
     repair_request.tracker_ticket_id = result.ticket_id
@@ -232,6 +245,13 @@ def sync_tracker_issue_and_attachments(
     if pending_before > 0 and not attachments_ok:
         return False
     return True
+
+
+def sync_tracker_issue_and_attachments(
+    db: Session, repair_request: RepairRequest
+) -> bool:
+    """Обратная совместимость."""
+    return sync_external_issue_and_attachments(db, repair_request)
 
 
 def run_attachment_cleanup(db: Session) -> AttachmentCleanupResult:

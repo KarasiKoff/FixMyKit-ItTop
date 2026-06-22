@@ -4,6 +4,9 @@ from __future__ import annotations
 
 from backend.app.core.config import settings
 
+# Лимит Jira Cloud на файл (типично 10–25 МБ; см. настройки инстанса).
+JIRA_ATTACHMENT_MAX_BYTES = 25 * 1024 * 1024
+
 # Ограничение Tracker API (~1024 Mbit в документации ≈ 128 МБ на файл).
 TRACKER_ATTACHMENT_MAX_BYTES = 128 * 1024 * 1024
 
@@ -68,7 +71,13 @@ def is_allowed_attachment(filename: str, content_type: str | None) -> bool:
 
 
 def effective_max_attachment_bytes() -> int:
-    return min(settings.server.attachment_max_bytes, TRACKER_ATTACHMENT_MAX_BYTES)
+    provider = settings.server.resolved_issue_tracker()
+    cap = settings.server.attachment_max_bytes
+    if provider == "jira":
+        return min(cap, JIRA_ATTACHMENT_MAX_BYTES)
+    if provider == "yandex":
+        return min(cap, TRACKER_ATTACHMENT_MAX_BYTES)
+    return cap
 
 
 def attachment_kind(filename: str, content_type: str | None) -> str:

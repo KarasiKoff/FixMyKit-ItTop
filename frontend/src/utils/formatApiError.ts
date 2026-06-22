@@ -139,9 +139,9 @@ export function isTrackerUnavailableError(err: unknown): boolean {
     return false;
 }
 
-/** Сообщение, когда статус в FixMyKit уже сохранён, а Трекер не ответил. */
+/** @deprecated используйте externalSyncPendingToast из externalIntegrationCopy */
 export const TRACKER_SYNC_PENDING_TOAST =
-    'Статус на сайте обновлён. Яндекс Трекер недоступен — нажмите «Синхронизировать с Трекером».';
+    'Статус на сайте обновлён. Синхронизация с задачей отложена — повторите синхронизацию на карточке.';
 
 export function formatApiError(err: unknown): string {
     if (err instanceof ApiError) {

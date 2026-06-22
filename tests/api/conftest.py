@@ -90,21 +90,25 @@ def db(session_factory) -> Generator[Session, None, None]:
 @pytest.fixture()
 def fake_tracker_client(monkeypatch: pytest.MonkeyPatch):
     """FakeTrackerClient + подмена get_tracker_issue_service."""
+    from backend.app.integrations.registry import reset_issue_tracker_cache
     from tests.support.fake_tracker_client import (
         patch_tracker_issue_service,
         tracker_create_issue_client,
     )
 
+    reset_issue_tracker_cache()
     return patch_tracker_issue_service(monkeypatch, tracker_create_issue_client())
 
 
 @pytest.fixture()
 def failing_tracker_client(monkeypatch: pytest.MonkeyPatch):
+    from backend.app.integrations.registry import reset_issue_tracker_cache
     from tests.support.fake_tracker_client import (
         patch_tracker_issue_service,
         tracker_failing_client,
     )
 
+    reset_issue_tracker_cache()
     return patch_tracker_issue_service(monkeypatch, tracker_failing_client())
 
 
@@ -123,7 +127,7 @@ def _mock_tracker_outbound(
         ).strip() or "FIXMYKIT-TEST"
 
     monkeypatch.setattr(
-        "backend.app.services.repair_request_actions_service.require_tracker_ticket",
+        "backend.app.services.repair_request_actions_service.require_external_ticket",
         _allow_workflow_without_ticket,
     )
 
@@ -240,3 +244,20 @@ def audience(db: Session) -> Audience:
 @pytest.fixture()
 def webhook_headers() -> dict[str, str]:
     return {"X-Tracker-Webhook-Secret": "test-webhook-secret"}
+
+
+@pytest.fixture()
+def jira_webhook_headers(monkeypatch: pytest.MonkeyPatch) -> dict[str, str]:
+    monkeypatch.setenv(
+        "JIRA_STATUS_MAP",
+        '{"To Do":"open","In Progress":"in_progress","Waiting for customer":"needs_info","Done":"closed"}',
+    )
+    from backend.app.core.config import Settings
+
+    fresh = Settings()
+    monkeypatch.setattr("backend.app.core.config.settings", fresh)
+    monkeypatch.setattr(
+        "backend.app.services.repair_request_jira_webhook_service.settings",
+        fresh,
+    )
+    return {"X-Jira-Webhook-Secret": "test-jira-webhook-secret"}

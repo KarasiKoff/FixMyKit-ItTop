@@ -12,8 +12,13 @@ import { RepairRequestDetailCard } from '../components/repair/RepairRequestDetai
 import { RepairTrackerSyncBanner } from '../components/RepairTrackerSyncBanner';
 import { FormSubmitOverlay } from '../components/ui/FormSubmitOverlay';
 import { LoadingPanel } from '../components/ui/LoadingPanel';
+import { usePublicIntegration } from '../context/public-integration-context';
 import { useToast } from '../hooks/useToast';
-import { yandexTrackerIssueWebHref } from '../utils/yandexTracker';
+import { externalIssueBrowseHref } from '../utils/externalIssueUrl';
+import {
+    integrationDisplayName,
+    syncWithIntegrationLabel,
+} from '../utils/externalIntegrationCopy';
 import { formatApiError } from '../utils/formatApiError';
 import { needsAttachmentTrackerSync } from '../utils/attachmentSyncDisplay';
 import { RoomMapModal } from '../components/RoomMapModal';
@@ -23,6 +28,7 @@ import { useRepairRequestDetail } from '../hooks/useRepairRequestDetail';
 export function RepairRequestDetailPage() {
     const { id } = useParams();
     const navigate = useNavigate();
+    const integration = usePublicIntegration();
     const { showSuccess, showError } = useToast();
     const {
         request,
@@ -46,7 +52,7 @@ export function RepairRequestDetailPage() {
         setSyncing(true);
         try {
             await syncRepairRequestTracker(id);
-            showSuccess('Синхронизация с Трекером выполнена');
+            showSuccess(`Синхронизация с ${integrationDisplayName(integration)} выполнена`);
             await reload();
         } catch (err) {
             showError(formatApiError(err));
@@ -125,23 +131,25 @@ export function RepairRequestDetailPage() {
         );
     }
 
-    const synced = isRepairRequestSynced(request);
-    const hasTrackerTicket = synced;
-    const apiSt = request.status;
-    const trackerHref = yandexTrackerIssueWebHref(request.ticketKey, request.ticketUrl);
+    const hasExternalTicket = isRepairRequestSynced(request);
+    const externalIssueHref = externalIssueBrowseHref(request.ticketKey, request.ticketUrl) ?? null;
     const needsAttachmentSync = needsAttachmentTrackerSync(request);
-    const showTrackerSyncButton = !trackerHref || needsAttachmentSync;
+    const showExternalSyncButton =
+        integration.enabled && (!externalIssueHref || needsAttachmentSync);
+    const canUseExternalWorkflow = !integration.enabled || hasExternalTicket;
     const resolutionNoteTrimmed = noteParts.resolutionTrimmed;
     const resolutionDescTrimmed = request.resolutionDesc?.trim() ?? '';
     const closedByDisplayed = noteParts.closedFromMeta || closedByDbLabel || '';
 
     return (
         <main className="page page--wide page--centered">
-            <FormSubmitOverlay
-                open={syncing}
-                title="Синхронизация с Трекером…"
-                detail="Создаём или обновляем задачу и загружаем вложения"
-            />
+            {integration.enabled ? (
+                <FormSubmitOverlay
+                    open={syncing}
+                    title={`${syncWithIntegrationLabel(integration)}…`}
+                    detail="Создаём или обновляем задачу и загружаем вложения"
+                />
+            ) : null}
             <div className="admin-page-head admin-page-head--edges">
                 <button type="button" className="admin-back-link" onClick={() => navigate('/requests')}>
                     ← К заявкам
@@ -162,10 +170,11 @@ export function RepairRequestDetailPage() {
                 </div>
             </div>
 
-            {id && hasTrackerTicket ? (
+            {id && integration.enabled && hasExternalTicket ? (
                 <RepairTrackerSyncBanner
                     requestId={id}
                     request={request}
+                    integration={integration}
                     onUpdated={applyRequestUpdate}
                 />
             ) : null}
@@ -177,7 +186,8 @@ export function RepairRequestDetailPage() {
                             <RepairRequestStatusPanel
                                 requestId={id}
                                 request={request}
-                                hasTrackerTicket={hasTrackerTicket}
+                                canUseExternalWorkflow={canUseExternalWorkflow}
+                                integration={integration}
                                 onUpdated={applyRequestUpdate}
                                 onCommentsChanged={bumpComments}
                             />
@@ -186,16 +196,17 @@ export function RepairRequestDetailPage() {
                     <RepairRequestDetailCard
                         request={request}
                         device={device}
-                        synced={synced}
-                        hasTrackerTicket={hasTrackerTicket}
-                        trackerHref={trackerHref ?? null}
-                        apiSt={apiSt}
+                        synced={hasExternalTicket}
+                        integration={integration}
+                        hasExternalTicket={hasExternalTicket}
+                        externalIssueHref={externalIssueHref}
+                        apiSt={request.status}
                         resolutionNoteTrimmed={resolutionNoteTrimmed ?? ''}
                         resolutionDescTrimmed={resolutionDescTrimmed}
                         closedByDisplayed={closedByDisplayed}
                         needsAttachmentSync={needsAttachmentSync}
                         syncing={syncing}
-                        showTrackerSyncButton={showTrackerSyncButton}
+                        showExternalSyncButton={showExternalSyncButton}
                         onShowMap={() => setShowMapModal(true)}
                         onOpenAttachments={() => setAttachmentsOpen(true)}
                         onSync={() => void trySync()}
@@ -206,7 +217,8 @@ export function RepairRequestDetailPage() {
                             <RepairRequestComments
                                 embedded
                                 requestId={id}
-                                hasTrackerTicket={hasTrackerTicket}
+                                integration={integration}
+                                canPostComment={canUseExternalWorkflow}
                                 refreshKey={`${request.ticketKey ?? id}-${commentsRefreshKey}`}
                             />
                         </section>

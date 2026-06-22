@@ -7,7 +7,7 @@ import {
     fetchRepairRequest,
     patchRepairRequestWorkflow,
 } from '../api/repairRequests';
-import { TRACKER_SYNC_PENDING_TOAST } from '../utils/formatApiError';
+import { externalSyncPendingToast } from '../utils/externalIntegrationCopy';
 
 const showSuccess = vi.fn();
 const showError = vi.fn();
@@ -25,6 +25,9 @@ vi.mock('../api/repairRequests', () => ({
 vi.mock('./RepairWorkflowModal', () => ({
     RepairWorkflowModal: () => null,
 }));
+
+const integration = { provider: 'jira' as const, enabled: true, label: 'Jira' };
+const pendingToast = externalSyncPendingToast(integration);
 
 const baseRequest: RepairRequestDetail = {
     id: 'req-1',
@@ -56,7 +59,8 @@ describe('RepairRequestStatusPanel', () => {
             <RepairRequestStatusPanel
                 requestId="req-1"
                 request={baseRequest}
-                hasTrackerTicket
+                canUseExternalWorkflow
+                integration={integration}
                 onUpdated={vi.fn()}
             />,
         );
@@ -64,7 +68,7 @@ describe('RepairRequestStatusPanel', () => {
         fireEvent.click(screen.getByRole('radio', { name: 'В работу' }));
 
         await waitFor(() => {
-            expect(showError).toHaveBeenCalledWith(TRACKER_SYNC_PENDING_TOAST);
+            expect(showError).toHaveBeenCalledWith(pendingToast);
         });
         expect(showSuccess).not.toHaveBeenCalled();
     });
@@ -83,7 +87,8 @@ describe('RepairRequestStatusPanel', () => {
             <RepairRequestStatusPanel
                 requestId="req-1"
                 request={baseRequest}
-                hasTrackerTicket
+                canUseExternalWorkflow
+                integration={integration}
                 onUpdated={vi.fn()}
             />,
         );
@@ -91,7 +96,7 @@ describe('RepairRequestStatusPanel', () => {
         fireEvent.click(screen.getByRole('radio', { name: 'В работу' }));
 
         await waitFor(() => {
-            expect(showError).toHaveBeenCalledWith(TRACKER_SYNC_PENDING_TOAST);
+            expect(showError).toHaveBeenCalledWith(pendingToast);
         });
     });
 
@@ -105,7 +110,8 @@ describe('RepairRequestStatusPanel', () => {
             <RepairRequestStatusPanel
                 requestId="req-1"
                 request={baseRequest}
-                hasTrackerTicket
+                canUseExternalWorkflow
+                integration={integration}
                 onUpdated={vi.fn()}
             />,
         );
@@ -115,6 +121,6 @@ describe('RepairRequestStatusPanel', () => {
         await waitFor(() => {
             expect(showError).toHaveBeenCalled();
         });
-        expect(showError).not.toHaveBeenCalledWith(TRACKER_SYNC_PENDING_TOAST);
+        expect(showError).not.toHaveBeenCalledWith(pendingToast);
     });
 });

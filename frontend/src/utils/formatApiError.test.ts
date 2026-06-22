@@ -33,8 +33,8 @@ describe('formatApiError', () => {
 });
 
 describe('TRACKER_SYNC_PENDING_TOAST', () => {
-    it('mentions site status and retry', () => {
+    it('mentions deferred sync', () => {
         expect(TRACKER_SYNC_PENDING_TOAST).toContain('сайте');
-        expect(TRACKER_SYNC_PENDING_TOAST).toContain('Трекер');
+        expect(TRACKER_SYNC_PENDING_TOAST).toContain('синхрониза');
     });
 });

@@ -5,8 +5,9 @@ import { useToast } from '../hooks/useToast';
 import {
     formatApiError,
     isTrackerUnavailableError,
-    TRACKER_SYNC_PENDING_TOAST,
 } from '../utils/formatApiError';
+import { externalSyncPendingToast } from '../utils/externalIntegrationCopy';
+import type { PublicIntegration } from '../types/integration';
 import { type RepairWorkflowState, workflowFromRequest } from '../utils/repairWorkflow';
 import { RepairWorkflowModal, type RepairWorkflowModalMode } from './RepairWorkflowModal';
 import type { RepairCloseResolution } from '../utils/repairWorkflow';
@@ -21,7 +22,8 @@ const STATUS_ICON_URLS = {
 type Props = {
     requestId: string;
     request: RepairRequestDetail;
-    hasTrackerTicket: boolean;
+    canUseExternalWorkflow: boolean;
+    integration: PublicIntegration;
     onUpdated: (request: RepairRequestDetail) => void;
     onCommentsChanged?: () => void;
 };
@@ -75,7 +77,8 @@ function IconTaken() {
 export function RepairRequestStatusPanel({
     requestId,
     request,
-    hasTrackerTicket,
+    canUseExternalWorkflow,
+    integration,
     onUpdated,
     onCommentsChanged,
 }: Props) {
@@ -84,7 +87,7 @@ export function RepairRequestStatusPanel({
     const [modal, setModal] = useState<RepairWorkflowModalMode | null>(null);
 
     const current = workflowFromRequest(request);
-    const canChange = hasTrackerTicket && !busy;
+    const canChange = canUseExternalWorkflow && !busy;
     const sliderValue: 'open' | 'in_progress' | null = current === 'open' || current === 'in_progress' ? current : null;
 
     async function applyWorkflow(
@@ -104,7 +107,7 @@ export function RepairRequestStatusPanel({
                 onCommentsChanged?.();
             }
             if (updated.trackerStatusSyncPending) {
-                showError(TRACKER_SYNC_PENDING_TOAST);
+                showError(externalSyncPendingToast(integration));
             } else {
                 showSuccess('Статус обновлён');
             }
@@ -117,7 +120,7 @@ export function RepairRequestStatusPanel({
                 /* ignore */
             }
             if (refreshed?.trackerStatusSyncPending && isTrackerUnavailableError(err)) {
-                showError(TRACKER_SYNC_PENDING_TOAST);
+                showError(externalSyncPendingToast(integration));
             } else {
                 showError(formatApiError(err));
             }
@@ -274,6 +277,7 @@ export function RepairRequestStatusPanel({
             <RepairWorkflowModal
                 open={modal !== null}
                 mode={modal ?? 'needs_info'}
+                integration={integration}
                 busy={busy}
                 onCancel={() => {
                     if (!busy) {

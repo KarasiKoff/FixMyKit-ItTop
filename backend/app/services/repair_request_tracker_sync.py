@@ -6,18 +6,26 @@ from uuid import UUID
 
 from backend.app.core.database import SessionLocal
 from backend.app.repositories.repair_request_repository import RepairRequestRepository
+from backend.app.integrations.registry import external_tracker_enabled
 from backend.app.services.repair_request_attachment_service import (
-    sync_tracker_issue_and_attachments,
+    sync_external_issue_and_attachments,
 )
 
 
-def try_tracker_sync(request_id: UUID) -> bool:
+def try_external_sync(request_id: UUID) -> bool:
     """Потокобезопасный вызов: своя Session на поток."""
+    if not external_tracker_enabled():
+        return True
     db = SessionLocal()
     try:
         repair_request = RepairRequestRepository(db).get_for_tracker(request_id)
         if repair_request is None:
             return False
-        return sync_tracker_issue_and_attachments(db, repair_request)
+        return sync_external_issue_and_attachments(db, repair_request)
     finally:
         db.close()
+
+
+def try_tracker_sync(request_id: UUID) -> bool:
+    """Обратная совместимость."""
+    return try_external_sync(request_id)

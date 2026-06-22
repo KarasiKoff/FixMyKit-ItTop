@@ -8,10 +8,13 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from fastapi import HTTPException, status
+
+from backend.app.integrations.registry import external_tracker_enabled
 from backend.app.schemas.tracker import TrackerSyncResponse
 from backend.app.services.realtime_notify import notify_repair_request_updated
 from backend.app.services.repair_request_attachment_service import (
-    sync_tracker_issue_and_attachments,
+    sync_external_issue_and_attachments,
 )
 from backend.app.repositories.repair_request_repository import get_repair_request_or_404
 
@@ -19,8 +22,13 @@ from backend.app.repositories.repair_request_repository import get_repair_reques
 def sync_repair_request_with_tracker(
     db: Session, request_id: UUID
 ) -> TrackerSyncResponse:
+    if not external_tracker_enabled():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="external_tracker_disabled",
+        )
     repair_request = get_repair_request_or_404(db, request_id, for_tracker=True)
-    if not sync_tracker_issue_and_attachments(db, repair_request):
+    if not sync_external_issue_and_attachments(db, repair_request):
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="tracker_unavailable",

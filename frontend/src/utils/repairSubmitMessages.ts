@@ -7,9 +7,11 @@ export function repairSubmitOverlayMessage(options: {
     sendToTracker: boolean;
     fileCount: number;
     isGuest: boolean;
+    integrationLabel?: string;
 }): RepairSubmitOverlayCopy {
-    const { sendToTracker, fileCount, isGuest } = options;
+    const { sendToTracker, fileCount, isGuest, integrationLabel } = options;
     const hasFiles = fileCount > 0;
+    const trackerName = (integrationLabel ?? '').trim() || 'Трекер';
 
     if (isGuest) {
         return {
@@ -22,15 +24,15 @@ export function repairSubmitOverlayMessage(options: {
 
     if (sendToTracker && hasFiles) {
         return {
-            title: 'Отправляем заявку в Трекер…',
-            detail: `Загружаем файлы и создаём задачу в Яндекс Трекере. Это может занять до минуты.`,
+            title: `Отправляем заявку в ${trackerName}…`,
+            detail: `Загружаем файлы и создаём задачу в ${trackerName}. Это может занять до минуты.`,
         };
     }
 
     if (sendToTracker) {
         return {
-            title: 'Отправляем заявку в Трекер…',
-            detail: 'Сохраняем заявку и создаём задачу в Яндекс Трекере.',
+            title: `Отправляем заявку в ${trackerName}…`,
+            detail: `Сохраняем заявку и создаём задачу в ${trackerName}.`,
         };
     }
 
