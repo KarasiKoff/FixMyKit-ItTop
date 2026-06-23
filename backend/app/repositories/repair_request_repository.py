@@ -88,6 +88,28 @@ class RepairRequestRepository:
             .first()
         )
 
+    def get_for_tracker_for_update(self, request_id: UUID) -> RepairRequest | None:
+        """Строка заявки с блокировкой — сериализует параллельный sync с трекером."""
+        locked = (
+            self._db.query(RepairRequest)
+            .filter(RepairRequest.id == request_id)
+            .with_for_update()
+            .first()
+        )
+        if locked is None:
+            return None
+        # joinedload + FOR UPDATE в одном запросе — outer join, PG отклоняет.
+        return (
+            self._db.query(RepairRequest)
+            .filter(RepairRequest.id == request_id)
+            .options(
+                joinedload(RepairRequest.device).joinedload(Device.audience),
+                joinedload(RepairRequest.audience),
+                joinedload(RepairRequest.author),
+            )
+            .one()
+        )
+
     def has_active_for_target(
         self,
         *,

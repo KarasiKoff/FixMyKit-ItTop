@@ -11,19 +11,19 @@ from backend.app.integrations.yandex.tracker import YandexIssueTracker
 
 
 class TestResolvedIssueTracker:
-    def test_auto_none_without_token(self) -> None:
-        cfg = ServerConfig(
-            ISSUE_TRACKER="auto",
-            TRACKER_TOKEN="",
-            JIRA_API_TOKEN="",
-            JIRA_PROJECT_KEY="",
-            JIRA_CLOUD_ID="",
-            JIRA_BASE_URL="",
-        )
+    def test_field_default_is_none(self) -> None:
+        assert ServerConfig.model_fields["issue_tracker"].default == "none"
+
+    def test_explicit_none(self) -> None:
+        cfg = ServerConfig(ISSUE_TRACKER="none", TRACKER_TOKEN="secret")
         assert cfg.resolved_issue_tracker() == "none"
         assert not cfg.external_tracker_enabled()
 
-    def test_auto_jira_when_configured(self) -> None:
+    def test_explicit_none_ignores_tracker_token(self) -> None:
+        cfg = ServerConfig(ISSUE_TRACKER="none", TRACKER_TOKEN="secret")
+        assert cfg.resolved_issue_tracker() == "none"
+
+    def test_auto_treated_as_none(self) -> None:
         cfg = ServerConfig(
             ISSUE_TRACKER="auto",
             JIRA_BASE_URL="https://x.atlassian.net",
@@ -31,18 +31,10 @@ class TestResolvedIssueTracker:
             JIRA_API_TOKEN="token",
             JIRA_PROJECT_KEY="FMK",
         )
-        assert cfg.resolved_issue_tracker() == "jira"
-        assert cfg.external_tracker_enabled()
+        assert cfg.resolved_issue_tracker() == "none"
 
-    def test_auto_yandex_with_token(self) -> None:
-        cfg = ServerConfig(
-            ISSUE_TRACKER="auto",
-            TRACKER_TOKEN="secret",
-            JIRA_API_TOKEN="",
-            JIRA_PROJECT_KEY="",
-            JIRA_CLOUD_ID="",
-            JIRA_BASE_URL="",
-        )
+    def test_explicit_yandex(self) -> None:
+        cfg = ServerConfig(ISSUE_TRACKER="yandex")
         assert cfg.resolved_issue_tracker() == "yandex"
         assert cfg.external_tracker_label() == "Yandex Tracker"
 
@@ -50,6 +42,10 @@ class TestResolvedIssueTracker:
         cfg = ServerConfig(ISSUE_TRACKER="jira")
         assert cfg.resolved_issue_tracker() == "jira"
         assert cfg.external_tracker_label() == "Jira"
+
+    def test_unknown_treated_as_none(self) -> None:
+        cfg = ServerConfig(ISSUE_TRACKER="tracker")
+        assert cfg.resolved_issue_tracker() == "none"
 
 
 class TestGetIssueTracker:

@@ -1,7 +1,10 @@
 from pathlib import Path
+import logging
 
 from pydantic import BaseModel, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_logger = logging.getLogger(__name__)
 
 ROOT_DIR = Path(__file__).resolve().parents[3]
 BACKEND_DIR = Path(__file__).resolve().parents[2]
@@ -75,12 +78,9 @@ class ServerConfig(BaseSettings):
         description="Логин технического пользователя",
     )
     issue_tracker: str = Field(
-        default="auto",
+        default="none",
         alias="ISSUE_TRACKER",
-        description=(
-            "auto | none | yandex | jira. "
-            "auto: jira при настроенных JIRA_*; иначе yandex при TRACKER_TOKEN; иначе none."
-        ),
+        description="none | yandex | jira — явный выбор внешнего трекера.",
     )
     jira_base_url: str | None = Field(
         default=None,
@@ -133,7 +133,10 @@ class ServerConfig(BaseSettings):
     jira_status_map_json: str = Field(
         default="{}",
         alias="JIRA_STATUS_MAP",
-        description='JSON: {"To Do":"open",...} для входящих вебхуков (фаза C).',
+        description=(
+            'JSON: {"К выполнению":"open",...} для входящих webhooks. '
+            "Пустой или {} — встроенный fallback (см. status_map.DEFAULT_JIRA_STATUS_MAP_JSON)."
+        ),
     )
     jira_transition_open: str | None = Field(default=None, alias="JIRA_TRANSITION_OPEN")
     jira_transition_in_progress: str | None = Field(
@@ -144,6 +147,31 @@ class ServerConfig(BaseSettings):
     )
     jira_transition_closed: str | None = Field(
         default=None, alias="JIRA_TRANSITION_CLOSED"
+    )
+    jira_create_start_date_field: str | None = Field(
+        default=None,
+        alias="JIRA_CREATE_START_DATE_FIELD",
+        description="customfield_* — дата начала при создании задачи из FMK (YYYY-MM-DD).",
+    )
+    jira_create_set_start_date: bool = Field(
+        default=True,
+        alias="JIRA_CREATE_SET_START_DATE",
+        description="Заполнять JIRA_CREATE_START_DATE_FIELD датой создания заявки.",
+    )
+    jira_create_team_field: str | None = Field(
+        default=None,
+        alias="JIRA_CREATE_TEAM_FIELD",
+        description="customfield_* — поле Team в Jira.",
+    )
+    jira_create_team_id: str | None = Field(
+        default=None,
+        alias="JIRA_CREATE_TEAM_ID",
+        description="UUID команды Jira (не имя). См. GET /rest/api/3/team или UI команды.",
+    )
+    jira_create_fields_json: str = Field(
+        default="{}",
+        alias="JIRA_CREATE_FIELDS_JSON",
+        description="Доп. поля create issue: JSON {\"customfield_10001\": \"value\"}.",
     )
     public_frontend_base_url: str = Field(
         default="https://fixmykit.local",
@@ -237,15 +265,17 @@ class ServerConfig(BaseSettings):
         return bool(account)
 
     def resolved_issue_tracker(self) -> str:
-        mode = (self.issue_tracker or "auto").strip().lower()
-        if mode == "auto":
-            if self.jira_credentials_ready():
-                return "jira"
-            if (self.tracker_token or "").strip():
-                return "yandex"
-            return "none"
+        mode = (self.issue_tracker or "none").strip().lower()
         if mode in ("none", "yandex", "jira"):
             return mode
+        if mode == "auto":
+            _logger.warning(
+                "issue_tracker_auto_removed: задайте ISSUE_TRACKER=jira, yandex или none"
+            )
+        else:
+            _logger.warning(
+                "issue_tracker_unknown: значение %r — трекер отключён (none)", mode
+            )
         return "none"
 
     def external_tracker_enabled(self) -> bool:

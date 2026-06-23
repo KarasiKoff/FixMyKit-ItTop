@@ -21,7 +21,8 @@ def try_external_sync(request_id: UUID) -> bool:
         repair_request = RepairRequestRepository(db).get_for_tracker(request_id)
         if repair_request is None:
             return False
-        return sync_external_issue_and_attachments(db, repair_request)
+        ok, _ = sync_external_issue_and_attachments(db, repair_request)
+        return ok
     finally:
         db.close()
 

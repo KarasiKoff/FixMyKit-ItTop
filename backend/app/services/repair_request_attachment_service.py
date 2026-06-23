@@ -204,15 +204,24 @@ def refresh_attachment_fields_from_disk(repair_request: RepairRequest) -> None:
 
 def sync_external_issue_and_attachments(
     db: Session, repair_request: RepairRequest
-) -> bool:
+) -> tuple[bool, str | None]:
     """Создаёт/подтверждает задачу во внешнем трекере и догружает pending-вложения."""
+    locked = RepairRequestRepository(db).get_for_tracker_for_update(repair_request.id)
+    if locked is None:
+        logger.warning(
+            "external_sync_skipped_not_found request_id=%s",
+            repair_request.id,
+        )
+        return False, "repair_request_not_found"
+    repair_request = locked
+
     tracker = get_issue_tracker()
     if not tracker.is_configured():
         logger.warning(
             "external_sync_skipped_not_configured request_id=%s",
             repair_request.id,
         )
-        return False
+        return False, "tracker_not_configured"
     try:
         result = tracker.sync_repair_request(repair_request)
     except IssueTrackerUnavailableError as exc:
@@ -221,14 +230,13 @@ def sync_external_issue_and_attachments(
             repair_request.id,
             exc.message,
         )
-        return False
+        return False, exc.message
 
     repair_request.tracker_ticket_id = result.ticket_id
     repair_request.tracker_ticket_key = result.ticket_key
     repair_request.tracker_ticket_url = result.ticket_url
     repair_request.last_sync_at = result.synced_at
     db.flush()
-    db.commit()
 
     pending_before = count_pending(repair_request.id)
     attachments_ok = True
@@ -237,19 +245,27 @@ def sync_external_issue_and_attachments(
             repair_request, remove_from_disk=False
         )
         apply_attachment_state_after_sync(repair_request, sync_result.uploaded)
-        attachments_ok = sync_result.ok > 0 and sync_result.failed == 0
+        attachments_ok = sync_result.failed == 0
+        if sync_result.failed > 0:
+            logger.warning(
+                "external_sync_attachments_partial request_id=%s ok=%s failed=%s",
+                repair_request.id,
+                sync_result.ok,
+                sync_result.failed,
+            )
     else:
         refresh_attachment_fields_from_disk(repair_request)
+
     db.commit()
     db.refresh(repair_request)
     if pending_before > 0 and not attachments_ok:
-        return False
-    return True
+        return False, "tracker_attachments_partial"
+    return True, None
 
 
 def sync_tracker_issue_and_attachments(
     db: Session, repair_request: RepairRequest
-) -> bool:
+) -> tuple[bool, str | None]:
     """Обратная совместимость."""
     return sync_external_issue_and_attachments(db, repair_request)
 

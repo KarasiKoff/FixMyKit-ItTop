@@ -8,15 +8,21 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from fastapi import HTTPException, status
-
 from backend.app.integrations.registry import external_tracker_enabled
+from backend.app.repositories.repair_request_repository import get_repair_request_or_404
 from backend.app.schemas.tracker import TrackerSyncResponse
 from backend.app.services.realtime_notify import notify_repair_request_updated
 from backend.app.services.repair_request_attachment_service import (
     sync_external_issue_and_attachments,
 )
-from backend.app.repositories.repair_request_repository import get_repair_request_or_404
+
+
+def _sync_error_detail(message: str | None) -> str:
+    if not message:
+        return "tracker_unavailable"
+    if message.startswith("jira_http_") or message.startswith("jira_transition"):
+        return message[:300]
+    return message[:200]
 
 
 def sync_repair_request_with_tracker(
@@ -28,10 +34,11 @@ def sync_repair_request_with_tracker(
             detail="external_tracker_disabled",
         )
     repair_request = get_repair_request_or_404(db, request_id, for_tracker=True)
-    if not sync_external_issue_and_attachments(db, repair_request):
+    ok, err = sync_external_issue_and_attachments(db, repair_request)
+    if not ok:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="tracker_unavailable",
+            detail=_sync_error_detail(err),
         ) from None
     db.refresh(repair_request)
     notify_repair_request_updated(repair_request, source="api")

@@ -10,6 +10,13 @@ from backend.app.models.enums import RequestStatus
 
 logger = logging.getLogger(__name__)
 
+# Fallback, если JIRA_STATUS_MAP в env пустой или «{}» (типичные ITSM + англ. имена).
+DEFAULT_JIRA_STATUS_MAP_JSON = (
+    '{"К выполнению":"open","В работе":"in_progress",'
+    '"Требуется информация":"needs_info","Решено":"closed",'
+    '"To Do":"open","In Progress":"in_progress",'
+    '"Waiting for customer":"needs_info","Done":"closed"}'
+)
 _JIRA_STATUS_VALUE_MAP: dict[str, RequestStatus] = {
     "open": RequestStatus.OPEN,
     "in_progress": RequestStatus.IN_PROGRESS,
@@ -40,8 +47,10 @@ def parse_jira_status_map(raw_json: str) -> dict[str, RequestStatus]:
 
 def jira_status_map(server: ServerConfig | None = None) -> dict[str, RequestStatus]:
     cfg = server or settings.server
-    return parse_jira_status_map(cfg.jira_status_map_json)
-
+    raw = (cfg.jira_status_map_json or "").strip()
+    if not raw or raw == "{}":
+        return parse_jira_status_map(DEFAULT_JIRA_STATUS_MAP_JSON)
+    return parse_jira_status_map(raw)
 
 def map_jira_status_to_request(
     raw: str, server: ServerConfig | None = None

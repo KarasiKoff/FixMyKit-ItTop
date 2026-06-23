@@ -364,6 +364,7 @@ type RepairRequestCommentApi = {
     author_user_id: string;
     author_login?: string | null;
     author_display_name?: string | null;
+    tracker_author_unlinked?: boolean;
     body: string;
     tracker_synced: boolean;
     created_at: string;
@@ -376,6 +377,7 @@ function mapComment(item: RepairRequestCommentApi): RepairRequestComment {
         authorUserId: item.author_user_id,
         authorLogin: item.author_login ?? undefined,
         authorDisplayName: item.author_display_name ?? undefined,
+        trackerAuthorUnlinked: item.tracker_author_unlinked ?? false,
         body: item.body,
         trackerSynced: item.tracker_synced,
         createdAt: item.created_at,

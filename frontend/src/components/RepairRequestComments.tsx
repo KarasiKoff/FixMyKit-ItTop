@@ -29,7 +29,17 @@ function CommentItem({ item }: { item: RepairRequestComment }) {
             </div>
             <article className="repair-comment__bubble">
                 <header className="repair-comment__head">
-                    <span className="repair-comment__author">{author}</span>
+                    <div className="repair-comment__author-wrap">
+                        <span className="repair-comment__author">{author}</span>
+                        {item.trackerAuthorUnlinked ? (
+                            <span
+                                className="repair-comment__unlinked"
+                                title="Email автора в Jira/Tracker не привязан к учётке Fix My Kit"
+                            >
+                                не в Fix My Kit
+                            </span>
+                        ) : null}
+                    </div>
                     <time
                         className="repair-comment__time"
                         dateTime={item.createdAt}

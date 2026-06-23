@@ -50,11 +50,26 @@ def create_user(
     if UserRepository(db).exists_by_login(user_data.login):
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="login_exists")
 
+    if user_data.tracker_user_email:
+        existing_email = UserRepository(db).get_by_tracker_email(
+            str(user_data.tracker_user_email)
+        )
+        if existing_email is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="tracker_user_email_exists",
+            )
+
     new_user = User(
         login=user_data.login,
         password_hash=hash_password(user_data.password),
         role=user_data.role,
         full_name=user_data.full_name,
+        tracker_user_email=(
+            str(user_data.tracker_user_email).strip().lower()
+            if user_data.tracker_user_email
+            else None
+        ),
         is_active=True,
     )
     new_user = UserRepository(db).create(new_user)
@@ -72,6 +87,19 @@ def update_user(
     user = UserRepository(db).get_or_404(user_id)
 
     update_data = user_data.model_dump(exclude_unset=True)
+    if "tracker_user_email" in update_data:
+        email = update_data["tracker_user_email"]
+        if email is None:
+            update_data["tracker_user_email"] = None
+        else:
+            normalized = str(email).strip().lower()
+            other = UserRepository(db).get_by_tracker_email(normalized)
+            if other is not None and other.id != user_id:
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail="tracker_user_email_exists",
+                )
+            update_data["tracker_user_email"] = normalized or None
     if user_id == current_admin.id and update_data.get("is_active") is False:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

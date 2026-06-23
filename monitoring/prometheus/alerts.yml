@@ -130,13 +130,13 @@ groups:
 
       - alert: JiraWebhookFailures
         expr: |
-          sum(rate(http_requests_total{job="fmk-backend", status="5xx", handler=~".*webhooks/jira.*"}[5m])) > 0
+          sum(rate(http_requests_total{job="fmk-backend", status=~"4xx|5xx", handler=~".*webhooks/jira.*"}[5m])) > 0
         for: 1m
         labels:
           severity: warning
         annotations:
-          summary: "💥 Ошибки webhook Jira"
-          description: "🚨 Эндпоинты /api/webhooks/jira* отдают 5xx.\n\nСтатусы из Jira Automation могут не доходить до Fix My Kit.\n\nПроверь логи fixmykit.http, JIRA_WEBHOOK_SECRET и JIRA_STATUS_MAP."
+          summary: "💥 Ошибки webhook Jira (4xx/5xx)"
+          description: "🚨 /api/webhooks/jira* отдаёт 4xx или 5xx.\n\nЧастые причины: неверный X-Jira-Webhook-Secret (401), пустой/неверный JIRA_STATUS_MAP (400 unmapped_jira_status), ошибка обработчика (5xx).\n\nПроверь логи fixmykit.http и env JIRA_STATUS_MAP."
           resolved_description: "✅ Webhook Jira снова принимает события! Синхронизация жива 🔗"
 
       - alert: TrackerWebhookFailures

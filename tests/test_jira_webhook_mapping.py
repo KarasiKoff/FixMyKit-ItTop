@@ -38,6 +38,12 @@ class TestMapJiraStatusToRequest:
             == RequestStatus.NEEDS_INFO
         )
 
+    def test_empty_env_uses_builtin_default(self) -> None:
+        cfg = ServerConfig(JIRA_STATUS_MAP="{}")
+        assert map_jira_status_to_request("К выполнению", cfg) == RequestStatus.OPEN
+        assert map_jira_status_to_request("Решено", cfg) == RequestStatus.CLOSED
+        assert map_jira_status_to_request("To Do", cfg) == RequestStatus.OPEN
+
     @pytest.mark.parametrize("raw", ["", "   ", "Unknown"])
     def test_unknown_returns_none(self, raw: str) -> None:
         cfg = ServerConfig(JIRA_STATUS_MAP='{"To Do":"open"}')

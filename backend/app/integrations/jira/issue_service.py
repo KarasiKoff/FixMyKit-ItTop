@@ -11,6 +11,7 @@ from uuid import uuid4
 
 from backend.app.core.config import settings
 from backend.app.integrations.jira.adf import plain_text_adf
+from backend.app.integrations.jira.issue_create_fields import build_create_issue_extra_fields
 from backend.app.integrations.jira.issue_description import (
     build_issue_summary,
     build_repair_request_description_adf,
@@ -231,6 +232,7 @@ class JiraIssueService:
         labels = default_issue_labels()
         if labels:
             fields["labels"] = labels
+        fields.update(build_create_issue_extra_fields(repair_request))
         payload = {"fields": fields}
         url = f"{self._client.api_base()}/issue"
         body = self._client.request_json("POST", url, data=payload)

@@ -11,6 +11,7 @@ const DETAIL_RU: Record<string, string> = {
     repair_request_not_found: 'Заявка не найдена',
     user_not_found: 'Пользователь не найден',
     login_exists: 'Пользователь с таким логином уже есть',
+    tracker_user_email_exists: 'Этот email трекера уже привязан к другому пользователю',
     cannot_deactivate_self: 'Нельзя отключить свою учётную запись',
     cannot_change_own_role: 'Нельзя изменить свою роль',
     inventory_number_exists: 'Устройство с таким инвентарным номером уже есть',
