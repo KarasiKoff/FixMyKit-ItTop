@@ -1,0 +1,7 @@
+{
+  "issue_key": "{{issue.key}}",
+  "issue_id": "{{issue.id}}",
+  "jira_status": "{{issue.status.name}}",
+  "resolution": "{{issue.resolution.name}}",
+  "user": "{{initiator.emailAddress}}"
+}

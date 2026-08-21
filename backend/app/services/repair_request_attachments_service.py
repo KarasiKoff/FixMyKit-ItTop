@@ -1,4 +1,4 @@
-"""Список и скачивание вложений заявки из Yandex Tracker."""
+"""Список и скачивание вложений заявки из внешнего трекера (Jira / Yandex)."""
 
 from __future__ import annotations
 
@@ -8,17 +8,14 @@ from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+from backend.app.integrations.registry import get_issue_tracker
+from backend.app.integrations.types import IssueTrackerUnavailableError
 from backend.app.schemas.attachments import TrackerAttachmentItem, TrackerAttachmentList
 from backend.app.services.repair_request_attachment_service import (
     tracker_attachment_kind,
 )
 from backend.app.repositories.repair_request_repository import get_repair_request_or_404
-from backend.app.services.tracker_service import (
-    TrackerUnavailableError,
-    fetch_attachment_content,
-    issue_ref_for,
-    list_issue_attachments,
-)
+from backend.app.services.tracker_types import issue_ref_for
 
 
 def list_tracker_attachments(db: Session, request_id: UUID) -> TrackerAttachmentList:
@@ -26,8 +23,8 @@ def list_tracker_attachments(db: Session, request_id: UUID) -> TrackerAttachment
     if not issue_ref_for(repair_request):
         return TrackerAttachmentList(items=[])
     try:
-        rows = list_issue_attachments(repair_request)
-    except TrackerUnavailableError:
+        rows = get_issue_tracker().list_attachments(repair_request)
+    except IssueTrackerUnavailableError:
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail="tracker_unavailable",
@@ -56,12 +53,12 @@ def fetch_tracker_attachment_bytes(
 ) -> tuple[bytes, str]:
     repair_request = get_repair_request_or_404(db, request_id, for_tracker=True)
     try:
-        data, content_type = fetch_attachment_content(
+        data, content_type = get_issue_tracker().fetch_attachment_content(
             repair_request,
             attachment_id,
             variant=variant,
         )
-    except TrackerUnavailableError as exc:
+    except IssueTrackerUnavailableError as exc:
         if "not_found" in exc.message:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

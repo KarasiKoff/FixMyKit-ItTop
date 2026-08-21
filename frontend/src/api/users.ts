@@ -4,6 +4,7 @@ export type UserListItem = {
     id: string;
     login: string;
     name: string;
+    trackerUserEmail: string | null;
     role: 'admin' | 'sysadmin';
     isActive: boolean;
     createdAt: string;
@@ -13,6 +14,7 @@ type UserApi = {
     id: string;
     login: string;
     full_name?: string | null;
+    tracker_user_email?: string | null;
     role: 'admin' | 'sysadmin';
     is_active: boolean;
     created_at: string;
@@ -23,6 +25,7 @@ function mapUser(item: UserApi): UserListItem {
         id: item.id,
         login: item.login,
         name: item.full_name ?? item.login,
+        trackerUserEmail: item.tracker_user_email ?? null,
         role: item.role,
         isActive: item.is_active,
         createdAt: item.created_at,
@@ -67,6 +70,7 @@ export async function createUser(payload: {
     password: string;
     role: 'admin' | 'sysadmin';
     full_name?: string | null;
+    tracker_user_email?: string | null;
 }) {
     const item = await apiRequest<UserApi>('/api/users', {
         method: 'POST',
@@ -75,6 +79,7 @@ export async function createUser(payload: {
             password: payload.password,
             role: payload.role,
             full_name: payload.full_name ?? null,
+            tracker_user_email: payload.tracker_user_email?.trim() || null,
         }),
     });
     return mapUser(item);
@@ -82,7 +87,12 @@ export async function createUser(payload: {
 
 export async function updateUser(
     id: string,
-    payload: { role?: 'admin' | 'sysadmin'; full_name?: string | null; is_active?: boolean },
+    payload: {
+        role?: 'admin' | 'sysadmin';
+        full_name?: string | null;
+        tracker_user_email?: string | null;
+        is_active?: boolean;
+    },
 ) {
     const item = await apiRequest<UserApi>(`/api/users/${id}`, {
         method: 'PATCH',

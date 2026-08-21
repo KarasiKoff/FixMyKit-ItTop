@@ -5,10 +5,15 @@ from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_db
 from backend.app.core.config import settings
+from backend.app.integrations.registry import (
+    external_tracker_enabled,
+    external_tracker_label,
+)
 from backend.app.repositories.audience_repository import AudienceRepository
 from backend.app.repositories.device_repository import DeviceRepository
 from backend.app.repositories.repair_request_repository import RepairRequestRepository
 from backend.app.schemas.attachments import AttachmentLimitsResponse
+from backend.app.schemas.integration import IntegrationPublicResponse
 from backend.app.services.attachment_validation import effective_max_attachment_bytes
 from backend.app.schemas.public_audience import (
     PublicAudienceRepairSummaryResponse,
@@ -28,6 +33,16 @@ from backend.app.services.url_shortener import (
 )
 
 router = APIRouter(prefix="/api/public", tags=["public"])
+
+
+@router.get("/integration", response_model=IntegrationPublicResponse)
+def get_public_integration() -> IntegrationPublicResponse:
+    provider = settings.server.resolved_issue_tracker()
+    return IntegrationPublicResponse(
+        provider=provider,  # type: ignore[arg-type]
+        enabled=external_tracker_enabled(),
+        label=external_tracker_label(),
+    )
 
 
 @router.get("/attachment-limits", response_model=AttachmentLimitsResponse)

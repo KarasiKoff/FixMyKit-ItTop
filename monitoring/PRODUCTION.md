@@ -81,7 +81,9 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT ON TABLES TO grafana_ro;
 
 ### Telegram
 
-`TG_BOT_ALERT_TOKEN`, `TG_ALERT_CHAT_ID` в `.env.monitoring`. При 429 — увеличить `repeat_interval` в [`alertmanager/alertmanager.yml`](alertmanager/alertmanager.yml).
+`TG_BOT_ALERT_TOKEN`, `TG_ALERT_CHAT_ID` в `.env.monitoring`.  
+`JSM_OPS_API_KEY`, `JSM_OPS_TEAM` — алерты **critical** в Jira Service Management (см. [`README.md`](README.md#алерты-в-jira-service-management)).  
+При 429 — увеличить `repeat_interval` в [`alertmanager/alertmanager.yml.template`](alertmanager/alertmanager.yml.template).
 
 ---
 

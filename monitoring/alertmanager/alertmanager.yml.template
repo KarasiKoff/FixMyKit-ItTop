@@ -1,0 +1,42 @@
+global:
+  resolve_timeout: 5m
+
+route:
+  receiver: "telegram-alerts"
+  group_by: ['alertname']
+  group_wait: 5s
+  group_interval: 10s
+  repeat_interval: 1h
+  routes:
+    # Critical → Jira Service Management (JSM Ops), затем Telegram (continue)
+    - matchers:
+        - severity = critical
+      receiver: "jsm-alerts"
+      continue: true
+
+receivers:
+  - name: "telegram-alerts"
+    webhook_configs:
+      - url: "http://alertserver:8080/alert"
+        send_resolved: true
+
+  - name: "jsm-alerts"
+    opsgenie_configs:
+      - api_key: "__JSM_OPS_API_KEY__"
+        api_url: https://api.atlassian.com/jsm/ops/integration/
+        send_resolved: true
+        message: '[Fix My Kit] {{ .CommonLabels.alertname }}'
+        description: |
+          {{ .CommonAnnotations.summary }}
+          {{ .CommonAnnotations.description }}
+        priority: P1
+        tags: fixmykit,prometheus,{{ .CommonLabels.severity }}
+        responders:
+          - name: "__JSM_OPS_TEAM__"
+            type: team
+        details:
+          alertname: "{{ .CommonLabels.alertname }}"
+          severity: "{{ .CommonLabels.severity }}"
+          summary: "{{ .CommonAnnotations.summary }}"
+          status: "{{ .Status }}"
+          source: fixmykit-prometheus

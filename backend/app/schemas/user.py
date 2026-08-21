@@ -11,7 +11,23 @@ class UserBase(BaseModel):
     login: str
     role: UserRole = UserRole.ADMIN
     full_name: str | None = None
+    tracker_user_email: str | None = Field(
+        default=None,
+        description="Email сотрудника в Jira / Yandex Tracker для входящих webhook.",
+    )
     is_active: bool = True
+
+    @field_validator("tracker_user_email", mode="before")
+    @classmethod
+    def normalize_tracker_user_email(cls, v: object) -> str | None:
+        if v is None:
+            return None
+        s = str(v).strip().lower()
+        if not s:
+            return None
+        if "@" not in s or "." not in s.split("@")[-1]:
+            raise ValueError("invalid_tracker_user_email")
+        return s
 
 
 class UserCreate(UserBase):
@@ -23,6 +39,7 @@ class UserCreateAdmin(BaseModel):
     password: str = Field(..., min_length=8)
     role: UserRole = Field(..., description="Role must be admin or sysadmin")
     full_name: str | None = None
+    tracker_user_email: str | None = None
 
     @field_validator("role")
     @classmethod
@@ -42,6 +59,7 @@ class UserUpdate(BaseModel):
 class UserUpdateAdmin(BaseModel):
     role: UserRole | None = None
     full_name: str | None = None
+    tracker_user_email: str | None = None
     is_active: bool | None = None
 
 

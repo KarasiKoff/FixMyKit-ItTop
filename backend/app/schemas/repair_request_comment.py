@@ -16,6 +16,10 @@ class RepairRequestCommentResponse(BaseModel):
     author_user_id: UUID
     author_login: str | None = None
     author_display_name: str | None = None
+    tracker_author_unlinked: bool = Field(
+        default=False,
+        description="Автор из Jira/Tracker не сопоставлен с учёткой Fix My Kit.",
+    )
     body: str
     tracker_synced: bool
     created_at: datetime

@@ -2,17 +2,28 @@ import React, { useEffect, useState } from 'react';
 import type { RepairCloseResolution } from '../utils/repairWorkflow';
 import { CLOSE_RESOLUTION_OPTIONS } from '../utils/repairWorkflow';
 
+import type { PublicIntegration } from '../types/integration';
+import { workflowCommentInIntegrationHint } from '../utils/externalIntegrationCopy';
+
 export type RepairWorkflowModalMode = 'needs_info' | 'close';
 
 type Props = {
     open: boolean;
     mode: RepairWorkflowModalMode;
+    integration: PublicIntegration;
     busy?: boolean;
     onConfirm: (payload: { comment: string; resolution?: RepairCloseResolution }) => void;
     onCancel: () => void;
 };
 
-export function RepairWorkflowModal({ open, mode, busy = false, onConfirm, onCancel }: Props) {
+export function RepairWorkflowModal({
+    open,
+    mode,
+    integration,
+    busy = false,
+    onConfirm,
+    onCancel,
+}: Props) {
     const [comment, setComment] = useState('');
     const [resolution, setResolution] = useState<RepairCloseResolution>('resolved');
 
@@ -44,7 +55,9 @@ export function RepairWorkflowModal({ open, mode, busy = false, onConfirm, onCan
     const title = mode === 'needs_info' ? 'Требуется информация' : 'Закрыть заявку';
     const hint =
         mode === 'needs_info'
-            ? 'Опишите, какие данные вам необходимы. Комментарий появится в задаче Yandex Tracker.'
+            ? integration.enabled
+                ? workflowCommentInIntegrationHint(integration)
+                : 'Опишите, какие данные вам необходимы. Комментарий появится в ленте заявки.'
             : 'Выберите резолюцию и при необходимости добавьте комментарий.';
 
     const commentTrimmed = comment.trim();

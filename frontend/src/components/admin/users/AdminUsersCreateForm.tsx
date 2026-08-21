@@ -13,6 +13,7 @@ export function AdminUsersCreateForm({ disabled, onCreated, onError, onSuccess }
     const [login, setLogin] = useState('');
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
+    const [trackerUserEmail, setTrackerUserEmail] = useState('');
     const [role, setRole] = useState<'admin' | 'sysadmin'>('sysadmin');
 
     async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
@@ -26,10 +27,12 @@ export function AdminUsersCreateForm({ disabled, onCreated, onError, onSuccess }
                 password,
                 role,
                 full_name: fullName.trim() || null,
+                tracker_user_email: trackerUserEmail.trim() || null,
             });
             setLogin('');
             setPassword('');
             setFullName('');
+            setTrackerUserEmail('');
             setRole('sysadmin');
             onSuccess('Пользователь создан');
             onCreated();
@@ -62,6 +65,16 @@ export function AdminUsersCreateForm({ disabled, onCreated, onError, onSuccess }
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Имя"
+                    disabled={disabled}
+                />
+            </label>
+            <label className="admin-inline-field admin-inline-field--email">
+                <span className="admin-inline-label">Email трекера</span>
+                <input
+                    type="email"
+                    value={trackerUserEmail}
+                    onChange={(e) => setTrackerUserEmail(e.target.value)}
+                    placeholder="user@company.com"
                     disabled={disabled}
                 />
             </label>

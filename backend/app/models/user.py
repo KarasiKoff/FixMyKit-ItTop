@@ -19,6 +19,7 @@ class User(Base):
         SQLEnum(UserRole, name="user_role"), nullable=False, default=UserRole.ADMIN
     )
     full_name = Column(String, nullable=True)
+    tracker_user_email = Column(String, nullable=True, unique=True)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(
         TIMESTAMP(timezone=True), nullable=False, server_default=func.now()

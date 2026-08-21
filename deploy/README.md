@@ -13,6 +13,8 @@
 | [`frontend/nginx.conf`](frontend/nginx.conf) | SPA внутри prod-контейнера frontend (`try_files` → `index.html`) |
 | [`PRODUCTION_UPLOADS.md`](PRODUCTION_UPLOADS.md) | Ошибка nginx **413** и «Нет связи с сервером» при больших вложениях |
 | `yandex-tracker-webhook*.body.example.json` | Примеры тел вебхуков для настройки триггеров в Tracker |
+| `jira-webhook*.body.example.json` | Примеры тел для Jira Automation |
+| [`JIRA_AUTOMATION.md`](JIRA_AUTOMATION.md) | Пошаговая настройка правил Jira (статус + комментарии) |
 
 Общая документация: [README.md](../README.md) (разделы **Продакшен**, **Авторизация**, **Интеграция с Яндекс Трекером**).
 
@@ -146,6 +148,21 @@ Runbook, nginx Grafana, `/metrics`: [`monitoring/PRODUCTION.md`](../monitoring/P
 | `/api/webhooks/yandex-tracker/comment` | Комментарий → лента на сайте |
 
 Примеры JSON — файлы `yandex-tracker-webhook*.body.example.json` в этом каталоге.
+
+---
+
+## Вебхуки Jira Automation
+
+Базовый URL API: `https://api.<домен>/api/webhooks/jira`  
+Заголовок: `X-Jira-Webhook-Secret: <JIRA_WEBHOOK_SECRET>`
+
+| Путь | Событие |
+|------|---------|
+| `POST /api/webhooks/jira` | Смена статуса задачи → заявка на сайте |
+| `POST /api/webhooks/jira/comment` | Комментарий в Jira → лента на сайте |
+
+Пошаговая настройка правил в Jira: [`JIRA_AUTOMATION.md`](JIRA_AUTOMATION.md).  
+Примеры JSON — `jira-webhook*.body.example.json`.
 
 ---
 

@@ -1,4 +1,4 @@
-"""Входящие HTTP-вызовы из триггеров Yandex Tracker."""
+"""Входящие HTTP-вызовы из триггеров Yandex Tracker и Jira Automation."""
 
 from typing import Annotated
 
@@ -6,12 +6,23 @@ from fastapi import APIRouter, Depends, Header
 from sqlalchemy.orm import Session
 
 from backend.app.api.deps import get_db
+from backend.app.schemas.jira_webhook import (
+    JiraWebhookCommentPayload,
+    JiraWebhookResponse,
+    JiraWebhookStatusPayload,
+)
 from backend.app.schemas.tracker_webhook import (
     YandexTrackerCommentPayload,
     YandexTrackerPublishPayload,
     YandexTrackerSysadminTakenPayload,
     YandexTrackerWebhookPayload,
     YandexTrackerWebhookResponse,
+)
+from backend.app.services.repair_request_jira_webhook_service import (
+    JIRA_WEBHOOK_SECRET_HEADER,
+    handle_jira_comment_webhook,
+    handle_jira_status_webhook,
+    verify_jira_webhook_secret,
 )
 from backend.app.services.repair_request_webhook_service import (
     TRACKER_STATUS_ALIASES,
@@ -26,7 +37,12 @@ from backend.app.services.repair_request_webhook_service import (
 router = APIRouter(prefix="/api/webhooks", tags=["webhooks"])
 
 # Для OpenAPI / описаний в роутере
-__all__ = ["router", "TRACKER_WEBHOOK_SECRET_HEADER", "TRACKER_STATUS_ALIASES"]
+__all__ = [
+    "router",
+    "TRACKER_WEBHOOK_SECRET_HEADER",
+    "JIRA_WEBHOOK_SECRET_HEADER",
+    "TRACKER_STATUS_ALIASES",
+]
 
 
 @router.post(
@@ -111,3 +127,44 @@ def yandex_tracker_sysadmin_taken(
 ) -> YandexTrackerWebhookResponse:
     verify_webhook_secret(x_tracker_webhook_secret)
     return handle_tracker_sysadmin_taken_webhook(db, payload)
+
+
+@router.post(
+    "/jira",
+    response_model=JiraWebhookResponse,
+    summary="Синхронизация заявки по событию из Jira",
+    description=(
+        "Jira Automation: правило «Issue transitioned» или «Issue updated» (статус). "
+        "В JSON: `jira_status` = `{{issue.status.name}}` — ключ в `JIRA_STATUS_MAP`. "
+        f"Заголовок `{JIRA_WEBHOOK_SECRET_HEADER}` = `JIRA_WEBHOOK_SECRET`."
+    ),
+)
+def jira_status_webhook(
+    payload: JiraWebhookStatusPayload,
+    db: Session = Depends(get_db),
+    x_jira_webhook_secret: Annotated[
+        str | None, Header(alias=JIRA_WEBHOOK_SECRET_HEADER)
+    ] = None,
+) -> JiraWebhookResponse:
+    verify_jira_webhook_secret(x_jira_webhook_secret)
+    return handle_jira_status_webhook(db, payload)
+
+
+@router.post(
+    "/jira/comment",
+    response_model=JiraWebhookResponse,
+    summary="Комментарий из Jira в ленту на сайте",
+    description=(
+        "Jira Automation: правило «Comment added». "
+        "Комментарии с маркером `[Fix My Kit]` игнорируются (эхо из сайта)."
+    ),
+)
+def jira_comment_webhook(
+    payload: JiraWebhookCommentPayload,
+    db: Session = Depends(get_db),
+    x_jira_webhook_secret: Annotated[
+        str | None, Header(alias=JIRA_WEBHOOK_SECRET_HEADER)
+    ] = None,
+) -> JiraWebhookResponse:
+    verify_jira_webhook_secret(x_jira_webhook_secret)
+    return handle_jira_comment_webhook(db, payload)

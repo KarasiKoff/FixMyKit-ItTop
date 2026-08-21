@@ -17,9 +17,10 @@ from backend.app.services.comment_body_normalize import (
     plain_author_prefix_body,
 )
 
-# Комментарии, которые сайт сам пишет в Tracker — не импортируем обратно.
+# Комментарии, которые сайт сам пишет во внешний трекер — не импортируем обратно.
 _TRACKER_ECHO_MARKERS = (
     "(Fix My Kit):",
+    "[Fix My Kit]",
     "Статус изменён в Fix My Kit",
     "В Fix My Kit ",
     "**Резолюция:**",

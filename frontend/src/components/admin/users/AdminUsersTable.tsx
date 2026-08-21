@@ -29,13 +29,21 @@ export function AdminUsersTable({
     onSuccess,
 }: AdminUsersTableProps) {
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [editDraft, setEditDraft] = useState({ fullName: '', role: 'admin' as 'admin' | 'sysadmin' });
+    const [editDraft, setEditDraft] = useState({
+        fullName: '',
+        trackerUserEmail: '',
+        role: 'admin' as 'admin' | 'sysadmin',
+    });
     const [resetUserId, setResetUserId] = useState<string | null>(null);
     const [resetPassword, setResetPassword] = useState('');
 
     function startEdit(u: UserListItem) {
         setEditingId(u.id);
-        setEditDraft({ fullName: u.name === u.login ? '' : u.name, role: u.role });
+        setEditDraft({
+            fullName: u.name === u.login ? '' : u.name,
+            trackerUserEmail: u.trackerUserEmail ?? '',
+            role: u.role,
+        });
     }
 
     const isCurrentUser = (u: UserListItem) => Boolean(currentUserId && u.id === currentUserId);
@@ -48,6 +56,7 @@ export function AdminUsersTable({
         try {
             await updateUser(editingId, {
                 full_name: editDraft.fullName.trim() || null,
+                tracker_user_email: editDraft.trackerUserEmail.trim() || null,
                 ...(editingSelf ? {} : { role: editDraft.role }),
             });
             setEditingId(null);
@@ -119,27 +128,28 @@ export function AdminUsersTable({
             ) : null}
 
             <div className="table-wrap admin-table-wrap">
-                <table className="admin-table">
+                <table className="admin-table admin-table--users">
                     <thead>
                         <tr>
-                            <th className="table-col-center">Логин</th>
-                            <th className="table-col-center">ФИО</th>
-                            <th className="table-col-center">Роль</th>
-                            <th className="table-col-center">Статус</th>
-                            <th className="table-col-center">Создан</th>
+                            <th className="table-col-center col-login">Логин</th>
+                            <th className="table-col-center col-name">ФИО</th>
+                            <th className="table-col-center col-tracker-email">Email трекера</th>
+                            <th className="table-col-center col-role">Роль</th>
+                            <th className="table-col-center col-status">Статус</th>
+                            <th className="table-col-center col-created">Создан</th>
                             <th className="table-col-center table-col-actions table-col-actions--compact">Действия</th>
                         </tr>
                     </thead>
                     <tbody>
                         {fetching && users.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="admin-table-empty">
+                                <td colSpan={7} className="admin-table-empty">
                                     Загрузка…
                                 </td>
                             </tr>
                         ) : users.length === 0 ? (
                             <tr>
-                                <td colSpan={6} className="admin-table-empty">
+                                <td colSpan={7} className="admin-table-empty">
                                     Нет записей
                                 </td>
                             </tr>
@@ -156,8 +166,8 @@ export function AdminUsersTable({
                                             .join(' ') || undefined
                                     }
                                 >
-                                    <td className="table-col-center">{u.login}</td>
-                                    <td className="table-col-center admin-table-cell--input">
+                                    <td className="table-col-center col-login">{u.login}</td>
+                                    <td className="table-col-center admin-table-cell--input col-name">
                                         {editingId === u.id ? (
                                             <input
                                                 value={editDraft.fullName}
@@ -167,10 +177,34 @@ export function AdminUsersTable({
                                                 disabled={!isAdmin}
                                             />
                                         ) : (
-                                            u.name || '—'
+                                            <span className="admin-table-cell-ellipsis" title={u.name}>
+                                                {u.name || '—'}
+                                            </span>
                                         )}
                                     </td>
-                                    <td className="table-col-center admin-table-cell--input">
+                                    <td
+                                        className="table-col-center admin-table-cell--input col-tracker-email"
+                                        title={u.trackerUserEmail ?? undefined}
+                                    >
+                                        {editingId === u.id ? (
+                                            <input
+                                                value={editDraft.trackerUserEmail}
+                                                onChange={(e) =>
+                                                    setEditDraft((d) => ({
+                                                        ...d,
+                                                        trackerUserEmail: e.target.value,
+                                                    }))
+                                                }
+                                                placeholder="user@company.com"
+                                                disabled={!isAdmin}
+                                            />
+                                        ) : (
+                                            <span className="admin-table-cell-ellipsis">
+                                                {u.trackerUserEmail || '—'}
+                                            </span>
+                                        )}
+                                    </td>
+                                    <td className="table-col-center admin-table-cell--input col-role">
                                         {editingId === u.id ? (
                                             isCurrentUser(u) ? (
                                                 u.role === 'admin' ? (
@@ -199,15 +233,15 @@ export function AdminUsersTable({
                                             'Сисадмин'
                                         )}
                                     </td>
-                                    <td className="table-col-center">
+                                    <td className="table-col-center col-status">
                                         <span
                                             className={`status-badge ${u.isActive ? 'status-badge--on' : 'status-badge--off'}`}
                                         >
                                             {u.isActive ? 'активен' : 'отключён'}
                                         </span>
                                     </td>
-                                    <td className="table-col-center table-col--nowrap">
-                                        {new Date(u.createdAt).toLocaleString('ru-RU')}
+                                    <td className="table-col-center col-created table-col--nowrap">
+                                        {new Date(u.createdAt).toLocaleDateString('ru-RU')}
                                     </td>
                                     <td className="table-col-center table-col-actions table-col-actions--compact">
                                         <div className="admin-row-actions admin-row-actions--users">

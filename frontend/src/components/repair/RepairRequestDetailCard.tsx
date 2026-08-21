@@ -4,23 +4,32 @@ import { isRepairRequestSynced } from '../../api/repairRequests';
 import type { RepairRequestDetail } from '../../types/repairRequest';
 import { Device } from '../../types/device';
 import {
+    attachmentsInIntegrationLabel,
+    openInIntegrationLabel,
+    syncWithIntegrationLabel,
+    syncedWithIntegrationLabel,
+} from '../../utils/externalIntegrationCopy';
+import type { PublicIntegration } from '../../types/integration';
+import {
     repairRequestStatusLabel,
     repairRequestStatusPillClassForRequest,
     repairRequestWorkflowBubble,
 } from '../../utils/statusDisplay';
+
 type RepairRequestDetailCardProps = {
     request: RepairRequestDetail;
     device: Device | null;
     synced: boolean;
-    hasTrackerTicket: boolean;
-    trackerHref: string | null;
+    integration: PublicIntegration;
+    hasExternalTicket: boolean;
+    externalIssueHref: string | null;
     apiSt: RepairRequestDetail['status'];
     resolutionNoteTrimmed: string;
     resolutionDescTrimmed: string;
     closedByDisplayed: string;
     needsAttachmentSync: boolean;
     syncing: boolean;
-    showTrackerSyncButton: boolean;
+    showExternalSyncButton: boolean;
     onShowMap: () => void;
     onOpenAttachments: () => void;
     onSync: () => void;
@@ -31,21 +40,24 @@ export function RepairRequestDetailCard({
     request,
     device,
     synced,
-    hasTrackerTicket,
-    trackerHref,
+    integration,
+    hasExternalTicket,
+    externalIssueHref,
     apiSt,
     resolutionNoteTrimmed,
     resolutionDescTrimmed,
     closedByDisplayed,
     needsAttachmentSync,
     syncing,
-    showTrackerSyncButton,
+    showExternalSyncButton,
     onShowMap,
     onOpenAttachments,
     onSync,
     onTogglePublish,
 }: RepairRequestDetailCardProps) {
     const workflowBubble = repairRequestWorkflowBubble(request);
+    const integrationName = syncedWithIntegrationLabel(integration);
+    const integrationEnabled = integration.enabled;
 
     return (
         <section className="card card-form card--narrow-device repair-detail-card repair-detail-layout__card">
@@ -54,11 +66,15 @@ export function RepairRequestDetailCard({
                     <span className={repairRequestStatusPillClassForRequest(request)}>
                         {repairRequestStatusLabel(request.status, request.trackerStatusLabel)}
                     </span>
-                    {synced ? (
-                        <span className="status-pill status-pill--tracker-synced">Трекер</span>
-                    ) : (
-                        <span className="status-pill status-pill--tracker-missing">Нет в Трекере</span>
-                    )}
+                    {integrationEnabled ? (
+                        synced ? (
+                            <span className="status-pill status-pill--tracker-synced">{integrationName}</span>
+                        ) : (
+                            <span className="status-pill status-pill--tracker-missing">
+                                Нет в {integrationName}
+                            </span>
+                        )
+                    ) : null}
                     {workflowBubble ? (
                         <span className={workflowBubble.className} title={workflowBubble.label}>
                             {workflowBubble.label}
@@ -74,11 +90,11 @@ export function RepairRequestDetailCard({
                         <strong>Резолюция:</strong>{' '}
                         {resolutionNoteTrimmed ? (
                             <span className="repair-detail-resolution-text">{resolutionNoteTrimmed}</span>
-                        ) : trackerHref ? (
+                        ) : externalIssueHref ? (
                             <span className="repair-detail-resolution-fallback muted-text">
                                 В ответе заявки текста нет — смотрите поле резолюции в{' '}
-                                <a href={trackerHref} target="_blank" rel="noreferrer">
-                                    задаче Трекера
+                                <a href={externalIssueHref} target="_blank" rel="noreferrer">
+                                    задаче {integrationName}
                                 </a>
                                 .
                             </span>
@@ -137,12 +153,12 @@ export function RepairRequestDetailCard({
                     <strong>Создана:</strong>
                     <span>{new Date(request.createdAt).toLocaleString('ru-RU')}</span>
                 </li>
-                {trackerHref ? (
+                {externalIssueHref ? (
                     <li>
                         <strong>Тикет:</strong>
                         <span>
-                            <a href={trackerHref} target="_blank" rel="noreferrer">
-                                {request.ticketKey ?? trackerHref}
+                            <a href={externalIssueHref} target="_blank" rel="noreferrer">
+                                {request.ticketKey ?? externalIssueHref}
                             </a>
                         </span>
                     </li>
@@ -153,70 +169,78 @@ export function RepairRequestDetailCard({
                 </li>
             </ul>
 
-            <section className="repair-detail-attachments card-inset">
-                <h3 className="repair-detail-attachments__title">Вложения</h3>
-                {request.hasAttachments ? (
-                    <p className="repair-detail-attachments__meta">
-                        Файлов: {request.attachmentsCount ?? 0}
-                        {request.attachmentsSyncStatus === 'complete'
-                            ? ' · все в Трекере'
-                            : request.attachmentsSyncStatus === 'partial'
-                              ? ' · часть ещё загружается в Трекер'
-                              : ' · ожидают загрузки в Трекер'}
-                    </p>
-                ) : (
-                    <p className="repair-detail-attachments__meta">Файлы не прикреплялись.</p>
-                )}
-                {isRepairRequestSynced(request) && request.attachmentsSyncStatus === 'complete' ? (
-                    <button type="button" className="btn-ghost btn-compact" onClick={onOpenAttachments}>
-                        Просмотреть вложения в Трекере
-                    </button>
-                ) : request.hasAttachments ? (
-                    <p className="repair-detail-attachments__hint">
-                        {needsAttachmentSync
-                            ? 'Вложения ещё не в Трекере. Нажмите «Синхронизировать с Трекером» ниже.'
-                            : 'Просмотр доступен после синхронизации с Трекером. Файлы можно прикрепить только при создании заявки.'}
-                    </p>
-                ) : null}
-            </section>
+            {integrationEnabled ? (
+                <section className="repair-detail-attachments card-inset">
+                    <h3 className="repair-detail-attachments__title">Вложения</h3>
+                    {request.hasAttachments ? (
+                        <p className="repair-detail-attachments__meta">
+                            Файлов: {request.attachmentsCount ?? 0}
+                            {request.attachmentsSyncStatus === 'complete'
+                                ? ` · все в ${attachmentsInIntegrationLabel(integration)}`
+                                : request.attachmentsSyncStatus === 'partial'
+                                  ? ` · часть ещё загружается в ${attachmentsInIntegrationLabel(integration)}`
+                                  : ` · ожидают загрузки в ${attachmentsInIntegrationLabel(integration)}`}
+                        </p>
+                    ) : (
+                        <p className="repair-detail-attachments__meta">Файлы не прикреплялись.</p>
+                    )}
+                    {isRepairRequestSynced(request) && request.attachmentsSyncStatus === 'complete' ? (
+                        <button type="button" className="btn-ghost btn-compact" onClick={onOpenAttachments}>
+                            Просмотреть вложения в {attachmentsInIntegrationLabel(integration)}
+                        </button>
+                    ) : request.hasAttachments ? (
+                        <p className="repair-detail-attachments__hint">
+                            {needsAttachmentSync
+                                ? `Вложения ещё не в ${attachmentsInIntegrationLabel(integration)}. Нажмите «${syncWithIntegrationLabel(integration)}» ниже.`
+                                : `Просмотр доступен после синхронизации. Файлы можно прикрепить только при создании заявки.`}
+                        </p>
+                    ) : null}
+                </section>
+            ) : null}
 
             <div className="repair-detail-tracker-actions">
-                <div className="repair-detail-tracker-footer repair-detail-tracker-footer--stacked">
-                    {trackerHref ? (
-                        <a
-                            href={trackerHref}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="repair-tracker-footer-btn repair-tracker-footer-btn--filled"
-                        >
-                            Перейти в Tracker
-                        </a>
-                    ) : (
-                        <button
-                            type="button"
-                            className="repair-tracker-footer-btn repair-tracker-footer-btn--muted"
-                            disabled
-                            title="Сначала синхронизируйте заявку — появится ссылка на тикет в Трекере"
-                        >
-                            Перейти в Tracker
-                        </button>
-                    )}
-                    {showTrackerSyncButton ? (
-                        <button
-                            type="button"
-                            className="repair-tracker-footer-btn repair-tracker-footer-btn--filled"
-                            disabled={syncing}
-                            onClick={onSync}
-                        >
-                            {syncing ? 'Синхронизация…' : 'Синхронизировать с Трекером'}
-                        </button>
-                    ) : null}
-                </div>
+                {integrationEnabled ? (
+                    <div className="repair-detail-tracker-footer repair-detail-tracker-footer--stacked">
+                        {externalIssueHref ? (
+                            <a
+                                href={externalIssueHref}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="repair-tracker-footer-btn repair-tracker-footer-btn--filled"
+                            >
+                                {openInIntegrationLabel(integration)}
+                            </a>
+                        ) : (
+                            <button
+                                type="button"
+                                className="repair-tracker-footer-btn repair-tracker-footer-btn--muted"
+                                disabled
+                                title={`Сначала синхронизируйте заявку — появится ссылка на задачу в ${integrationName}`}
+                            >
+                                {openInIntegrationLabel(integration)}
+                            </button>
+                        )}
+                        {showExternalSyncButton ? (
+                            <button
+                                type="button"
+                                className="repair-tracker-footer-btn repair-tracker-footer-btn--filled"
+                                disabled={syncing}
+                                onClick={onSync}
+                            >
+                                {syncing ? 'Синхронизация…' : syncWithIntegrationLabel(integration)}
+                            </button>
+                        ) : null}
+                    </div>
+                ) : null}
                 <button
                     type="button"
                     className={`repair-detail-publish-btn ${request.isPublished ? 'btn-publish--active' : 'btn-publish'}`}
-                    disabled={!hasTrackerTicket}
-                    title={hasTrackerTicket ? undefined : 'Сначала синхронизируйте с Трекером'}
+                    disabled={integrationEnabled && !hasExternalTicket}
+                    title={
+                        integrationEnabled && !hasExternalTicket
+                            ? syncWithIntegrationLabel(integration)
+                            : undefined
+                    }
                     onClick={onTogglePublish}
                 >
                     {request.isPublished ? 'Снять публикацию' : 'Опубликовать'}

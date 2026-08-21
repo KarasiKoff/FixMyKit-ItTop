@@ -62,7 +62,8 @@ class UserRepository:
         if search:
             query = query.filter(
                 (User.login.ilike(f"%{search}%"))
-                | (User.full_name.ilike(f"%{search}%")),
+                | (User.full_name.ilike(f"%{search}%"))
+                | (User.tracker_user_email.ilike(f"%{search}%")),
             )
         total = query.count()
         users = query.offset(offset).limit(limit).all()
@@ -84,12 +85,39 @@ class UserRepository:
     def commit(self) -> None:
         self._db.commit()
 
+    def get_active_by_tracker_email(self, email: str) -> User | None:
+        normalized = (email or "").strip().lower()
+        if not normalized or "@" not in normalized:
+            return None
+        return (
+            self._db.query(User)
+            .filter(
+                func.lower(User.tracker_user_email) == normalized,
+                User.is_active.is_(True),
+            )
+            .first()
+        )
+
+    def get_by_tracker_email(self, email: str) -> User | None:
+        normalized = (email or "").strip().lower()
+        if not normalized:
+            return None
+        return (
+            self._db.query(User)
+            .filter(func.lower(User.tracker_user_email) == normalized)
+            .first()
+        )
+
     def resolve_tracker_actor(
         self, tracker_user_raw: str | None, fallback: User
     ) -> User:
         raw = (tracker_user_raw or "").strip()
         if not raw:
             return fallback
+        if "@" in raw:
+            u = self.get_active_by_tracker_email(raw)
+            if u is not None:
+                return u
         u = self.get_active_by_login(raw)
         if u is not None:
             return u

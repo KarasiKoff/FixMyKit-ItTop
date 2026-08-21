@@ -28,6 +28,35 @@ def plain_author_prefix_body(text: str, author_label: str) -> str:
     return f"{label}:\n\n{body}"
 
 
+def strip_plain_author_prefix(text: str, author_label: str) -> str:
+    body = (text or "").strip()
+    label = author_label.strip()
+    prefix = f"{label}:\n\n"
+    if label and body.startswith(prefix):
+        return body[len(prefix) :].strip()
+    return body
+
+
+def inbound_tracker_comment_display(
+    author_login: str | None,
+    author_full_name: str | None,
+    body: str,
+    *,
+    webhook_actor_login: str,
+) -> tuple[str | None, str]:
+    """Имя автора и текст без префикса для комментариев из webhook трекера."""
+    normalized = normalize_comment_body(body)
+    login = (author_login or "").strip()
+    if login and login == webhook_actor_login:
+        m = re.match(r"^([^:\n]{1,200}):\n\n", normalized, re.DOTALL)
+        if m:
+            label = m.group(1).strip()
+            if label:
+                return label, strip_plain_author_prefix(normalized, label)
+    display = (author_full_name or "").strip() or login or None
+    return display, normalized
+
+
 def legacy_markdown_author_to_plain(text: str) -> str:
     """Старые импорты с **Имя**: → обычный «Имя:\\n\\nтекст»."""
     m = _LEGACY_AUTHOR_PREFIX_RE.match(text)

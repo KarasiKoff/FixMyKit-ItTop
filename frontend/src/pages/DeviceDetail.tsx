@@ -11,7 +11,9 @@ import { DeviceTitlePills } from '../components/DeviceTitlePills';
 import { deviceHistoryStatusLabel } from '../utils/statusDisplay';
 import { formatApiError } from '../utils/formatApiError';
 import { IconSync } from '../components/admin/AdminDashboardIcons';
-import { yandexTrackerIssueWebHref } from '../utils/yandexTracker';
+import { externalIssueBrowseHref } from '../utils/externalIssueUrl';
+import { integrationDisplayName } from '../utils/externalIntegrationCopy';
+import { usePublicIntegration } from '../context/public-integration-context';
 
 const HISTORY_PAGE_SIZE = 8;
 
@@ -118,11 +120,14 @@ type DeviceMetaItemProps = {
 };
 
 function HistoryEntryLinks({ entry }: { entry: RepairHistoryEntry }) {
+    const integration = usePublicIntegration();
+
     if (!entry.repairRequestId) {
         return null;
     }
 
-    const trackerHref = yandexTrackerIssueWebHref(entry.ticketKey, entry.ticketUrl);
+    const issueHref = externalIssueBrowseHref(entry.ticketKey, entry.ticketUrl);
+    const integrationName = integrationDisplayName(integration);
 
     return (
         <span className="history-timeline__links">
@@ -130,13 +135,13 @@ function HistoryEntryLinks({ entry }: { entry: RepairHistoryEntry }) {
             <Link className="history-timeline__link" to={`/requests/${entry.repairRequestId}`}>
                 Заявка
             </Link>
-            {trackerHref ? (
+            {issueHref ? (
                 <>
                     <span className="history-timeline__links-sep" aria-hidden="true">
                         ·
                     </span>
-                    <a className="history-timeline__link" href={trackerHref} target="_blank" rel="noreferrer">
-                        {entry.ticketKey ? `Трекер: ${entry.ticketKey}` : 'Яндекс Трекер'}
+                    <a className="history-timeline__link" href={issueHref} target="_blank" rel="noreferrer">
+                        {entry.ticketKey ? `${integrationName}: ${entry.ticketKey}` : integrationName}
                     </a>
                 </>
             ) : null}
